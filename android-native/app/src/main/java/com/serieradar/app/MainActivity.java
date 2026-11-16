@@ -63,17 +63,10 @@ public class MainActivity extends Activity {
 
         webView.addJavascriptInterface(new ReminderBridge(), "AndroidReminders");
 
-        WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
-                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
-                .build();
+        settings.setAllowFileAccessFromFileURLs(true);
+        settings.setAllowUniversalAccessFromFileURLs(true);
 
         webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public android.webkit.WebResourceResponse shouldInterceptRequest(
-                    WebView view, String url) {
-                return assetLoader.shouldInterceptRequest(android.net.Uri.parse(url));
-            }
-
             @Override
             public void onPageFinished(WebView view, String url) {
                 pageLoaded = true;
@@ -82,7 +75,7 @@ public class MainActivity extends Activity {
         });
         webView.setWebChromeClient(new WebChromeClient());
 
-        webView.loadUrl("https://appassets.androidplatform.net/assets/web/index.html");
+        webView.loadUrl("file:///android_asset/web/index.html");
     }
 
     @Override
