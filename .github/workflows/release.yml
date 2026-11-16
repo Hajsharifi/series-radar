@@ -22,6 +22,10 @@ permissions:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -118,13 +122,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Deploy APK to HTTP server
-        if: ${{ secrets.DEPLOY_SSH_KEY != '' }}
+        if: env.DEPLOY_SSH_KEY != ''
         run: |
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > deploy_key
+          echo "$DEPLOY_SSH_KEY" > deploy_key
           chmod 600 deploy_key
           scp -o StrictHostKeyChecking=no -i deploy_key \
             android-native/app/build/outputs/apk/release/app-release.apk \
-            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/var/www/apk/series-radar.apk
+            "$DEPLOY_USER@$DEPLOY_HOST:/var/www/apk/series-radar.apk"
           ssh -o StrictHostKeyChecking=no -i deploy_key \
-            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
             "systemctl restart series-radar-share.service"
