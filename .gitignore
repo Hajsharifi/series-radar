@@ -41,7 +41,7 @@ web/node_modules/.cache/
 android-native/app/src/main/assets/web/
 
 # Secrets
-*.keystore
+# *.keystore (except release)
 *.jks
 /opt/series-radar-api/token
 /opt/series-radar-api/cache/
@@ -51,3 +51,6 @@ coverage/
 
 # Misc
 *.pem
+# Allow release keystore for consistent signing
+!android-native/release.keystore
+!android-native/app/release.keystore
