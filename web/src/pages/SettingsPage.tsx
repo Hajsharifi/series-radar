@@ -9,6 +9,8 @@ import { relativeSyncLabel, toPersianDigits } from "../lib/date";
 import { isNativeApp, openExactAlarmSettings, requestNotificationPermission } from "../lib/native";
 import { downloadBackup, importBackup, readBackupFile } from "../lib/backup";
 
+declare const __APP_VERSION__: string;
+
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-white/6 py-2.5 last:border-0">
@@ -190,7 +192,7 @@ export function SettingsPage() {
 
       <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
         <h2 className="mb-2 text-sm font-bold text-white">درباره</h2>
-        <Row label="نسخه" value="۱.۴.۰" />
+        <Row label="نسخه" value={toPersianDigits(__APP_VERSION__)} />
         <Row label="منبع داده" value="TVMaze · TMDB · Box Office Mojo" />
         <Row label="تقویم" value="شمسی + میلادی" />
         <Row label="یادآوری" value="آلارم اندروید" />
