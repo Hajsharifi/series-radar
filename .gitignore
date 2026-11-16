@@ -35,7 +35,6 @@ yarn-error.log*
 # Android
 android-native/local.properties
 android-native/app/release/
-android-native/gradle/wrapper/gradle-wrapper.jar
 
 # Cache
 web/node_modules/.cache/
