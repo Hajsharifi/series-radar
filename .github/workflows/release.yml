@@ -68,6 +68,11 @@ jobs:
         working-directory: ./web
         run: npm run build
 
+      - name: Sync web assets to Android
+        run: |
+          rm -rf android-native/app/src/main/assets/web
+          cp -r web/dist android-native/app/src/main/assets/web
+
       - name: Build APK
         working-directory: ./android-native
         run: ./gradlew assembleRelease
