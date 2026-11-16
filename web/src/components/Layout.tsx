@@ -7,6 +7,7 @@ import { toPersianDigits } from "../lib/date";
 
 const NAV = [
   { to: "/", label: "رادار", icon: "◉" },
+  { to: "/search", label: "جستجو", icon: "🔍" },
   { to: "/movies", label: "فیلم‌ها", icon: "▤" },
   { to: "/boxoffice", label: "گیشه", icon: "◫" },
   { to: "/favorites", label: "ستاره‌ها", icon: "★" },

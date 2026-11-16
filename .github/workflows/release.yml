@@ -1,37 +1,54 @@
-name: Build & Release APK
+name: Release APK
 
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
 
 jobs:
-  build:
-    name: Build APK
+  build-and-release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-          fetch-tags: true
+          fetch-depth: 0  # Need full history for version bump
 
-      - name: Set up JDK 17
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+          cache: 'gradle'
 
-      - name: Set up Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          api-level: 34
-          ndk-version: r26c
-          build-tools-version: 34.0.0
+          api-level: 35
+          ndk-version: r27c
+          build-tools-version: '35.0.0'
+          cmdline-tools-version: 'latest'
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -39,88 +56,75 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('android-native/**/*.gradle*', 'android-native/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}-
 
-      - name: Make gradlew executable
-        run: chmod +x android-native/gradlew
+      - name: Install web dependencies
+        working-directory: ./web
+        run: npm ci
 
-      - name: Build Debug APK
-        run: |
-          cd android-native
-          ./gradlew assembleDebug --console=plain
+      - name: Build web
+        working-directory: ./web
+        run: npm run build
 
-      - name: Upload APK as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: series-radar-apk
-          path: android-native/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+      - name: Build APK
+        working-directory: ./android-native
+        run: ./gradlew assembleRelease
 
       - name: Get version from tag
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
       - name: Generate changelog
         id: changelog
         run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          TAG=${{ steps.version.outputs.tag }}
+          PREV_TAG=$(git describe --tags --abbrev=0 ${TAG}^ 2>/dev/null || echo "")
           if [ -n "$PREV_TAG" ]; then
-            CHANGELOG=$(git log --pretty=format:"- %s (%an)" $PREV_TAG..HEAD)
+            CHANGELOG=$(git log ${PREV_TAG}..${TAG} --pretty=format:"- %s (%h)" --no-merges)
           else
-            CHANGELOG=$(git log --pretty=format:"- %s (%an)" -20)
+            CHANGELOG=$(git log ${TAG} --pretty=format:"- %s (%h)" --no-merges)
           fi
-          echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
-  release:
-    name: Create GitHub Release
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-      - name: Download APK
-        uses: actions/download-artifact@v4
-        with:
-          name: series-radar-apk
-          path: .
-
-      - name: Rename APK
-        run: mv app-debug.apk series-radar-${{ needs.build.outputs.VERSION }}.apk
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Series Radar ${{ github.ref_name }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Series Radar ${{ steps.version.outputs.tag }}
           body: |
-            ## تغییرات
-            ${{ needs.build.outputs.CHANGELOG }}
-
-            ## نصب
-            فایل APK را دانلود و روی اندروید نصب کنید.
+            ## ${{ steps.version.outputs.tag }}
             
-            - **حجم**: ~3.8 MB
-            - **حداقل اندروید**: 7.0 (API 24)
-            - **معماری**: arm64-v8a, armeabi-v7a, x86, x86_64
-
-            ## ویژگی‌های اصلی
-            - 📺 **رادار سریال**: ۱۶۶+ سریال با تقویم شمسی/میلادی و ساعت تهران
-            - 🎬 **فیلم‌ها**: روی پرده، آنلاین/بلوری، به‌زودی
-            - 💰 **گیشه**: بکس‌افیس با بودجه/فروش داخلی/جهانی
-            - ⭐ **ستاره‌ها**: سریال، فیلم، پیگیری کیفیت سینما
-            - 🔔 **یادآوری**: ۲۴ ساعت قبل، ۰۹:۰۰ تهران
-            - 📱 **ویجت**: ۳ آیتم بعدی در هوم‌اسکرین
-            - ⬇️ **Pull-to-refresh** در همه صفحات
-            - 💾 **Export/Import** بکاپ JSON
-            - 🌙 **تم تاریک سینمایی** با ارقام فارسی
-
-          files:
-            - series-radar-${{ needs.build.outputs.VERSION }}.apk
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ---
+            **Download:** [series-radar.apk](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/series-radar.apk)
+            
+            **Install:** Enable "Install unknown apps" for your browser, then open the APK.
+            
+            **HTTP Install:** `http://31.56.229.237:8080/series-radar.apk` (always latest)
+          files: |
+            android-native/app/build/outputs/apk/release/app-release.apk
+            android-native/app/build/outputs/apk/release/app-release.apk:series-radar.apk
           draft: false
           prerelease: false
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy APK to HTTP server
+        if: ${{ secrets.DEPLOY_SSH_KEY != '' }}
+        run: |
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > deploy_key
+          chmod 600 deploy_key
+          scp -o StrictHostKeyChecking=no -i deploy_key \
+            android-native/app/build/outputs/apk/release/app-release.apk \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/var/www/apk/series-radar.apk
+          ssh -o StrictHostKeyChecking=no -i deploy_key \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "systemctl restart series-radar-share.service"

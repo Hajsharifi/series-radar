@@ -119,3 +119,54 @@ export interface BoxOfficePayload {
   weekend: BoxOfficeEntry[];
   yearly: BoxOfficeEntry[];
 }
+
+/** Episode from TVMaze */
+export interface Episode {
+  id: number;
+  season: number;
+  number: number;
+  name: string;
+  airdate: string | null;        // YYYY-MM-DD
+  airtime: string | null;        // HH:MM
+  airstamp: string | null;       // ISO instant
+  runtime: number | null;
+  rating: { average: number | null } | null;
+  summary: string | null;
+  image: { medium: string; original: string } | null;
+}
+
+/** Series detail with episodes (TVMaze + local tracking) */
+export interface SeriesDetail {
+  id: number;
+  title: string;
+  type: string | null;
+  language: string | null;
+  genres: string[];
+  status: string | null;
+  premiered: string | null;       // YYYY-MM-DD
+  ended: string | null;           // YYYY-MM-DD
+  officialSite: string | null;
+  schedule: { time: string; days: string[] } | null;
+  rating: { average: number | null } | null;
+  weight: number | null;
+  network: { name: string; country: { code: string } } | null;
+  webChannel: { name: string; country: { code: string } } | null;
+  externals: { tvrage: number | null; thetvdb: number | null; imdb: string | null } | null;
+  image: { medium: string; original: string } | null;
+  summary: string | null;
+  updated: number | null;
+  _links: { self: { href: string }; previousepisode: { href: string } | null; nextepisode: { href: string } | null } | null;
+  /** All episodes from TVMaze */
+  episodes: Episode[];
+  /** Local tracking state */
+  watchedEpisodes: Set<number>;   // episode ids
+  /** Progress: watched / total */
+  progress: { watched: number; total: number };
+}
+
+/** Local episode tracking state */
+export interface EpisodeTracking {
+  showId: number;
+  watchedEpisodeIds: number[];
+  lastUpdated: string;
+}

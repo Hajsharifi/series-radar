@@ -10,11 +10,13 @@ import {
   useNowTicker,
   type ShowFilters,
 } from "../hooks/useSchedule";
+import { useLiveTVSections, useThisWeekEpisodes } from "../hooks/useLiveTV";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { CATEGORY_LABEL, genreLabel } from "../lib/labels";
-import { toPersianDigits } from "../lib/date";
+import { toPersianDigits, jalaliDate } from "../lib/date";
 import type { Show } from "../types";
 import { ShowCard, ShowRow } from "../components/ShowCard";
+import { Poster } from "../components/Poster";
 
 const FILTERS: Array<{ key: ShowFilters["category"]; label: string }> = [
   { key: "all", label: "همه" },
@@ -78,6 +80,10 @@ export function RadarPage() {
   const toggle = useCallback((show: Show) => favorites.toggle(show.id), [favorites]);
 
   const hasFilters = filters.category !== "all" || !!genre || !!debouncedSearch;
+
+  // Live TV hooks
+  const liveTV = useLiveTVSections();
+  const thisWeek = useThisWeekEpisodes(Array.from(favoriteIds));
 
   return (
     <div className="space-y-6">
@@ -180,6 +186,82 @@ export function RadarPage() {
               <div key={show.id} className="w-[136px] shrink-0">
                 <ShowCard show={show} favorite={favoriteIds.has(show.id)} onToggleFavorite={toggle} />
               </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Live TV - On the Air */}
+      {liveTV.onTheAir.length > 0 && !hasFilters && (
+        <section>
+          <div className="mb-2.5 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white">On the Air</h2>
+            <span className="text-[11px] text-ink-400">در حال پخش</span>
+          </div>
+          <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+            {liveTV.onTheAir.slice(0, 10).map((show: typeof liveTV.onTheAir[0]) => (
+              <div key={show.id} className="w-[136px] shrink-0">
+                <ShowCard show={show} favorite={favoriteIds.has(show.id)} onToggleFavorite={toggle} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Live TV - Airing Today */}
+      {liveTV.airingToday.length > 0 && !hasFilters && (
+        <section>
+          <div className="mb-2.5 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white">Airing Today</h2>
+            <span className="text-[11px] text-ink-400">امروز پخش می‌شود</span>
+          </div>
+          <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+            {liveTV.airingToday.slice(0, 10).map((show: typeof liveTV.airingToday[0]) => (
+              <div key={show.id} className="w-[136px] shrink-0">
+                <ShowCard show={show} favorite={favoriteIds.has(show.id)} onToggleFavorite={toggle} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* This Week - Personal Calendar */}
+      {thisWeek.data && thisWeek.data.length > 0 && !hasFilters && (
+        <section>
+          <div className="mb-2.5 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white">این هفته</h2>
+            <span className="text-[11px] text-ink-400">قسمت‌های پیش‌رو سریال‌های ستاره‌دار</span>
+          </div>
+          <div className="space-y-2">
+            {thisWeek.data.slice(0, 10).map((ep) => (
+              <Link key={ep.id} to={"/series/" + ep.showId} className="block">
+                <article className="relative overflow-hidden rounded-2xl border border-white/8 bg-ink-850/70">
+                  <div className="flex items-center gap-3 p-3">
+                    {ep.show?.posterPath && (
+                      <Poster
+                        show={{ id: ep.showId, title: ep.show?.title || "", posterPath: ep.show.posterPath, posterOriginal: ep.show.posterOriginal, category: "returning" as const }}
+                        className="h-16 w-12 shrink-0 rounded-xl"
+                        rounded="rounded-xl"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-sky-400/90 px-2 py-0.5 text-[10px] font-bold text-sky-950">سریال</span>
+                        <span className="text-[11px] text-ink-300">{ep.show?.title || "نامشخص"}</span>
+                      </div>
+                      <p className="text-sm font-medium text-white line-clamp-1" dir="auto">{ep.name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[11px] text-ink-400">فصل {ep.season} • قسمت {ep.number}</span>
+                        {ep.airdate && (
+                          <span className="text-[11px] text-amber-300">
+                            {jalaliDate(new Date(ep.airdate + "T12:00:00"))}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              </Link>
             ))}
           </div>
         </section>
