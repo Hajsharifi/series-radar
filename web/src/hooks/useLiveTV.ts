@@ -91,13 +91,21 @@ export function useThisWeekEpisodes(favoriteIds: number[]) {
   });
 }
 
+/** Keep only items that can be safely rendered (id + title). */
+function safeShows(data: unknown): LiveTVShow[] {
+  if (!Array.isArray(data)) return [];
+  return (data as LiveTVShow[]).filter(
+    (item) => item && typeof item === "object" && item.id != null && typeof item.title === "string",
+  );
+}
+
 export function useLiveTVSections() {
   const onTheAir = useOnTheAir();
   const airingToday = useAiringToday();
 
   return {
-    onTheAir: onTheAir.data?.slice(0, 10) || [],
-    airingToday: airingToday.data?.slice(0, 10) || [],
+    onTheAir: safeShows(onTheAir.data).slice(0, 10),
+    airingToday: safeShows(airingToday.data).slice(0, 10),
     isLoading: onTheAir.isLoading || airingToday.isLoading,
     isError: onTheAir.isError || airingToday.isError,
   };

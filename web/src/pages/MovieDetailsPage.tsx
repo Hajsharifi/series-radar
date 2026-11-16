@@ -203,13 +203,12 @@ export function MovieDetailsPage() {
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <ReleaseRow label="اکران سینمایی" day={movie.theatricalDate ?? movie.releaseDate} tone="amber" />
               <ReleaseRow label="نسخهٔ دیجیتال" day={movie.digitalDate} tone="sky" />
-              <ReleaseRow label="بلوری / فیزیکی" day={movie.physicalDate} tone="emerald" />
             </div>
             {onlineDay && (
               <p className="mt-2 text-[11px] text-ink-400">
                 {movie.availableNow
-                  ? `نسخهٔ ${movie.releaseKind === "physical" ? "فیزیکی" : "دیجیتال"} از ${dayCountdownLabel(onlineDay).replace("پخش شده", "چند روز پیش")} در دسترس است.`
-                  : `انتشار بعدی ${dayCountdownLabel(onlineDay)} است.`}
+                  ? `نسخهٔ دیجیتال از ${dayCountdownLabel(onlineDay).replace("پخش شده", "چند روز پیش")} در دسترس است.`
+                  : `انتشار نسخهٔ دیجیتال ${dayCountdownLabel(onlineDay)} است.`}
               </p>
             )}
           </div>
@@ -343,7 +342,7 @@ export function MovieDetailsPage() {
       </article>
 
       <p className="text-[11px] leading-relaxed text-ink-400">
-        دادهٔ این صفحه از TMDB می‌آید و ممکن است تاریخ‌های دیجیتال/بلوری بعد از اعلام رسمی تغییر کنند.
+        دادهٔ این صفحه از TMDB می‌آید و ممکن است تاریخ‌های انتشار بعد از اعلام رسمی تغییر کنند.
         {moviePosterUrl(movie) ? "" : " پوستر رسمی برای این فیلم در دسترس نیست."}
       </p>
     </div>

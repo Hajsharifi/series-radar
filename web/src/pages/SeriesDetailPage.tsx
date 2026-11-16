@@ -42,7 +42,7 @@ export default function SeriesDetailPage() {
       <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-14 text-center">
         <p className="text-sm font-semibold text-white">این سریال پیدا نشد</p>
         <p className="mt-1 text-xs text-ink-400">ممکن است از برنامهٔ آینده حذف شده باشد.</p>
-        <Link to="/radar" className="mt-4 inline-block rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-ink-950">
+        <Link to="/" className="mt-4 inline-block rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-ink-950">
           بازگشت به رادار
         </Link>
       </div>
@@ -54,7 +54,7 @@ export default function SeriesDetailPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <Link to="/radar" className="text-xs text-ink-400">
+        <Link to="/" className="text-xs text-ink-400">
           → بازگشت به رادار
         </Link>
       </div>

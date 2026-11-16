@@ -71,39 +71,40 @@ export function NativeReminders() {
       });
     }
 
+    // Digital releases only - one reminder per movie, no duplicate for favorites + tracked.
+    const remindedMovieIds = new Set<number>();
     for (const favorite of movieFavorites.items) {
       if (favorite.reminderEnabled === false) continue;
       const movie = moviesById.get(favorite.movieId);
       if (!movie) continue;
-      const day = movie.onlineDate ?? movie.digitalDate ?? movie.physicalDate ?? null;
+      const day = movie.onlineDate ?? movie.digitalDate ?? null;
       const triggerAt = reminderTimeMsForDay(day);
       if (triggerAt === null || triggerAt <= now) continue;
-      const kindLabel = movie.releaseKind === "physical" ? "نسخهٔ بلوری" : "نسخهٔ دیجیتال";
+      remindedMovieIds.add(movie.id);
       items.push({
         id: movie.id,
         kind: "movie",
         route: `/movie/${movie.id}`,
-        title: `${kindLabel} «${movie.title}»`,
-        body: "فردا برای تماشای خانگی منتشر می‌شود؛ یادآوری ۰۹:۰۰ به وقت تهران.",
+        title: `نسخهٔ دیجیتال «${movie.title}»`,
+        body: "فردا نسخهٔ دیجیتال منتشر می‌شود؛ یادآوری ۰۹:۰۰ به وقت تهران.",
         triggerAt,
       });
     }
 
-    // Tracked cinema movies
+    // Tracked cinema movies (waiting for quality) - skip if already reminded as favorite.
     for (const tracked of movieTrack.items) {
-      if (tracked.reminderEnabled === false) continue;
+      if (tracked.reminderEnabled === false || remindedMovieIds.has(tracked.movieId)) continue;
       const movie = moviesById.get(tracked.movieId);
       if (!movie) continue;
-      const day = movie.onlineDate ?? movie.digitalDate ?? movie.physicalDate ?? null;
+      const day = movie.onlineDate ?? movie.digitalDate ?? null;
       const triggerAt = reminderTimeMsForDay(day);
       if (triggerAt === null || triggerAt <= now) continue;
-      const kindLabel = movie.releaseKind === "physical" ? "نسخهٔ بلوری" : "نسخهٔ دیجیتال";
       items.push({
         id: tracked.movieId + 3_000_000, // separate range
         kind: "movie_track",
         route: `/movie/${tracked.movieId}`,
-        title: `${kindLabel} «${movie.title}»`,
-        body: "نسخهٔ خانگی منتشر شد؛ یادآوری ۰۹:۰۰ به وقت تهران.",
+        title: `نسخهٔ دیجیتال «${movie.title}»`,
+        body: "نسخهٔ دیجیتال منتشر شد؛ یادآوری ۰۹:۰۰ به وقت تهران.",
         triggerAt,
       });
     }

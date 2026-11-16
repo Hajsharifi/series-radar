@@ -175,7 +175,19 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void openExactAlarmSettings() {
-            openExactAlarmSettingsInternal();
+            // Always open the settings screen when the user taps the button,
+            // even if exact alarms are already allowed (so they can verify/change it).
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                runOnUiThread(() -> {
+                    try {
+                        startActivity(new Intent(
+                                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                                Uri.parse("package:" + getPackageName())));
+                    } catch (Exception ignored) {
+                        /* some ROMs hide this screen */
+                    }
+                });
+            }
         }
 
         @JavascriptInterface

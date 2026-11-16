@@ -9,9 +9,7 @@ interface MovieCardProps {
   movie: Movie;
   tab: MovieTab;
   favorite: boolean;
-  tracked?: boolean;
   onToggleFavorite: (movie: Movie) => void;
-  onToggleTrack?: (movie: Movie) => void;
 }
 
 function onlineBadge(movie: Movie): { label: string; className: string } | null {
@@ -35,12 +33,11 @@ function isReleasedInCinema(movie: Movie): boolean {
   return theatrical <= tehranTodayISO();
 }
 
-export function MovieCard({ movie, tab, favorite, tracked, onToggleFavorite, onToggleTrack }: MovieCardProps) {
+export function MovieCard({ movie, tab, favorite, onToggleFavorite }: MovieCardProps) {
   const date = moviePrimaryDate(movie, tab);
   const countdown = tab === "cinema" ? "" : dayCountdownLabel(date);
   const genres = movieGenres(movie).slice(0, 2);
   const badge = tab === "online" ? onlineBadge(movie) : null;
-  const showTrackBtn = tab === "cinema" && onToggleTrack;
   const released = tab === "cinema" && isReleasedInCinema(movie);
 
   return (
@@ -104,20 +101,6 @@ export function MovieCard({ movie, tab, favorite, tracked, onToggleFavorite, onT
       >
         {favorite ? "★" : "☆"}
       </button>
-
-      {showTrackBtn && (
-        <button
-          type="button"
-          aria-label={tracked ? "حذف از رادار" : "افزودن به رادار (پیگیری کیفیت)"}
-          aria-pressed={tracked}
-          onClick={() => onToggleTrack!(movie)}
-          className={`sr-no-tap absolute top-2 right-2 z-10 grid h-9 w-9 place-items-center rounded-full text-base shadow-lg backdrop-blur transition ${
-            tracked ? "bg-sky-400 text-sky-950" : "bg-black/45 text-white/85 hover:bg-black/65"
-          }`}
-        >
-          {tracked ? "🔔" : "🔔"}
-        </button>
-      )}
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <Link

@@ -21,5 +21,6 @@ export function posterGradient(show: Show): string {
 }
 
 export function posterFallbackLabel(show: Show): string {
-  return show.title.slice(0, 2).toUpperCase();
+  const title = show?.title ?? show?.originalTitle ?? "";
+  return title.slice(0, 2).toUpperCase() || "؟";
 }

@@ -5,14 +5,14 @@ import { useMovieFavorites, useMovieList } from "../hooks/useMovies";
 import { useMovieTrack } from "../hooks/useMovieTrack";
 import { useDebounced } from "../hooks/useSchedule";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
-import { searchMovies } from "../lib/movies";
+import { searchMovies, tehranTodayISO } from "../lib/movies";
 import { toPersianDigits } from "../lib/date";
 import { RelativeUpdated } from "../components/DateChip";
 import { MovieCard } from "../components/MovieCard";
 
 const TABS: Array<{ key: MovieTab; label: string; hint: string }> = [
   { key: "cinema", label: "روی پرده", hint: "فیلم‌هایی که همین حالا در سینماهای آمریکا اکران‌اند" },
-  { key: "online", label: "در انتظار کیفیت", hint: "فیلم‌های اکران‌شده که نسخه دیجیتال/بلوری‌شان هنوز نیامده" },
+  { key: "online", label: "در انتظار کیفیت", hint: "فیلم‌های اکران‌شده که نسخه دیجیتالشان هنوز نیامده" },
   { key: "upcoming", label: "به‌زودی", hint: "اکران‌های سینمایی پیش‌رو" },
 ];
 
@@ -97,11 +97,17 @@ export function MoviesPage() {
   const activeTab = TABS.find((item) => item.key === tab)!;
 
   function toggleFavorite(movie: Movie) {
+    const wasFavorite = favorites.ids.has(movie.id);
     favorites.toggle(movie.id);
-  }
-
-  function toggleTrack(movie: Movie) {
-    tracked.toggle(movie.id);
+    // Starring a movie that is already in cinemas == waiting for its quality (digital) release.
+    // Keep the "در انتظار" list in sync automatically - no separate bell button needed.
+    const theatrical = movie.theatricalDate ?? movie.releaseDate;
+    const released = theatrical && theatrical <= tehranTodayISO();
+    if (!wasFavorite && released) {
+      if (!tracked.ids.has(movie.id)) tracked.add(movie.id);
+    } else if (wasFavorite) {
+      if (tracked.ids.has(movie.id)) tracked.remove(movie.id);
+    }
   }
 
   function renderGrid(items: Movie[]) {
@@ -113,9 +119,7 @@ export function MoviesPage() {
             movie={movie}
             tab={searchingActive ? "upcoming" : tab}
             favorite={favorites.ids.has(movie.id)}
-            tracked={tracked.ids.has(movie.id)}
             onToggleFavorite={toggleFavorite}
-            onToggleTrack={toggleTrack}
           />
         ))}
       </div>
@@ -143,7 +147,7 @@ export function MoviesPage() {
               فیلم‌ها، از <span className="text-amber-300">پردهٔ سینما</span> تا خانه
             </h1>
             <p className="mt-1.5 text-xs leading-relaxed text-ink-300">
-              اکران‌های سینمایی، فیلم‌های در انتظار نسخه دیجیتال/بلوری، و اکران‌های پیش‌رو.
+              اکران‌های سینمایی، فیلم‌های در انتظار نسخه دیجیتال، و اکران‌های پیش‌رو.
             </p>
           </div>
 
@@ -260,9 +264,7 @@ export function MoviesPage() {
                   movie={movie}
                   tab="cinema"
                   favorite={favorites.ids.has(movie.id)}
-                  tracked={true}
                   onToggleFavorite={toggleFavorite}
-                  onToggleTrack={toggleTrack}
                 />
               </div>
             ))}
@@ -294,7 +296,7 @@ export function MoviesPage() {
         <div className="space-y-6">
           <section>
             <div className="mb-2.5 flex items-baseline gap-2">
-              <h3 className="text-sm font-bold text-white">در انتظار نسخه دیجیتال/بلوری</h3>
+              <h3 className="text-sm font-bold text-white">در انتظار نسخه دیجیتال</h3>
               <span className="text-[11px] text-ink-400">{toPersianDigits(shown.length)} فیلم</span>
             </div>
             {renderGrid(shown)}
@@ -320,7 +322,7 @@ export function MoviesPage() {
             <h3 className="text-sm font-semibold text-white">دربارهٔ این بخش</h3>
             <p className="mt-1 text-[11px] leading-relaxed text-ink-400">
               فهرست فیلم‌ها و تاریخ‌های اکران/انتشار از TMDB می‌آید و تاریخ‌ها به شمسی و میلادی نمایش داده
-              می‌شوند. «دیجیتال» یعنی نسخهٔ رسمی WEB و «فیزیکی» یعنی بلوری/دیسک.
+              می‌شوند. وقتی فیلمی اکران‌شده را ستاره‌دار می‌کنید، به‌طور خودکار در لیست «در انتظار کیفیت» قرار می‌گیرد تا وقتی نسخهٔ دیجیتالش منتشر شد اطلاع داده شود.
             </p>
           </div>
           <Link to="/boxoffice" className="shrink-0 rounded-lg bg-white/6 px-3 py-1.5 text-xs text-ink-200">

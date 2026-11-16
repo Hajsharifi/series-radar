@@ -282,10 +282,10 @@ function EmptyMovies() {
 function EmptyTracked() {
   return (
     <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-12 text-center">
-      <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white/5 text-xl text-ink-400">🔔</div>
-      <p className="mt-3 text-sm font-semibold text-white">هنوز filmi را برای پیگیری کیفیت اضافه نکرده‌ید</p>
+      <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white/5 text-xl text-ink-400">⏳</div>
+      <p className="mt-3 text-sm font-semibold text-white">هنوز فیلمی در انتظار کیفیت نیست</p>
       <p className="mt-1 text-xs text-ink-400">
-        در تب «روی پرده» روی آیکون 🔔 هر فیلم بزنید تا وقتی نسخه دیجیتال/بلوری منتشر شد به شما اطلاع داده شود.
+        وقتی فیلمی را که اکران شده ستاره‌دار می‌کنید، به‌طور خودکار همینجا قرار می‌گیرد تا زمان انتشار نسخهٔ دیجیتالش به شما یادآوری شود.
       </p>
       <Link to="/movies" className="mt-4 inline-block rounded-lg bg-white/8 px-4 py-2 text-xs text-white">
         رفتن به فیلم‌ها

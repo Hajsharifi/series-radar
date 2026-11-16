@@ -43,6 +43,27 @@ export function SettingsPage() {
     }
   }
 
+  async function checkUpdate() {
+    setMessage("در حال بررسی آپدیت…");
+    try {
+      const res = await fetch(
+        "https://api.github.com/repos/Hajsharifi/series-radar/releases/latest",
+        { cache: "no-store" },
+      );
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = (await res.json()) as { tag_name?: string; html_url?: string };
+      const latest = (data.tag_name || "").replace(/^v/, "");
+      if (!latest) throw new Error("not found");
+      if (latest === __APP_VERSION__) {
+        setMessage(`شما روی آخرین نسخه هستید (${toPersianDigits(__APP_VERSION__)}).`);
+      } else {
+        setMessage(`نسخهٔ جدید ${toPersianDigits(latest)} موجود است — از لینک دانلود در GitHub یا http://31.56.229.237:8080/series-radar.apk نصب کنید.`);
+      }
+    } catch {
+      setMessage("بررسی آپدیت ممکن نشد — اتصال اینترنت را چک کنید.");
+    }
+  }
+
   function clearFavorites() {
     if (!window.confirm("همهٔ ستاره‌ها (سریال، فیلم و در انتظار) حذف شوند؟")) return;
     try {
@@ -123,14 +144,20 @@ export function SettingsPage() {
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={requestNotificationPermission}
+              onClick={() => {
+                requestNotificationPermission();
+                setMessage("درخواست مجوز اعلان ارسال شد. اگر پنجره\u200cای ظاهر نشد، مجوز قبلاً صادر شده است.");
+              }}
               className="rounded-lg border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-ink-200"
             >
               درخواست مجوز اعلان
             </button>
             <button
               type="button"
-              onClick={openExactAlarmSettings}
+              onClick={() => {
+                openExactAlarmSettings();
+                setMessage("صفحه تنظیمات آلارم دقیق باز شد.");
+              }}
               className="rounded-lg border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-ink-200"
             >
               تنظیم آلارم دقیق
@@ -198,9 +225,18 @@ export function SettingsPage() {
         <Row label="یادآوری" value="آلارم اندروید" />
         <Row label="وضعیت ورود" value="محلی، بدون حساب" />
         <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
-          سریال‌ها از TVMaze، فیلم‌ها و تاریخ‌های دیجیتال/بلوری از TMDB و اعداد گیشه از Box Office Mojo گرفته
+          سریال‌ها از TVMaze، فیلم‌ها و تاریخ‌های انتشار از TMDB و اعداد گیشه از Box Office Mojo گرفته
           می‌شوند. فعلاً نیازی به ورود یا Firebase نیست.
         </p>
+        {isNativeApp() && (
+          <button
+            type="button"
+            onClick={checkUpdate}
+            className="mt-3 w-full rounded-lg border border-sky-400/30 bg-sky-400/10 px-3.5 py-2 text-xs font-semibold text-sky-200 active:bg-sky-400/20"
+          >
+            بررسی نسخهٔ جدید
+          </button>
+        )}
       </section>
 
       {message && (

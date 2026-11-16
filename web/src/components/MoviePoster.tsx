@@ -10,10 +10,11 @@ const GRADIENTS = [
   "linear-gradient(135deg,#1e293b 0%,#334155 55%,#475569 100%)",
 ];
 
-function hashTitle(title: string): number {
+function hashTitle(title?: string): number {
   let value = 0;
-  for (let index = 0; index < title.length; index += 1) {
-    value = (value * 31 + title.charCodeAt(index)) | 0;
+  const safe = title ?? "";
+  for (let index = 0; index < safe.length; index += 1) {
+    value = (value * 31 + safe.charCodeAt(index)) | 0;
   }
   return Math.abs(value);
 }
@@ -42,7 +43,7 @@ export function MoviePoster({
         aria-hidden="true"
       >
         <span className="px-2 text-center text-2xl font-black tracking-tight text-white/70" dir="auto">
-          {movie.title.slice(0, 2)}
+          {(movie.title ?? movie.originalTitle ?? "؟").slice(0, 2)}
         </span>
       </div>
     );
