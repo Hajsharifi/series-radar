@@ -125,7 +125,7 @@ def main():
     git_commit_and_tag(new_version, new_version_code)
     print(f"✅ Committed and tagged v{new_version}")
 
-    print(f"\n🚀 Ready to push: git push origin main --tags")
+    print(f"\n🚀 Ready to push: git push origin master --tags")
 
 if __name__ == "__main__":
     main()

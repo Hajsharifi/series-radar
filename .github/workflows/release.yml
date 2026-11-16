@@ -68,15 +68,36 @@ jobs:
         working-directory: ./web
         run: npm run build
 
-      - name: Sync web assets to Android
-        run: |
-          mkdir -p android-native/app/src/main/assets
-          rm -rf android-native/app/src/main/assets/web
-          cp -r web/dist android-native/app/src/main/assets/web
-
+      # Web assets are synced automatically by the syncWebAssets Gradle task
+      # (preBuild depends on it), so stale/partial APKs are impossible.
       - name: Build APK
         working-directory: ./android-native
         run: ./gradlew assembleRelease
+
+      - name: Verify APK (size, signature, code-split chunks)
+        run: |
+          APK=android-native/app/build/outputs/apk/release/app-release.apk
+          echo "APK size: $(stat -c%s "$APK") bytes"
+          # 1. Size threshold: a healthy APK with all JS chunks is > 2.8 MB
+          SIZE=$(stat -c%s "$APK")
+          if [ "$SIZE" -lt 2800000 ]; then
+            echo "::error::APK too small ($SIZE bytes) - web chunks likely missing!"; exit 1
+          fi
+          # 2. Signature: must match the keystore used by all previously distributed builds
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          CERT=$($APKSIGNER verify --print-certs "$APK" 2>&1 | grep "SHA-256 digest" | head -1 | awk '{print $NF}')
+          echo "Signature SHA-256: $CERT"
+          EXPECTED=1e4c4723acaba68e8e6f83e51c64f68470937e025c362beab68a3b642a868553
+          if [ "${CERT,,}" != "$EXPECTED" ]; then
+            echo "::error::Wrong signing certificate ($CERT) - in-place updates would fail!"; exit 1
+          fi
+          # 3. Code-split chunks must be present inside the APK
+          for CHUNK in index- SearchPage- SeriesDetailPage-; do
+            if ! unzip -l "$APK" | grep -q "assets/web/assets/$CHUNK"; then
+              echo "::error::Missing JS chunk $CHUNK in APK!"; exit 1
+            fi
+          done
+          echo "✅ APK verification passed"
 
       - name: Get version from tag
         id: version
