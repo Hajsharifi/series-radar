@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useFavorites } from "../hooks/useFavorites";
 import { useMovieFavorites } from "../hooks/useMovies";
-import { useMovieTrack } from "../hooks/useMovieTrack";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { relativeSyncLabel, toPersianDigits } from "../lib/date";
 import { isNativeApp, openExactAlarmSettings, requestNotificationPermission } from "../lib/native";
@@ -24,7 +23,6 @@ export function SettingsPage() {
   const schedule = useScheduleContext();
   const favorites = useFavorites();
   const movieFavorites = useMovieFavorites();
-  const movieTrack = useMovieTrack();
   const [message, setMessage] = useState("");
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
@@ -57,15 +55,25 @@ export function SettingsPage() {
       if (latest === __APP_VERSION__) {
         setMessage(`شما روی آخرین نسخه هستید (${toPersianDigits(__APP_VERSION__)}).`);
       } else {
-        setMessage(`نسخهٔ جدید ${toPersianDigits(latest)} موجود است — از لینک دانلود در GitHub یا http://31.56.229.237:8080/series-radar.apk نصب کنید.`);
+        setMessage(`نسخهٔ جدید ${toPersianDigits(latest)} موجود است — از صفحه releases در GitHub دانلود و نصب کنید.`);
       }
     } catch {
       setMessage("بررسی آپدیت ممکن نشد — اتصال اینترنت را چک کنید.");
     }
   }
 
+  function reportError() {
+    try {
+      const logs = localStorage.getItem("sr:error-log:v1") || "هیچ خطایی ثبت نشده است.";
+      // Show the log to the user so they can copy/share it with the developer.
+      window.prompt("آخرین خطاهای ثبتشده (برای کپی کردن):", logs.slice(0, 4000));
+    } catch {
+      setMessage("دسترسی به لاگ ممکن نشد.");
+    }
+  }
+
   function clearFavorites() {
-    if (!window.confirm("همهٔ ستاره‌ها (سریال، فیلم و در انتظار) حذف شوند؟")) return;
+    if (!window.confirm("همهٔ ستاره‌ها (سریال و فیلم) حذف شوند؟")) return;
     try {
       localStorage.removeItem("sr:favorites:v1");
       localStorage.removeItem("sr:movie-favorites:v1");
@@ -135,7 +143,6 @@ export function SettingsPage() {
         <Row label="ساعت ارسال" value="۰۹:۰۰ به وقت تهران" />
         <Row label="سریال‌های ستاره‌دار" value={`${toPersianDigits(favorites.items.length)} سریال`} />
         <Row label="فیلم‌های ستاره‌دار" value={`${toPersianDigits(movieFavorites.items.length)} فیلم`} />
-        <Row label="فیلم‌های در انتظار کیفیت" value={`${toPersianDigits(movieTrack.items.length)} فیلم`} />
         <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
           یادآوری برای هر مورد به‌صورت جداگانه قابل فعال/غیرفعال کردن است (در صفحه جزئیات یا ستاره‌ها).
           همه یادآوری‌ها ۲۴ ساعت قبل، ساعت ۰۹:۰۰ به وقت تهران ارسال می‌شوند.
@@ -183,7 +190,7 @@ export function SettingsPage() {
       <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
         <h2 className="mb-2 text-sm font-bold text-white">پشتیبان‌گیری و بازیابی</h2>
         <p className="text-[11px] leading-relaxed text-ink-400">
-          تمام ستاره‌ها (سریال، فیلم، در انتظار) در یک فایل JSON ذخیره یا از فایل بازیابی می‌شوند.
+          تمام ستاره‌ها (سریال و فیلم) در یک فایل JSON ذخیره یا از فایل بازیابی می‌شوند.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button
@@ -237,6 +244,13 @@ export function SettingsPage() {
             بررسی نسخهٔ جدید
           </button>
         )}
+        <button
+          type="button"
+          onClick={reportError}
+          className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-ink-200 active:bg-white/10"
+        >
+          مشاهدهٔ لاگ خطاها
+        </button>
       </section>
 
       {message && (

@@ -18,6 +18,7 @@ export interface SearchFilters {
 export interface SearchResult {
   id: number;
   title: string;
+  mediaType?: "movie" | "tv";
   originalTitle?: string;
   overview?: string;
   posterPath?: string | null;
@@ -48,25 +49,19 @@ async function fetchTVSearch(query: string, page = 1) {
   return res.json();
 }
 
-async function fetchDiscoverMovies(params: Record<string, string>) {
+async function fetchDiscover(params: Record<string, string>, type: "movie" | "tv") {
   const queryString = new URLSearchParams(params).toString();
-  const res = await fetch(`${API}/api/movies/discover?${queryString}`);
+  const res = await fetch(`${API}/api/${type === "movie" ? "movies" : "tv"}/discover?${queryString}`);
   if (!res.ok) throw new Error("Discover failed");
   return res.json();
 }
 
-async function fetchDiscoverTV(params: Record<string, string>) {
-  const queryString = new URLSearchParams(params).toString();
-  const res = await fetch(`${API}/api/tv/discover?${queryString}`);
-  if (!res.ok) throw new Error("Discover failed");
-  return res.json();
-}
-
+/** Live text search (debounced). Results are tagged with mediaType for correct routing. */
 export function useLiveSearch(query: string, type: "movie" | "tv" | "all" = "all") {
   const [debouncedQuery, setDebouncedQuery] = useState(query);
 
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query), 300);
+    const timer = setTimeout(() => setDebouncedQuery(query.trim()), 300);
     return () => clearTimeout(timer);
   }, [query]);
 
@@ -84,18 +79,21 @@ export function useLiveSearch(query: string, type: "movie" | "tv" | "all" = "all
     staleTime: 5 * 60 * 1000,
   });
 
+  // Tag results explicitly so routing never depends on fragile field presence.
   const results: SearchResult[] = [
-    ...(movieQuery.data?.items || []),
-    ...(tvQuery.data?.results || []),
+    ...(movieQuery.data?.items || []).map((r: SearchResult) => ({ ...r, mediaType: "movie" as const })),
+    ...(tvQuery.data?.results || []).map((r: SearchResult) => ({ ...r, mediaType: "tv" as const })),
   ];
 
   return {
     results,
-    isLoading: movieQuery.isLoading || tvQuery.isLoading,
+    isLoading: movieQuery.isFetching || tvQuery.isFetching,
+    isFetching: movieQuery.isFetching || tvQuery.isFetching,
     isError: movieQuery.isError || tvQuery.isError,
   };
 }
 
+/** Discover/browse when no text query is present. */
 export function useAdvancedSearch(filters: SearchFilters) {
   const params: Record<string, string> = {
     language: "en-US",
@@ -103,7 +101,6 @@ export function useAdvancedSearch(filters: SearchFilters) {
     include_adult: "false",
     page: "1",
   };
-
   if (filters.year) params["primary_release_date.gte"] = `${filters.year}-01-01`;
   if (filters.year) params["primary_release_date.lte"] = `${filters.year}-12-31`;
   if (filters.rating) params["vote_average.gte"] = filters.rating;
@@ -115,15 +112,22 @@ export function useAdvancedSearch(filters: SearchFilters) {
     queryKey,
     queryFn: async () => {
       if (filters.type === "movie") {
-        return fetchDiscoverMovies(params);
+        const data = await fetchDiscover(params, "movie");
+        return { items: (data.items || []).map((r: SearchResult) => ({ ...r, mediaType: "movie" as const })) };
       } else if (filters.type === "tv") {
-        return fetchDiscoverTV(params);
+        const data = await fetchDiscover(params, "tv");
+        return { items: (data.results || []).map((r: SearchResult) => ({ ...r, mediaType: "tv" as const })) };
       }
       const [movies, tv] = await Promise.all([
-        fetchDiscoverMovies(params),
-        fetchDiscoverTV(params),
+        fetchDiscover(params, "movie"),
+        fetchDiscover(params, "tv"),
       ]);
-      return { items: [...(movies.items || []), ...(tv.results || [])] };
+      return {
+        items: [
+          ...(movies.items || []).map((r: SearchResult) => ({ ...r, mediaType: "movie" as const })),
+          ...(tv.results || []).map((r: SearchResult) => ({ ...r, mediaType: "tv" as const })),
+        ],
+      };
     },
     enabled: !filters.query || filters.query.length < 2,
     staleTime: 5 * 60 * 1000,
@@ -149,26 +153,21 @@ export const GENRE_MAP: Record<number, string> = {
   10749: "رومانتیک",
   878: "علمی-تخیلی",
   10770: "فیلم تلویزیونی",
-  53: "تریلر",
+  53: "هیجانانگیز",
   10752: "جنگی",
-  37: "vestern",
+  37: "وسترن",
   10759: "اکشن و ماجراجویی",
   10762: "کودک",
   10763: "خبری",
   10764: "رئالیتی",
   10765: "علمی-تخیلی و فانتزی",
   10766: "سوپر اوپرا",
-  10767: "توک‌شو",
+  10767: "تاکشو",
   10768: "جنگ و سیاست",
 };
 
 export function getGenreName(id: number): string {
   return GENRE_MAP[id] || String(id);
-}
-
-export function getGenreId(name: string): number | null {
-  const entry = Object.entries(GENRE_MAP).find(([, v]) => v === name);
-  return entry ? Number(entry[0]) : null;
 }
 
 export const ALL_GENRES = Object.entries(GENRE_MAP).map(([id, name]) => ({

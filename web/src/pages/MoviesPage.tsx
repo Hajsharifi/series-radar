@@ -2,17 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Movie, MovieTab } from "../types";
 import { useMovieFavorites, useMovieList } from "../hooks/useMovies";
-import { useMovieTrack } from "../hooks/useMovieTrack";
 import { useDebounced } from "../hooks/useSchedule";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
-import { searchMovies, tehranTodayISO } from "../lib/movies";
+import { searchMovies } from "../lib/movies";
 import { toPersianDigits } from "../lib/date";
 import { RelativeUpdated } from "../components/DateChip";
 import { MovieCard } from "../components/MovieCard";
 
 const TABS: Array<{ key: MovieTab; label: string; hint: string }> = [
-  { key: "cinema", label: "روی پرده", hint: "فیلم‌هایی که همین حالا در سینماهای آمریکا اکران‌اند" },
-  { key: "online", label: "در انتظار کیفیت", hint: "فیلم‌های اکران‌شده که نسخه دیجیتالشان هنوز نیامده" },
+  { key: "cinema", label: "روی پرده", hint: "فیلم‌های اکران‌شده — فقط منتظر نسخه دیجیتال باکیفیتشان هستیم" },
   { key: "upcoming", label: "به‌زودی", hint: "اکران‌های سینمایی پیش‌رو" },
 ];
 
@@ -39,7 +37,6 @@ export function MoviesPage() {
   const [searchError, setSearchError] = useState(false);
   const list = useMovieList(tab);
   const favorites = useMovieFavorites();
-  const tracked = useMovieTrack();
   const debounced = useDebounced(query, 350);
 
   usePullToRefresh(() => list.refresh(), { threshold: 80 });
@@ -97,17 +94,7 @@ export function MoviesPage() {
   const activeTab = TABS.find((item) => item.key === tab)!;
 
   function toggleFavorite(movie: Movie) {
-    const wasFavorite = favorites.ids.has(movie.id);
     favorites.toggle(movie.id);
-    // Starring a movie that is already in cinemas == waiting for its quality (digital) release.
-    // Keep the "در انتظار" list in sync automatically - no separate bell button needed.
-    const theatrical = movie.theatricalDate ?? movie.releaseDate;
-    const released = theatrical && theatrical <= tehranTodayISO();
-    if (!wasFavorite && released) {
-      if (!tracked.ids.has(movie.id)) tracked.add(movie.id);
-    } else if (wasFavorite) {
-      if (tracked.ids.has(movie.id)) tracked.remove(movie.id);
-    }
   }
 
   function renderGrid(items: Movie[]) {
@@ -125,15 +112,6 @@ export function MoviesPage() {
       </div>
     );
   }
-
-  // Tracked movies waiting for digital/physical release
-  const trackedMovies = useMemo(() => {
-    const map = new Map(list.items.map((m) => [m.id, m]));
-    return tracked.items
-      .map((t) => map.get(t.movieId))
-      .filter((m): m is Movie => Boolean(m))
-      .filter((m) => !m.availableNow && !(m.digitalDate || m.physicalDate));
-  }, [list.items, tracked.items]);
 
   return (
     <div className="space-y-5">
@@ -250,28 +228,6 @@ export function MoviesPage() {
         </div>
       )}
 
-      {/* Tracked movies waiting for quality release */}
-      {tab === "cinema" && trackedMovies.length > 0 && (
-        <section className="space-y-3">
-          <div className="mb-2.5 flex items-baseline justify-between gap-2">
-            <h3 className="text-sm font-bold text-white">در انتظار کیفیت خوب</h3>
-            <span className="text-[11px] text-ink-400">{toPersianDigits(trackedMovies.length)} فیلم در رادار</span>
-          </div>
-          <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-            {trackedMovies.map((movie) => (
-              <div key={movie.id} className="w-[136px] shrink-0">
-                <MovieCard
-                  movie={movie}
-                  tab="cinema"
-                  favorite={favorites.ids.has(movie.id)}
-                  onToggleFavorite={toggleFavorite}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
       {searchingActive ? (
         shown.length === 0 ? (
           <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-10 text-center">
@@ -322,7 +278,7 @@ export function MoviesPage() {
             <h3 className="text-sm font-semibold text-white">دربارهٔ این بخش</h3>
             <p className="mt-1 text-[11px] leading-relaxed text-ink-400">
               فهرست فیلم‌ها و تاریخ‌های اکران/انتشار از TMDB می‌آید و تاریخ‌ها به شمسی و میلادی نمایش داده
-              می‌شوند. وقتی فیلمی اکران‌شده را ستاره‌دار می‌کنید، به‌طور خودکار در لیست «در انتظار کیفیت» قرار می‌گیرد تا وقتی نسخهٔ دیجیتالش منتشر شد اطلاع داده شود.
+              می‌شوند. هر فیلم اکران‌شده‌ای را ستاره‌دار می‌کنید، یعنی منتظر نسخه دیجیتال باکیفیت آن هستید — وقتی منتشر شد به شما اطلاع داده می‌شود.
             </p>
           </div>
           <Link to="/boxoffice" className="shrink-0 rounded-lg bg-white/6 px-3 py-1.5 text-xs text-ink-200">

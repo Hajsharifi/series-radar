@@ -153,9 +153,10 @@ public class MainActivity extends Activity {
         if (manager == null || manager.canScheduleExactAlarms()) return;
         runOnUiThread(() -> {
             try {
-                startActivity(new Intent(
-                        Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                        Uri.parse("package:" + getPackageName())));
+                Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                intent.putExtra("android.provider.extra.PACKAGE_NAME", getPackageName());
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
             } catch (Exception ignored) {
                 /* some ROMs hide this screen */
             }
@@ -175,19 +176,44 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void openExactAlarmSettings() {
-            // Always open the settings screen when the user taps the button,
-            // even if exact alarms are already allowed (so they can verify/change it).
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                runOnUiThread(() -> {
+            runOnUiThread(() -> {
+                boolean opened = false;
+                // Primary: dedicated exact-alarm permission screen (Android 12+).
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     try {
-                        startActivity(new Intent(
-                                Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                                Uri.parse("package:" + getPackageName())));
+                        Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                        intent.putExtra("android.provider.extra.PACKAGE_NAME", getPackageName());
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                        opened = true;
                     } catch (Exception ignored) {
-                        /* some ROMs hide this screen */
+                        /* some ROMs hide this screen - try fallbacks */
                     }
-                });
-            }
+                }
+                // Fallback 1: app notification settings (works on all Android 8+).
+                if (!opened && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    try {
+                        Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                        intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                        opened = true;
+                    } catch (Exception ignored) {
+                        /* keep trying */
+                    }
+                }
+                // Fallback 2: generic app details screen.
+                if (!opened) {
+                    try {
+                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        intent.setData(Uri.parse("package:" + getPackageName()));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(intent);
+                    } catch (Exception ignored) {
+                        /* nothing else we can do */
+                    }
+                }
+            });
         }
 
         @JavascriptInterface

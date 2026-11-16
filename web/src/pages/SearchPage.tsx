@@ -7,6 +7,7 @@ import {
   type SearchResult,
   ALL_GENRES,
   RATING_OPTIONS,
+  SORT_OPTIONS,
   getGenreName,
 } from "../hooks/useSearch";
 import { Poster } from "../components/Poster";
@@ -15,21 +16,27 @@ import { toPersianDigits, jalaliDate } from "../lib/date";
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("q") || "");
-  const [type, setType] = useState<"movie" | "tv" | "all">(
+  const [type, setTypeState] = useState<"movie" | "tv" | "all">(
     (searchParams.get("type") as "movie" | "tv" | "all") || "all",
   );
-  const [filters, setFilters] = useState<SearchFilters>({
-    query: "",
-    type: "all",
-    genre: "",
-    year: "",
-    rating: "",
+  const [filters, setFilters] = useState<SearchFilters>(() => ({
+    query: searchParams.get("q") || "",
+    type: (searchParams.get("type") as "movie" | "tv" | "all") || "all",
+    genre: searchParams.get("genre") || "",
+    year: searchParams.get("year") || "",
+    rating: searchParams.get("rating") || "",
     status: "",
     network: "",
     sortBy: "popularity",
     sortOrder: "desc",
-  });
+  }));
   const [showFilters, setShowFilters] = useState(false);
+
+  // Keep type and filters in sync so chips affect BOTH live search and discover.
+  const setType = (t: "movie" | "tv" | "all") => {
+    setTypeState(t);
+    setFilters((prev) => ({ ...prev, type: t }));
+  };
 
   const live = useLiveSearch(query, type);
   const advanced = useAdvancedSearch(filters);
@@ -37,13 +44,13 @@ export default function SearchPage() {
   const isLive = query.trim().length >= 2;
   const results: SearchResult[] = isLive
     ? live.results
-    : advanced.data?.items || advanced.data?.results || [];
-  const loading = isLive ? live.isLoading : advanced.isLoading;
+    : advanced.data?.items || [];
+  const loading = isLive ? live.isFetching : advanced.isFetching;
   const error = isLive ? live.isError : advanced.isError;
 
   const hasActiveFilters = Boolean(filters.genre || filters.year || filters.rating);
 
-  // Keep URL in sync so links are shareable and back button works.
+  // URL sync for shareable links + back button support.
   useEffect(() => {
     const params = new URLSearchParams();
     if (query.trim()) params.set("q", query.trim());
@@ -54,13 +61,15 @@ export default function SearchPage() {
     setSearchParams(params, { replace: true });
   }, [query, type, filters.genre, filters.year, filters.rating, setSearchParams]);
 
+  // When user types a query, filters become irrelevant (live search takes over);
+  // when user clears the query, discover results come back with the active filters.
   const update = useCallback(<K extends keyof SearchFilters>(key: K, value: SearchFilters[K]) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   }, []);
 
   const clearAll = () => {
     setQuery("");
-    setType("all");
+    setTypeState("all");
     setFilters({
       query: "", type: "all", genre: "", year: "", rating: "",
       status: "", network: "", sortBy: "popularity", sortOrder: "desc",
@@ -132,11 +141,11 @@ export default function SearchPage() {
           </button>
         </div>
 
-        {/* Filter chips panel */}
+        {/* Filter panel: ژانر / سال / امتیاز / مرتبسازی */}
         {showFilters && (
           <div className="space-y-3 rounded-2xl border border-white/8 bg-black/20 p-3">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="w-14 shrink-0 text-[11px] text-ink-400">ژانر</span>
+              <span className="w-16 shrink-0 text-[11px] text-ink-400">ژانر</span>
               <div className="sr-hide-scrollbar flex flex-1 gap-1.5 overflow-x-auto">
                 <button type="button" onClick={() => update("genre", "")} className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] ${!filters.genre ? "bg-white/15 text-white" : "bg-white/5 text-ink-400"}`}>همه</button>
                 {ALL_GENRES.map((g) => (
@@ -147,7 +156,7 @@ export default function SearchPage() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="w-14 shrink-0 text-[11px] text-ink-400">سال</span>
+              <span className="w-16 shrink-0 text-[11px] text-ink-400">سال</span>
               <div className="sr-hide-scrollbar flex flex-1 gap-1.5 overflow-x-auto">
                 <button type="button" onClick={() => update("year", "")} className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] ${!filters.year ? "bg-white/15 text-white" : "bg-white/5 text-ink-400"}`}>همه</button>
                 {Array.from({ length: 15 }, (_, i) => 2026 - i).map((y) => (
@@ -158,10 +167,25 @@ export default function SearchPage() {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="w-14 shrink-0 text-[11px] text-ink-400">امتیاز</span>
+              <span className="w-16 shrink-0 text-[11px] text-ink-400">امتیاز</span>
               <div className="flex flex-1 gap-1.5">
                 {RATING_OPTIONS.map((opt) => (
                   <button key={opt.value} type="button" onClick={() => update("rating", opt.value)} className={`rounded-lg px-2.5 py-1 text-[11px] ${filters.rating === opt.value ? "bg-white/15 text-white" : "bg-white/5 text-ink-400"}`}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="w-16 shrink-0 text-[11px] text-ink-400">مرتبسازی</span>
+              <div className="flex flex-1 flex-wrap gap-1.5">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => { update("sortBy", opt.value); update("sortOrder", "desc"); }}
+                    className={`rounded-lg px-2.5 py-1 text-[11px] ${filters.sortBy === opt.value ? "bg-white/15 text-white" : "bg-white/5 text-ink-400"}`}
+                  >
                     {opt.label}
                   </button>
                 ))}
@@ -176,13 +200,17 @@ export default function SearchPage() {
 
       {/* Results */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-bold text-white">
             {isLive
               ? loading ? "در حال جستجو…" : `${toPersianDigits(results.length)} نتیجه`
-              : `${toPersianDigits(results.length)} عنوان`}
+              : loading ? "در حال بارگذاری…" : `${toPersianDigits(results.length)} عنوان`}
           </h2>
-          {!isLive && !loading && <span className="text-[11px] text-ink-400">پربازدیدترینها</span>}
+          {!isLive && !loading && (
+            <span className="text-[11px] text-ink-400">
+              {hasActiveFilters ? "نتایج فیلترشده" : "پربازدیدترینها"}
+            </span>
+          )}
         </div>
 
         {error && (
@@ -210,7 +238,7 @@ export default function SearchPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {results.map((item, i) => (
-              <SearchResultCard key={`${item.id}-${i}`} item={item} />
+              <SearchResultCard key={`${item.mediaType}-${item.id}-${i}`} item={item} />
             ))}
           </div>
         )}
@@ -220,7 +248,10 @@ export default function SearchPage() {
 }
 
 function SearchResultCard({ item }: { item: SearchResult }) {
-  const isTV = Boolean(item.firstAirDate);
+  // Explicit mediaType from API; fall back to field presence only as last resort.
+  const isTV = item.mediaType
+    ? item.mediaType === "tv"
+    : Boolean(item.firstAirDate && !item.releaseDate);
   const date = item.firstAirDate || item.releaseDate;
   const genreNames = item.genres?.length
     ? item.genres.slice(0, 2).join(" · ")
@@ -242,7 +273,7 @@ function SearchResultCard({ item }: { item: SearchResult }) {
             }}
             className="aspect-[2/3] w-full"
           />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-ink-950 to-transparent" />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-ink-950 via-ink-950/50 to-transparent" />
           <span className={`absolute right-2 top-2 ${badgeClass}`}>{isTV ? "سریال" : "فیلم"}</span>
           {typeof item.rating === "number" && item.rating > 0 && (
             <span className="absolute left-2 top-2 rounded-lg bg-black/65 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 backdrop-blur">
@@ -254,7 +285,12 @@ function SearchResultCard({ item }: { item: SearchResult }) {
           <h3 className="line-clamp-2 min-h-[2.4em] text-sm font-bold leading-snug text-white" dir="auto">
             {item.title || "بدون عنوان"}
           </h3>
-          <div className="mt-auto flex items-center justify-between gap-1 text-[10px] text-ink-400">
+          {item.overview && (
+            <p className="line-clamp-2 text-[10px] leading-relaxed text-ink-400" dir="auto">
+              {item.overview}
+            </p>
+          )}
+          <div className="mt-auto flex items-center justify-between gap-1 pt-1 text-[10px] text-ink-400">
             <span className="truncate">{genreNames || "—"}</span>
             {date && <span className="shrink-0 tabular-nums">{jalaliDate(new Date(date + "T12:00:00"))}</span>}
           </div>
