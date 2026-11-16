@@ -12,7 +12,7 @@ import { MovieCard } from "../components/MovieCard";
 
 const TABS: Array<{ key: MovieTab; label: string; hint: string }> = [
   { key: "cinema", label: "روی پرده", hint: "فیلم‌هایی که همین حالا در سینماهای آمریکا اکران‌اند" },
-  { key: "online", label: "آنلاین و خانگی", hint: "نسخهٔ دیجیتال یا بلوری منتشرشده و تاریخ‌های نزدیک" },
+  { key: "online", label: "در انتظار کیفیت", hint: "فیلم‌های اکران‌شده که نسخه دیجیتال/بلوری‌شان هنوز نیامده" },
   { key: "upcoming", label: "به‌زودی", hint: "اکران‌های سینمایی پیش‌رو" },
 ];
 
@@ -94,8 +94,6 @@ export function MoviesPage() {
     return [...local, ...remote.filter((movie) => !ids.has(movie.id))];
   }, [list.items, remote, debounced, genre]);
 
-  const available = shown.filter((movie) => movie.availableNow);
-  const soon = shown.filter((movie) => !movie.availableNow);
   const activeTab = TABS.find((item) => item.key === tab)!;
 
   function toggleFavorite(movie: Movie) {
@@ -145,7 +143,7 @@ export function MoviesPage() {
               فیلم‌ها، از <span className="text-amber-300">پردهٔ سینما</span> تا خانه
             </h1>
             <p className="mt-1.5 text-xs leading-relaxed text-ink-300">
-              اکران‌های امروز، نسخه‌های دیجیتال و بلوری در دسترس، و تاریخ انتشارهای پیش‌رو.
+              اکران‌های سینمایی، فیلم‌های در انتظار نسخه دیجیتال/بلوری، و اکران‌های پیش‌رو.
             </p>
           </div>
 
@@ -294,24 +292,13 @@ export function MoviesPage() {
         </div>
       ) : tab === "online" ? (
         <div className="space-y-6">
-          {available.length > 0 && (
-            <section>
-              <div className="mb-2.5 flex items-baseline gap-2">
-                <h3 className="text-sm font-bold text-white">همین حالا در دسترس</h3>
-                <span className="text-[11px] text-ink-400">{toPersianDigits(available.length)} فیلم</span>
-              </div>
-              {renderGrid(available)}
-            </section>
-          )}
-          {soon.length > 0 && (
-            <section>
-              <div className="mb-2.5 flex items-baseline gap-2">
-                <h3 className="text-sm font-bold text-white">انتشارهای نزدیک</h3>
-                <span className="text-[11px] text-ink-400">{toPersianDigits(soon.length)} فیلم</span>
-              </div>
-              {renderGrid(soon)}
-            </section>
-          )}
+          <section>
+            <div className="mb-2.5 flex items-baseline gap-2">
+              <h3 className="text-sm font-bold text-white">در انتظار نسخه دیجیتال/بلوری</h3>
+              <span className="text-[11px] text-ink-400">{toPersianDigits(shown.length)} فیلم</span>
+            </div>
+            {renderGrid(shown)}
+          </section>
         </div>
       ) : tab === "upcoming" ? (
         <div className="space-y-6">

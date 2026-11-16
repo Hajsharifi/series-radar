@@ -190,7 +190,7 @@ export function SettingsPage() {
 
       <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
         <h2 className="mb-2 text-sm font-bold text-white">درباره</h2>
-        <Row label="نسخه" value="۱.۳.۰" />
+        <Row label="نسخه" value="۱.۴.۰" />
         <Row label="منبع داده" value="TVMaze · TMDB · Box Office Mojo" />
         <Row label="تقویم" value="شمسی + میلادی" />
         <Row label="یادآوری" value="آلارم اندروید" />
