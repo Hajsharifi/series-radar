@@ -170,9 +170,24 @@ export function MovieRow({ movie, tab, favorite, onToggleFavorite }: MovieCardPr
           {genres.length ? genres.join(" · ") : movie.originalTitle ?? "—"}
           {countdown ? ` · ${countdown}` : ""}
         </p>
-        <div className="mt-0.5 text-[11px] text-ink-300">
+        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-ink-300">
           <JalaliSpans stamp={date} />
-          {movie.availableNow ? <span className="mr-1.5 text-[10px] text-emerald-300">موجود</span> : null}
+          {movie.availableNow ? <span className="text-emerald-300">موجود</span> : null}
+          {movie.imdbRating && (
+            <span className="rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-bold text-amber-300">
+              IMDb {movie.imdbRating.split("/")[0]}
+            </span>
+          )}
+          {movie.rottenTomatoesRating && (
+            <span className="rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-bold text-red-400">
+              RT {movie.rottenTomatoesRating.replace("%", "")}%
+            </span>
+          )}
+          {movie.metacriticRating && (
+            <span className="rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-bold text-green-400">
+              MC {movie.metacriticRating.split("/")[0]}
+            </span>
+          )}
         </div>
       </div>
       <button

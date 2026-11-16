@@ -349,3 +349,4 @@ export function MovieDetailsPage() {
     </div>
   );
 }
+export default MovieDetailsPage;

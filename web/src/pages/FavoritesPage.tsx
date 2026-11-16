@@ -293,3 +293,4 @@ function EmptyTracked() {
     </div>
   );
 }
+export default FavoritesPage;

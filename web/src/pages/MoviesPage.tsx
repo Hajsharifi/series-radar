@@ -330,4 +330,4 @@ export function MoviesPage() {
       </section>
     </div>
   );
-}
+}export default MoviesPage;

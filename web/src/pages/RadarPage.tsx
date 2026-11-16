@@ -315,4 +315,4 @@ export function RadarPage() {
       </section>
     </div>
   );
-}
+}export default RadarPage;

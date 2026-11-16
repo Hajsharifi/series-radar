@@ -212,4 +212,4 @@ export function SettingsPage() {
       </Link>
     </div>
   );
-}
+}export default SettingsPage;

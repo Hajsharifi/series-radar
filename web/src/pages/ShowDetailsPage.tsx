@@ -241,4 +241,4 @@ export function ShowDetailsPage() {
       )}
     </div>
   );
-}
+}export default ShowDetailsPage;
