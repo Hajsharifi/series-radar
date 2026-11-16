@@ -70,6 +70,7 @@ jobs:
 
       - name: Sync web assets to Android
         run: |
+          mkdir -p android-native/app/src/main/assets
           rm -rf android-native/app/src/main/assets/web
           cp -r web/dist android-native/app/src/main/assets/web
 
