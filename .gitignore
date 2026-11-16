@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+android-native/app/build/
+android-native/app/.gradle/
+android-native/.gradle/
+android-native/build/
+
+# Build outputs
+dist/
+build/
+*.apk
+*.aab
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Android
+android-native/local.properties
+android-native/app/release/
+android-native/gradle/wrapper/gradle-wrapper.jar
+
+# Cache
+web/node_modules/.cache/
+android-native/app/src/main/assets/web/
+
+# Secrets
+*.keystore
+*.jks
+/opt/series-radar-api/token
+/opt/series-radar-api/cache/
+
+# Test coverage
+coverage/
+
+# Misc
+*.pem

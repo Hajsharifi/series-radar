@@ -1,0 +1,119 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Vazirmatn", "Vazir", "Segoe UI", Tahoma, system-ui, sans-serif;
+  --color-ink-950: #070b16;
+  --color-ink-900: #0b1020;
+  --color-ink-850: #111830;
+  --color-ink-800: #161e3a;
+  --color-ink-700: #212b4d;
+  --color-ink-600: #2e3a62;
+  --color-ink-400: #6d7aa3;
+  --color-ink-300: #9aa6c9;
+  --color-amber-glow: #f5b642;
+}
+
+@font-face {
+  font-family: "Vazirmatn";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/Vazirmatn-Regular.woff2") format("woff2");
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #070b16;
+  --surface: #111830;
+  --surface-2: #161e3a;
+  --border: rgba(148, 163, 196, 0.14);
+  --text: #eef2ff;
+  --muted: #9aa6c9;
+  --amber: #f5b642;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1100px 620px at 85% -10%, rgba(245, 182, 66, 0.13), transparent 60%),
+    radial-gradient(900px 520px at 5% 0%, rgba(56, 189, 248, 0.1), transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(245, 182, 66, 0.28);
+}
+
+.sr-scroll-x {
+  scrollbar-width: none;
+}
+.sr-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes sr-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.sr-skeleton {
+  background: linear-gradient(90deg, #131b33 25%, #1d2745 37%, #131b33 63%);
+  background-size: 200% 100%;
+  animation: sr-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes sr-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sr-pop {
+  animation: sr-pop 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.sr-no-tap {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sr-card-hover {
+  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+@media (hover: hover) {
+  .sr-card-hover:hover {
+    transform: translateY(-3px);
+  }
+}
+
+.sr-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.sr-date-box {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}

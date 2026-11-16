@@ -1,0 +1,175 @@
+import { useEffect, useMemo } from "react";
+import { useFavorites } from "../hooks/useFavorites";
+import { useScheduleContext } from "../hooks/ScheduleContext";
+import { useMovieFavorites, useMovieList } from "../hooks/useMovies";
+import { useMovieTrack } from "../hooks/useMovieTrack";
+import { reminderTimeMs, reminderTimeMsForDay } from "../lib/date";
+import { fetchMovieDetail } from "../lib/movies";
+import { isNativeApp, syncNativeReminders, type NativeReminder, updateWidgetData } from "../lib/native";
+import type { Movie } from "../types";
+
+/**
+ * Keeps Android alarms in sync with starred shows, starred movies, and tracked cinema movies.
+ * Only items with reminders enabled and a future release are scheduled.
+ */
+export function NativeReminders() {
+  const { shows } = useScheduleContext();
+  const favorites = useFavorites();
+  const movieFavorites = useMovieFavorites();
+  const movieTrack = useMovieTrack();
+  const online = useMovieList("online");
+  const upcoming = useMovieList("upcoming");
+
+  const moviesById = useMemo(() => {
+    const map = new Map<number, Movie>();
+    for (const movie of [...online.items, ...upcoming.items]) map.set(movie.id, movie);
+    return map;
+  }, [online.items, upcoming.items]);
+
+  // Check tracked movies for digital/physical dates periodically
+  useEffect(() => {
+    if (!isNativeApp()) return;
+    const timer = window.setInterval(async () => {
+      for (const tracked of movieTrack.items) {
+        if (tracked.reminderEnabled === false) continue;
+        try {
+          const detail = await fetchMovieDetail(tracked.movieId);
+          const movie = detail.movie;
+          const day = movie.onlineDate ?? movie.digitalDate ?? movie.physicalDate ?? null;
+          if (!day) continue;
+          const triggerAt = reminderTimeMsForDay(day);
+          if (triggerAt === null || triggerAt <= Date.now()) continue;
+          // Sync will pick it up on next render
+        } catch {
+          /* ignore */
+        }
+      }
+    }, 6 * 60 * 60 * 1000); // every 6 hours
+    return () => window.clearInterval(timer);
+  }, [movieTrack.items]);
+
+  useEffect(() => {
+    if (!isNativeApp()) return;
+    const byId = new Map(shows.map((show) => [show.id, show]));
+    const now = Date.now();
+
+    const items: NativeReminder[] = [];
+
+    for (const favorite of favorites.items) {
+      if (favorite.reminderEnabled === false) continue;
+      const show = byId.get(favorite.showId);
+      if (!show?.airstamp) continue;
+      const triggerAt = reminderTimeMs(show.airstamp);
+      if (triggerAt === null || triggerAt <= now) continue;
+      items.push({
+        id: show.id,
+        kind: "show",
+        route: `/show/${show.id}`,
+        title: `پخش «${show.title}»`,
+        body: "فردا پخش می‌شود؛ یادآوری ۰۹:۰۰ به وقت تهران.",
+        triggerAt,
+      });
+    }
+
+    for (const favorite of movieFavorites.items) {
+      if (favorite.reminderEnabled === false) continue;
+      const movie = moviesById.get(favorite.movieId);
+      if (!movie) continue;
+      const day = movie.onlineDate ?? movie.digitalDate ?? movie.physicalDate ?? null;
+      const triggerAt = reminderTimeMsForDay(day);
+      if (triggerAt === null || triggerAt <= now) continue;
+      const kindLabel = movie.releaseKind === "physical" ? "نسخهٔ بلوری" : "نسخهٔ دیجیتال";
+      items.push({
+        id: movie.id,
+        kind: "movie",
+        route: `/movie/${movie.id}`,
+        title: `${kindLabel} «${movie.title}»`,
+        body: "فردا برای تماشای خانگی منتشر می‌شود؛ یادآوری ۰۹:۰۰ به وقت تهران.",
+        triggerAt,
+      });
+    }
+
+    // Tracked cinema movies
+    for (const tracked of movieTrack.items) {
+      if (tracked.reminderEnabled === false) continue;
+      const movie = moviesById.get(tracked.movieId);
+      if (!movie) continue;
+      const day = movie.onlineDate ?? movie.digitalDate ?? movie.physicalDate ?? null;
+      const triggerAt = reminderTimeMsForDay(day);
+      if (triggerAt === null || triggerAt <= now) continue;
+      const kindLabel = movie.releaseKind === "physical" ? "نسخهٔ بلوری" : "نسخهٔ دیجیتال";
+      items.push({
+        id: tracked.movieId + 3_000_000, // separate range
+        kind: "movie_track",
+        route: `/movie/${tracked.movieId}`,
+        title: `${kindLabel} «${movie.title}»`,
+        body: "نسخهٔ خانگی منتشر شد؛ یادآوری ۰۹:۰۰ به وقت تهران.",
+        triggerAt,
+      });
+    }
+
+    syncNativeReminders(items);
+
+    // Prepare widget data: next 3 upcoming items (series + movies)
+    const widgetItems: Array<{
+      id: number;
+      title: string;
+      subtitle: string;
+      type: "series" | "movie";
+      posterUrl?: string;
+    }> = [];
+
+    // Add upcoming series (by airstamp)
+    const upcomingShows = shows
+      .filter((s) => s.airstamp && new Date(s.airstamp).getTime() > now)
+      .sort((a, b) => (a.airstamp ?? "").localeCompare(b.airstamp ?? ""))
+      .slice(0, 3);
+
+    for (const show of upcomingShows) {
+      const dayLabel = show.airstamp ? new Date(show.airstamp).toLocaleDateString("fa-IR", {
+        weekday: "short", day: "numeric", month: "short"
+      }) : "—";
+      widgetItems.push({
+        id: show.id,
+        title: show.title,
+        subtitle: `${dayLabel} • ${show.network ?? "—"}`,
+        type: "series",
+        posterUrl: show.posterPath ?? undefined,
+      });
+    }
+
+    // Add upcoming movies (by theatrical/digital date)
+    const allMovies = [...online.items, ...upcoming.items];
+    const upcomingMovies = allMovies
+      .filter((m) => {
+        const date = m.theatricalDate ?? m.releaseDate ?? m.digitalDate ?? m.physicalDate;
+        return date && date >= new Date().toISOString().slice(0, 10);
+      })
+      .sort((a, b) => {
+        const ad = a.theatricalDate ?? a.releaseDate ?? a.digitalDate ?? a.physicalDate ?? "9999";
+        const bd = b.theatricalDate ?? b.releaseDate ?? b.digitalDate ?? b.physicalDate ?? "9999";
+        return ad.localeCompare(bd);
+      })
+      .slice(0, 3);
+
+    for (const movie of upcomingMovies) {
+      const date = movie.theatricalDate ?? movie.releaseDate ?? movie.digitalDate ?? movie.physicalDate;
+      const dayLabel = date ? new Date(date + "T12:00:00Z").toLocaleDateString("fa-IR", {
+        weekday: "short", day: "numeric", month: "short"
+      }) : "—";
+      widgetItems.push({
+        id: movie.id,
+        title: movie.title,
+        subtitle: `${dayLabel} • سینما/خانه`,
+        type: "movie",
+        posterUrl: movie.posterPath ?? undefined,
+      });
+    }
+
+    // Sort combined by date and take top 3
+    widgetItems.sort((a, b) => a.subtitle.localeCompare(b.subtitle));
+    updateWidgetData(widgetItems.slice(0, 3));
+  }, [shows, favorites.items, movieFavorites.items, movieTrack.items, moviesById]);
+
+  return null;
+}
