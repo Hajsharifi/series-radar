@@ -150,3 +150,38 @@ body {
   background: linear-gradient(90deg, #050505 25%, #141414 37%, #050505 63%);
   background-size: 200% 100%;
 }
+/* Keyboard focus is always visible, including inside the WebView. */
+:focus-visible {
+  outline: 2px solid rgba(245, 182, 66, 0.9);
+  outline-offset: 2px;
+}
+
+.sr-skip-link {
+  position: fixed;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  border-radius: 0.75rem;
+  background: #f5b642;
+  color: #0b1020;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: transform 0.15s ease;
+}
+
+.sr-skip-link:focus {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

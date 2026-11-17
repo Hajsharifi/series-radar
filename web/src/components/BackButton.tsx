@@ -70,7 +70,7 @@ export function BackButton({ compact = false, label, className = "" }: BackButto
         onClick={goBack}
         aria-label="بازگشت به صفحهٔ قبل"
         title={text}
-        className={`sr-no-tap grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5 text-base text-ink-200 active:bg-white/10 ${className}`}
+        className={`sr-no-tap grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5 text-base text-ink-200 active:bg-white/10 ${className}`}
       >
         <span aria-hidden="true">→</span>
       </button>

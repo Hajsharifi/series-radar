@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useFavorites } from "../hooks/useFavorites";
 import { useMovieFavorites } from "../hooks/useMovies";
@@ -7,6 +8,7 @@ import { BackButton, hasInAppHistory } from "./BackButton";
 import { toPersianDigits } from "../lib/date";
 import { useNetworkState, retryNetwork } from "../lib/offline";
 import { queryClient } from "../lib/queryClient";
+import { ErrorBoundary } from "./ErrorBoundary";
 
 const NAV = [
   { to: "/", label: "رادار", icon: "◉" },
@@ -23,13 +25,22 @@ export function Layout() {
   const movies = useMovieFavorites();
   const { updatedAt, refresh, refreshing } = useScheduleContext();
   const location = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
   const totalStars = items.length + movies.items.length;
   const network = useNetworkState();
 
+  useEffect(() => {
+    mainRef.current?.focus();
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [location.pathname]);
+
   return (
     <div className="app-shell">
+      <a href="#main-content" className="sr-skip-link">
+        پرش به محتوای اصلی
+      </a>
       {network.offline && (
-        <div className="border-b border-amber-400/25 bg-amber-500/15 px-4 py-2 text-center text-[11px] text-amber-200">
+        <div role="status" aria-live="polite" className="border-b border-amber-400/25 bg-amber-500/15 px-4 py-2 text-center text-[11px] text-amber-200">
           <span>
             اتصال برقرار نشد — نمایش آخرین داده
             {network.savedAt ? ` (${new Date(network.savedAt).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })})` : ""}
@@ -81,8 +92,10 @@ export function Layout() {
         </div>
       </header>
 
-      <main className="sr-main">
-        <Outlet />
+      <main id="main-content" ref={mainRef} tabIndex={-1} className="sr-main">
+        <ErrorBoundary resetKey={location.pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       <nav className="sr-safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-white/8 bg-ink-950/92 backdrop-blur-xl">
@@ -93,6 +106,7 @@ export function Layout() {
               <Link
                 key={item.to}
                 to={item.to}
+                aria-current={active ? "page" : undefined}
                 className={`sr-no-tap flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition ${
                   active ? "text-amber-300" : "text-ink-400"
                 }`}

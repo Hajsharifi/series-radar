@@ -14,6 +14,18 @@ export default defineConfig({
   },
   build: {
     target: "es2020",
+    rolldownOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (!id.includes("node_modules")) return undefined;
+          if (id.includes("react-router") || id.includes("/react/") || id.includes("/react-dom/")) {
+            return "react";
+          }
+          if (id.includes("@tanstack/react-query")) return "query";
+          return undefined;
+        },
+      },
+    },
   },
   plugins: [
     react(),

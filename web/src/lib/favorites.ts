@@ -79,6 +79,17 @@ export function getFavorites(): StoredFavorite[] {
   return read();
 }
 
+/** Replace the whole list (used by backup restore, including legacy files). */
+export function replaceFavorites(
+  items: Array<Partial<StoredFavorite> & { showId: number }>,
+): void {
+  write(
+    items
+      .filter((item) => item && typeof item.showId === "number")
+      .map((item) => normalize(item)),
+  );
+}
+
 export function isFavorite(showId: number, source: FavoriteSource = "tvmaze"): boolean {
   return read().some((item) => item.showId === showId && item.source === source);
 }

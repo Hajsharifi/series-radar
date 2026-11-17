@@ -106,7 +106,7 @@ export default function SearchPage() {
             onKeyDown={(e) => {
               if (e.key === "Enter") remember(query);
             }}
-            placeholder="نام فیلم یا سریال… (حداقل ۲ حرف)"
+            placeholder="نام فیلم یا سریال… (حداقل ۲ حرف)" aria-label="نام فیلم یا سریال… (حداقل ۲ حرف)"
             className="w-full rounded-2xl border border-white/10 bg-black/30 py-3 pr-11 pl-10 text-sm text-white placeholder:text-ink-400 focus:border-amber-400/60 focus:outline-none"
             autoFocus
           />

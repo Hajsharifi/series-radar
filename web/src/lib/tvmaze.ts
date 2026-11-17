@@ -2,7 +2,7 @@ import type { Show, ShowCategory } from "../types";
 import { toIsoDay, tehranParts } from "./date";
 import SEED from "./seed.json";
 import { fetchPopularTV, fetchTopRatedTV, fetchOnTheAirTV } from "./tmdb-tv";
-import { cachedFetchJson } from "./offline";
+import { cachedFetchJson, retryAsync } from "./offline";
 import { eventKindFromEpisode } from "./show-event";
 
 const API = "https://api.tvmaze.com";
@@ -127,7 +127,7 @@ function fromEpisodes(episodes: TvmazeEpisode[]): Show[] {
 }
 
 async function getJson<T>(url: string, timeoutMs = 20000): Promise<T> {
-  return cachedFetchJson<T>(url, timeoutMs);
+  return retryAsync(() => cachedFetchJson<T>(url, timeoutMs), 2, 800);
 }
 
 function sortByWeight(items: Show[]): Show[] {
@@ -153,9 +153,9 @@ function mergeById(current: Show[], incoming: Show[]): Show[] {
 export async function enrichWithTMDBTV(baseItems: Show[]): Promise<Show[]> {
   try {
     const [popular, topRated, onTheAir] = await Promise.allSettled([
-      fetchPopularTV(),
-      fetchTopRatedTV(),
-      fetchOnTheAirTV(),
+      retryAsync(fetchPopularTV, 2, 800),
+      retryAsync(fetchTopRatedTV, 2, 800),
+      retryAsync(fetchOnTheAirTV, 2, 800),
     ]);
     const extra: Show[] = [];
     for (const result of [popular, topRated, onTheAir]) {

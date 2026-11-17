@@ -1,4 +1,4 @@
-import { getFavorites } from "./favorites";
+import { getFavorites, replaceFavorites } from "./favorites";
 import { getMovieFavorites } from "./movie-favorites";
 import { getTrackedMovies } from "./movie-track";
 
@@ -53,7 +53,8 @@ export function importBackup(jsonText: string): { ok: boolean; error?: string } 
     if (!data.version || !data.favorites || !data.movieFavorites || !data.trackedMovies) {
       return { ok: false, error: "فرمت فایل معتبر نیست" };
     }
-    localStorage.setItem("sr:favorites:v1", JSON.stringify(data.favorites));
+    replaceFavorites(data.favorites);
+    localStorage.removeItem("sr:favorites:v1");
     localStorage.setItem("sr:movie-favorites:v1", JSON.stringify(data.movieFavorites));
     localStorage.setItem("sr:movie-track:v1", JSON.stringify(data.trackedMovies));
     if (data.episodeTracking) {

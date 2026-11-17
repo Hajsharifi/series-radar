@@ -77,7 +77,11 @@ export async function cachedFetchJson<T>(url: string, timeoutMs = TIMEOUT_MS): P
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(url, { signal: controller.signal, cache: "no-store" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) {
+      const failure = new Error(`HTTP ${response.status}`) as Error & { status?: number };
+      failure.status = response.status;
+      throw failure;
+    }
     const data = (await response.json()) as T;
     try {
       localStorage.setItem(key, JSON.stringify({ at: Date.now(), data }));
@@ -101,4 +105,24 @@ export async function cachedFetchJson<T>(url: string, timeoutMs = TIMEOUT_MS): P
 
 export function retryNetwork() {
   setState({ offline: false });
+}
+
+/** Lightweight exponential backoff for non-React-Query calls. */
+export async function retryAsync<T>(
+  operation: () => Promise<T>,
+  attempts = 2,
+  baseDelayMs = 700,
+): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, baseDelayMs * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
 }

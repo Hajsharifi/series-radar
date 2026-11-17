@@ -43,7 +43,7 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
         aria-label={favorite ? "حذف از ستاره‌ها" : "افزودن به ستاره‌ها"}
         aria-pressed={favorite}
         onClick={() => onToggleFavorite(show)}
-        className={`sr-no-tap absolute top-2 left-2 z-10 grid h-9 w-9 place-items-center rounded-full text-base shadow-lg backdrop-blur transition ${
+        className={`sr-no-tap absolute top-2 left-2 z-10 grid h-10 w-10 place-items-center rounded-full text-base shadow-lg backdrop-blur transition ${
           favorite ? "bg-amber-400 text-ink-950" : "bg-black/45 text-white/85 hover:bg-black/65"
         }`}
       >

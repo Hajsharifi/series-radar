@@ -8,6 +8,7 @@ import json
 import os
 import re
 import sys
+import threading
 import time
 import unicodedata
 import urllib.error
@@ -53,9 +54,30 @@ TMDB_HEADERS = {"Authorization": "Bearer " + TMDB_TOKEN, "Accept": "application/
 # OMDB API key (set via environment variable OMDB_API_KEY)
 OMDB_API_KEY = os.environ.get("OMDB_API_KEY", "")
 
+STARTED_AT = time.time()
+REQUEST_COUNT = 0
+ERROR_COUNT = 0
+METRICS_LOCK = threading.Lock()
+
 # Cache housekeeping: keep the service from growing forever.
 CACHE_MAX_AGE = int(os.environ.get("SERIES_RADAR_CACHE_MAX_AGE", str(30 * 86400)))
 LAST_PRUNE = 0.0
+
+
+def cache_stats():
+    files = 0
+    size = 0
+    try:
+        for entry in os.scandir(CACHE_DIR):
+            try:
+                if entry.is_file() and entry.name.endswith(".json"):
+                    files += 1
+                    size += entry.stat().st_size
+            except OSError:
+                pass
+    except OSError:
+        pass
+    return files, size
 
 
 def prune_cache(force=False):
@@ -1400,9 +1422,24 @@ class Handler(BaseHTTPRequestHandler):
         # parse_qs returns lists; TMDB expects scalar query values.
         flat_query = {k: v[0] for k, v in query.items() if v}
         force = query.get("refresh", ["0"])[0] == "1"
+        global REQUEST_COUNT, ERROR_COUNT
+        with METRICS_LOCK:
+            REQUEST_COUNT += 1
         try:
             if path == "/api/health":
                 return self.send_json({"ok": True, "time": dt.datetime.utcnow().isoformat() + "Z"})
+            if path == "/api/metrics":
+                files, size = cache_stats()
+                with METRICS_LOCK:
+                    metrics = {
+                        "ok": True,
+                        "uptimeSeconds": int(time.time() - STARTED_AT),
+                        "requests": REQUEST_COUNT,
+                        "errors": ERROR_COUNT,
+                        "cacheFiles": files,
+                        "cacheBytes": size,
+                    }
+                return self.send_json(metrics)
             if path == "/api/movies/now-playing":
                 return self.send_json(now_playing(force))
             if path == "/api/movies/upcoming":
@@ -1556,8 +1593,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"results": shows, "total_pages": data.get("total_pages")})
             return self.send_json({"error": "not found"}, 404)
         except urllib.error.HTTPError as error:
+            with METRICS_LOCK:
+                ERROR_COUNT += 1
             return self.send_json({"error": "upstream HTTP %s" % error.code}, 502)
         except Exception as error:
+            with METRICS_LOCK:
+                ERROR_COUNT += 1
             return self.send_json({"error": str(error)}, 500)
 
     def log_message(self, fmt, *args):

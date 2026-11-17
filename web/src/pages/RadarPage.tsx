@@ -200,7 +200,7 @@ export function RadarPage() {
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="جست‌وجوی سریال، شبکه یا ژانر"
+              placeholder="جست‌وجوی سریال، شبکه یا ژانر" aria-label="جست‌وجوی سریال، شبکه یا ژانر"
               className="w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-ink-400 focus:border-amber-400/60 focus:outline-none"
             />
             {search && (

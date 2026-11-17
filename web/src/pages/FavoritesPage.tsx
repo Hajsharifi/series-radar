@@ -240,7 +240,7 @@ export function FavoritesPage() {
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="جست‌وجو در ستاره‌ها"
+        placeholder="جست‌وجو در ستاره‌ها" aria-label="جست‌وجو در ستاره‌ها"
         className="w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-ink-400 focus:border-amber-400/60 focus:outline-none"
         dir="auto"
       />

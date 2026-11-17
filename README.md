@@ -57,6 +57,7 @@ python3 -m pytest tests -q
 مسیرهای مهم:
 
 - `GET /api/health`
+- `GET /api/metrics` — uptime، درخواست‌ها، خطاها و آمار کش
 - `GET /api/tv/popular`، `/api/tv/on_the_air`، `/api/tv/<id>`
 - `GET /api/movies/quality`، `/api/movies/upcoming`
 - `GET /api/movie/<id>`، `/api/movie/<id>/similar`

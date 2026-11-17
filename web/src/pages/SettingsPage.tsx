@@ -462,7 +462,7 @@ export function SettingsPage() {
       </section>
 
       {message && (
-        <div className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
+        <div role="status" aria-live="polite" className="rounded-xl border border-emerald-400/25 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-200">
           {message}
         </div>
       )}
