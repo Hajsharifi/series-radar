@@ -1,5 +1,6 @@
 package com.serieradar.app;
 
+import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
@@ -84,6 +85,14 @@ public class WidgetProvider extends AppWidgetProvider {
                     ? new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(updatedAt))
                     : "—");
             views.setTextViewText(R.id.widget_updated, updatedText);
+
+            // Tapping anywhere in the widget opens the weekly calendar in-app.
+            Intent open = new Intent(context, MainActivity.class);
+            open.putExtra("route", "/calendar");
+            open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            PendingIntent pending = PendingIntent.getActivity(
+                    context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            views.setOnClickPendingIntent(R.id.widget_root, pending);
 
         } catch (Exception e) {
             views.setViewVisibility(R.id.widget_empty, android.view.View.VISIBLE);

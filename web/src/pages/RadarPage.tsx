@@ -13,7 +13,15 @@ import {
 import { useLiveTVSections, useThisWeekEpisodes } from "../hooks/useLiveTV";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { CATEGORY_LABEL, genreLabel } from "../lib/labels";
-import { toPersianDigits, jalaliDate } from "../lib/date";
+import {
+  toPersianDigits,
+  jalaliDate,
+  jalaliFromStamp,
+  dateAfterDays,
+  tehranClock,
+  tehranParts,
+  toIsoDay,
+} from "../lib/date";
 import type { Show } from "../types";
 import { ShowCard, ShowRow } from "../components/ShowCard";
 import { Poster } from "../components/Poster";
@@ -84,6 +92,59 @@ export function RadarPage() {
   // Live TV hooks
   const liveTV = useLiveTVSections();
   const thisWeek = useThisWeekEpisodes(Array.from(favoriteIds));
+
+  // Tonight = any episode airing on the current Tehran day, from both sources.
+  const tonight = useMemo(() => {
+    const today = toIsoDay(dateAfterDays(0));
+    const found: Array<{
+      key: string;
+      title: string;
+      subtitle: string;
+      clock: string;
+      path: string;
+      source: "tmdb" | "tvmaze";
+      posterPath?: string | null;
+      posterOriginal?: string | null;
+    }> = [];
+
+    for (const show of schedule.shows) {
+      if (!show.airstamp) continue;
+      const parts = tehranParts(show.airstamp);
+      if (!parts || toIsoDay({ y: parts.y, m: parts.m, d: parts.d }) !== today) continue;
+      found.push({
+        key: `tvmaze-${show.id}`,
+        title: show.title,
+        subtitle: show.seasonNumber ? `فصل ${toPersianDigits(show.seasonNumber)}` : show.network ?? "سریال",
+        clock: tehranClock(show.airstamp),
+        path: `/show/${show.id}`,
+        source: "tvmaze",
+        posterPath: show.posterPath,
+        posterOriginal: show.posterOriginal,
+      });
+    }
+
+    const seen = new Set<number>();
+    for (const show of [...liveTV.airingToday, ...liveTV.onTheAir]) {
+      if (seen.has(show.id)) continue;
+      seen.add(show.id);
+      const next = show.nextEpisode;
+      if (next?.airdate !== today) continue;
+      found.push({
+        key: `tmdb-${show.id}`,
+        title: show.title,
+        subtitle:
+          next.season && next.number
+            ? `فصل ${toPersianDigits(next.season)} · قسمت ${toPersianDigits(next.number)}`
+            : show.network ?? "سریال",
+        clock: "امروز",
+        path: `/tv/${show.id}`,
+        source: "tmdb",
+        posterPath: show.posterPath,
+        posterOriginal: show.posterOriginal,
+      });
+    }
+    return found.slice(0, 4);
+  }, [schedule.shows, liveTV.airingToday, liveTV.onTheAir]);
 
   return (
     <div className="space-y-6">
@@ -174,6 +235,44 @@ export function RadarPage() {
           </div>
         </div>
       </section>
+
+      {/* Tonight - a compact highlight built from both data sources */}
+      {tonight.length > 0 && !hasFilters && (
+        <section className="overflow-hidden rounded-3xl border border-amber-400/25 bg-gradient-to-br from-amber-500/10 via-ink-850 to-ink-900 p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-bold text-white">امشب به وقت تهران</h2>
+              <p className="mt-0.5 text-[11px] text-ink-400">{jalaliFromStamp(new Date().toISOString())}</p>
+            </div>
+            <Link to="/calendar" className="sr-no-tap rounded-lg bg-white/8 px-3 py-1.5 text-[11px] text-ink-200">
+              تقویم هفت روزه ←
+            </Link>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {tonight.map((item) => (
+              <Link key={item.key} to={item.path} className="sr-no-tap flex items-center gap-3 rounded-2xl border border-white/8 bg-black/20 p-2.5">
+                <Poster
+                  show={{
+                    id: Number(item.key.replace(/\D/g, "")) || 0,
+                    title: item.title,
+                    posterPath: item.posterPath,
+                    posterOriginal: item.posterOriginal,
+                    category: "returning",
+                    source: item.source,
+                  }}
+                  className="h-14 w-11 shrink-0 rounded-lg"
+                  rounded="rounded-lg"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-1 text-xs font-bold text-white" dir="auto">{item.title}</p>
+                  <p className="mt-0.5 line-clamp-1 text-[10px] text-ink-400">{item.subtitle}</p>
+                </div>
+                <span className="shrink-0 text-[11px] font-bold tabular-nums text-amber-300">{item.clock}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {featured.length > 0 && !hasFilters && (
         <section>

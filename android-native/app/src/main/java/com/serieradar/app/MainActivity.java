@@ -221,7 +221,7 @@ public class MainActivity extends Activity {
 
             DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
             request.setTitle("Series Radar " + version);
-            request.setDescription("در حال دانلود بستهٔ به\u200cروزرسانی…");
+            request.setDescription("در حال دانلود بستهٔ به‌روزرسانی…");
             request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
             request.setDestinationUri(Uri.fromFile(target));
 

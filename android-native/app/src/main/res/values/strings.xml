@@ -1,6 +1,13 @@
 <resources>
     <string name="app_name">رادار</string>
-    <string name="widget_name">رادار • فردا چه می‌آید؟</string>
+    <string name="widget_name">رادار • فردا چه می&#x200C;آید؟</string>
     <string name="widget_item_poster_desc">پوستر</string>
     <string name="widget_item_type_desc">نوع محتوا</string>
+    <string name="shortcut_search_short">جستجو</string>
+    <string name="shortcut_search_long">جستجوی فیلم و سریال</string>
+    <string name="shortcut_favorites_short">ستاره&#x200C;ها</string>
+    <string name="shortcut_favorites_long">سریال&#x200C;ها و فیلم&#x200C;های ستاره&#x200C;دار</string>
+    <string name="shortcut_calendar_short">تقویم</string>
+    <string name="shortcut_calendar_long">برنامهٔ هفت&#x200C;روزهٔ سریال&#x200C;ها</string>
+    <string name="shortcut_disabled">این میانبر در دسترس نیست</string>
 </resources>

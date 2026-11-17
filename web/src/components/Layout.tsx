@@ -10,6 +10,7 @@ import { queryClient } from "../lib/queryClient";
 const NAV = [
   { to: "/", label: "رادار", icon: "◉" },
   { to: "/search", label: "جستجو", icon: "🔍" },
+  { to: "/calendar", label: "تقویم", icon: "▦" },
   { to: "/movies", label: "فیلم‌ها", icon: "▤" },
   { to: "/boxoffice", label: "گیشه", icon: "◫" },
   { to: "/favorites", label: "ستاره‌ها", icon: "★" },

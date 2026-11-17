@@ -74,10 +74,10 @@ export function FavoritesPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-extrabold text-white">ستاره\u200cهای من</h1>
+          <h1 className="text-xl font-extrabold text-white">ستاره‌های من</h1>
           <p className="mt-1 text-xs text-ink-400">
             {toPersianDigits(total)} مورد · {toPersianDigits(favorites.items.length)} سریال،{" "}
-            {toPersianDigits(movieFavorites.items.length)} فیلم · ذخیره\u200cشده روی همین گوشی
+            {toPersianDigits(movieFavorites.items.length)} فیلم · ذخیره‌شده روی همین گوشی
           </p>
         </div>
         <div className="flex gap-2">
@@ -98,7 +98,7 @@ export function FavoritesPage() {
             tab === "series" ? "bg-amber-400 text-ink-950" : "border border-white/10 bg-white/5 text-ink-300"
           }`}
         >
-          سریال\u200cها ({toPersianDigits(favorites.items.length)})
+          سریال‌ها ({toPersianDigits(favorites.items.length)})
         </button>
         <button
           type="button"
@@ -107,14 +107,14 @@ export function FavoritesPage() {
             tab === "movies" ? "bg-sky-400 text-sky-950" : "border border-white/10 bg-white/5 text-ink-300"
           }`}
         >
-          فیلم\u200cها ({toPersianDigits(movieFavorites.items.length)})
+          فیلم‌ها ({toPersianDigits(movieFavorites.items.length)})
         </button>
       </div>
 
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="جست\u200cوجو در ستاره\u200cها"
+        placeholder="جست‌وجو در ستاره‌ها"
         className="w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-ink-400 focus:border-amber-400/60 focus:outline-none"
         dir="auto"
       />
@@ -125,7 +125,7 @@ export function FavoritesPage() {
         ) : shows.length === 0 ? (
           <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-10 text-center">
             <p className="text-sm text-white">
-              {missingShows > 0 ? "این سریال\u200cها دیگر در برنامهٔ آینده نیستند" : "نتیجهای پیدا نشد"}
+              {missingShows > 0 ? "این سریال‌ها دیگر در برنامهٔ آینده نیستند" : "نتیجهای پیدا نشد"}
             </p>
             <p className="mt-1 text-xs text-ink-400">
               {missingShows > 0
@@ -150,11 +150,11 @@ export function FavoritesPage() {
       ) : movies.length === 0 ? (
         <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-10 text-center">
           <p className="text-sm text-white">
-            {missingMovies > 0 ? "این فیلم\u200cها در فهرست فعلی نیستند" : "نتیجهای پیدا نشد"}
+            {missingMovies > 0 ? "این فیلم‌ها در فهرست فعلی نیستند" : "نتیجهای پیدا نشد"}
           </p>
           <p className="mt-1 text-xs text-ink-400">
             {missingMovies > 0
-              ? "ممکن است از فهرست فیلم\u200cها خارج شده باشند؛ اتصال اینترنت را بررسی کنید."
+              ? "ممکن است از فهرست فیلم‌ها خارج شده باشند؛ اتصال اینترنت را بررسی کنید."
               : "عبارت دیگری را امتحان کنید."}
           </p>
         </div>
@@ -174,12 +174,12 @@ export function FavoritesPage() {
 
       {tab === "series" && missingShows > 0 && shows.length > 0 && (
         <p className="text-[11px] text-ink-400">
-          {toPersianDigits(missingShows)} سریال ستاره\u200cشده در برنامهٔ آینده قرار ندارد و نمایش داده نمی\u200cشود.
+          {toPersianDigits(missingShows)} سریال ستاره‌شده در برنامهٔ آینده قرار ندارد و نمایش داده نمی‌شود.
         </p>
       )}
       {tab === "movies" && missingMovies > 0 && movies.length > 0 && (
         <p className="text-[11px] text-ink-400">
-          {toPersianDigits(missingMovies)} فیلم ستاره\u200cشده در فهرست فعلی نیست.
+          {toPersianDigits(missingMovies)} فیلم ستاره‌شده در فهرست فعلی نیست.
         </p>
       )}
     </div>
@@ -190,7 +190,7 @@ function EmptySeries() {
   return (
     <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-12 text-center">
       <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white/5 text-xl text-ink-400">☆</div>
-      <p className="mt-3 text-sm font-semibold text-white">هنوز سریالی را ستاره نکرده\u200cاید</p>
+      <p className="mt-3 text-sm font-semibold text-white">هنوز سریالی را ستاره نکرده‌اید</p>
       <p className="mt-1 text-xs text-ink-400">
         در صفحهٔ رادار روی ستارهٔ هر سریال بزنید تا یادآوری برایش فعال شود.
       </p>
@@ -205,12 +205,12 @@ function EmptyMovies() {
   return (
     <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-12 text-center">
       <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white/5 text-xl text-ink-400">☆</div>
-      <p className="mt-3 text-sm font-semibold text-white">هنوز فیلمی را ستاره نکرده\u200cاید</p>
+      <p className="mt-3 text-sm font-semibold text-white">هنوز فیلمی را ستاره نکرده‌اید</p>
       <p className="mt-1 text-xs text-ink-400">
-        در بخش فیلم\u200cها روی ستارهٔ هر فیلم بزنید تا وقتی نسخه دیجیتالش منتشر شد به شما یادآوری داده شود.
+        در بخش فیلم‌ها روی ستارهٔ هر فیلم بزنید تا وقتی نسخه دیجیتالش منتشر شد به شما یادآوری داده شود.
       </p>
       <Link to="/movies" className="mt-4 inline-block rounded-lg bg-white/8 px-4 py-2 text-xs text-white">
-        رفتن به فیلم\u200cها
+        رفتن به فیلم‌ها
       </Link>
     </div>
   );

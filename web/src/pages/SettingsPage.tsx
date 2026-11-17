@@ -195,7 +195,7 @@ export function SettingsPage() {
               type="button"
               onClick={() => {
                 requestNotificationPermission();
-                setMessage("درخواست مجوز اعلان ارسال شد. اگر پنجره\u200cای ظاهر نشد، مجوز قبلاً صادر شده است.");
+                setMessage("درخواست مجوز اعلان ارسال شد. اگر پنجره‌ای ظاهر نشد، مجوز قبلاً صادر شده است.");
               }}
               className="rounded-lg border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-ink-200"
             >

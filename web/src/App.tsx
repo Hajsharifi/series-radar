@@ -20,6 +20,7 @@ const SeriesDetailPage = lazy(() => import("./pages/SeriesDetailPage"));
 const MovieDetailsPage = lazy(() => import("./pages/MovieDetailsPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
+const CalendarPage = lazy(() => import("./pages/CalendarPage"));
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
                 <Route path="/movie/:id" element={<MovieDetailsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
 <Route path="/search" element={<SearchPage />} />
+                <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

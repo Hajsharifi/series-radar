@@ -12,6 +12,7 @@ import {
 } from "../hooks/useSearch";
 import { Poster } from "../components/Poster";
 import { toPersianDigits, jalaliDate } from "../lib/date";
+import { useSearchHistory } from "../lib/searchHistory";
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -31,6 +32,7 @@ export default function SearchPage() {
     sortOrder: "desc",
   }));
   const [showFilters, setShowFilters] = useState(false);
+  const [history, remember, clearHistory] = useSearchHistory();
 
   // Keep type and filters in sync so chips affect BOTH live search and discover.
   const setType = (t: "movie" | "tv" | "all") => {
@@ -83,7 +85,7 @@ export default function SearchPage() {
         <div>
           <p className="text-[11px] font-medium tracking-wide text-amber-300/90">جستجو و کشف</p>
           <h1 className="mt-1 text-2xl font-extrabold leading-snug text-white">
-            هر چی دنبالش می\u200cگردی، <span className="text-amber-300">اینجا</span>
+            هر چه دنبالش هستید، <span className="text-amber-300">اینجا</span>
           </h1>
           <p className="mt-1.5 text-xs leading-relaxed text-ink-400">
             فیلم و سریال را جستجو کنید یا با فیلترها کشف کنید.
@@ -96,6 +98,10 @@ export default function SearchPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onBlur={() => remember(query)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") remember(query);
+            }}
             placeholder="نام فیلم یا سریال… (حداقل ۲ حرف)"
             className="w-full rounded-2xl border border-white/10 bg-black/30 py-3 pr-11 pl-10 text-sm text-white placeholder:text-ink-400 focus:border-amber-400/60 focus:outline-none"
             autoFocus
@@ -118,11 +124,33 @@ export default function SearchPage() {
         {suggestion && (
           <button
             type="button"
-            onClick={() => setQuery(suggestion.text)}
+            onClick={() => {
+              setQuery(suggestion.text);
+              remember(suggestion.text);
+            }}
             className="w-full rounded-xl border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-right text-xs text-amber-200"
           >
             منظورت «<span className="font-bold">{suggestion.text}</span>» بود؟ بزن تا جستجو شود
           </button>
+        )}
+
+        {!isLive && history.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] text-ink-400">جستجوهای اخیر:</span>
+            {history.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setQuery(item)}
+                className="sr-no-tap rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-ink-200 active:bg-white/10"
+              >
+                {item}
+              </button>
+            ))}
+            <button type="button" onClick={clearHistory} className="text-[11px] text-ink-400 underline">
+              پاک کردن
+            </button>
+          </div>
         )}
 
         {/* Type chips + filter toggle */}
