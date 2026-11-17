@@ -3,10 +3,14 @@ import type { Show } from "../types";
 export interface FeaturedOptions {
   now?: number;
   favoriteIds?: Set<number>;
+  /** Source-aware keys ("tmdb:123"), preferred over favoriteIds. */
+  favoriteKeys?: Set<string>;
   /** Genres of the user's starred shows, used as a mild taste signal. */
   favoriteGenres?: string[];
   /** Keys already shown in tonight/live sections, e.g. "tmdb:123". */
   excludedKeys?: Set<string>;
+  /** Shows the user marked as "not interested". */
+  dismissedKeys?: Set<string>;
   limit?: number;
 }
 
@@ -79,8 +83,10 @@ export function rankFeaturedShows(shows: Show[], options: FeaturedOptions = {}):
   const now = options.now ?? Date.now();
   const limit = options.limit ?? 6;
   const favoriteIds = options.favoriteIds ?? new Set<number>();
+  const favoriteKeys = options.favoriteKeys ?? new Set<string>();
   const favoriteGenres = new Set((options.favoriteGenres ?? []).map(canonicalGenre).filter(Boolean));
   const excluded = options.excludedKeys ?? new Set<string>();
+  const dismissed = options.dismissedKeys ?? new Set<string>();
 
   const candidates = shows.filter((show) => {
     if (!show.airstamp) return false;
@@ -126,8 +132,9 @@ export function rankFeaturedShows(shows: Show[], options: FeaturedOptions = {}):
   const qualified = scored
     .filter(({ show }) => {
       if (!show.posterPath && !show.posterOriginal) return false;
-      if (show.source !== "tmdb" && favoriteIds.has(show.id)) return false;
-      if (excluded.has(showKey(show))) return false;
+      if (favoriteKeys.has(showKey(show))) return false;
+      if (!options.favoriteKeys && show.source !== "tmdb" && favoriteIds.has(show.id)) return false;
+      if (excluded.has(showKey(show)) || dismissed.has(showKey(show))) return false;
       // Both gates matter: a low-rated but "popular" show is not a
       // suggestion, and a high rating from three voters is not either.
       return qualityScore(show, poolMean) >= 6.5 && (show.weight ?? 0) >= 80;

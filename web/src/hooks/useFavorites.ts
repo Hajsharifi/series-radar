@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   addFavorite,
+  favoriteKey,
+  favoriteSource,
   getFavorites,
   isFavorite,
   removeFavorite,
@@ -8,6 +10,7 @@ import {
   setReminderLead as persistLead,
   subscribeFavorites,
   toggleFavorite as persistToggle,
+  type FavoriteSource,
   type StoredFavorite,
 } from "../lib/favorites";
 import { requestNotificationPermission } from "../lib/native";
@@ -26,36 +29,55 @@ export function useFavorites() {
     return unsubscribe;
   }, []);
 
-  const ids = new Set(items.map((item) => item.showId));
+  const ids = new Set(items.filter((item) => item.source === "tvmaze").map((item) => item.showId));
+  const keys = new Set(items.map((item) => favoriteKey(item.showId, item.source)));
 
-  const toggle = useCallback((showId: number) => {
-    const enabled = !isFavorite(showId);
-    persistToggle(showId, enabled);
+  const toggle = useCallback((showId: number, source: FavoriteSource = "tvmaze") => {
+    const enabled = !isFavorite(showId, source);
+    persistToggle(showId, source, enabled);
     if (enabled) requestNotificationPermission();
     setItems(getFavorites());
     return enabled;
   }, []);
 
-  const add = useCallback((showId: number) => {
-    addFavorite(showId);
+  const add = useCallback((showId: number, source: FavoriteSource = "tvmaze") => {
+    addFavorite(showId, source);
     requestNotificationPermission();
     setItems(getFavorites());
   }, []);
 
-  const remove = useCallback((showId: number) => {
-    removeFavorite(showId);
+  const remove = useCallback((showId: number, source: FavoriteSource = "tvmaze") => {
+    removeFavorite(showId, source);
     setItems(getFavorites());
   }, []);
 
-  const setReminder = useCallback((showId: number, enabled: boolean) => {
-    persistReminder(showId, enabled);
+  const setReminder = useCallback((showId: number, source: FavoriteSource, enabled: boolean) => {
+    persistReminder(showId, source, enabled);
     setItems(getFavorites());
   }, []);
 
-  const setLead = useCallback((showId: number, hours: number) => {
-    persistLead(showId, hours);
+  const setLead = useCallback((showId: number, source: FavoriteSource, hours: number) => {
+    persistLead(showId, source, hours);
     setItems(getFavorites());
   }, []);
 
-  return { items, ids, ready, toggle, add, remove, setReminder, setLead, isFavorite: (id: number) => ids.has(id) };
+  const find = useCallback(
+    (showId: number, source: FavoriteSource = "tvmaze") =>
+      items.find((item) => item.showId === showId && item.source === favoriteSource(source)),
+    [items],
+  );
+
+  return {
+    items,
+    ids,
+    keys,
+    ready,
+    toggle,
+    add,
+    remove,
+    setReminder,
+    setLead,
+    find,
+    isFavorite: (id: number, source: FavoriteSource = "tvmaze") => keys.has(favoriteKey(id, source)),
+  };
 }

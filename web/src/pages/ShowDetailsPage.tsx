@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import { BackButton } from "../components/BackButton";
 import { useFavorites } from "../hooks/useFavorites";
 import { useScheduleContext } from "../hooks/ScheduleContext";
-import { useFavoriteIds } from "../hooks/useSchedule";
 import { EVENT_CHIP, EVENT_LABEL, genreLabel, statusLabel } from "../lib/labels";
 import { showEventKind } from "../lib/show-event";
 import {
@@ -28,11 +27,12 @@ export function ShowDetailsPage() {
   const showId = Number(id);
   const schedule = useScheduleContext();
   const favorites = useFavorites();
-  const favoriteIds = useFavoriteIds();
   const credits = useTvmazeCredits(Number.isFinite(showId) ? showId : null);
 
   const show = useMemo(() => schedule.shows.find((item) => item.id === showId), [schedule.shows, showId]);
-  const favorite = favorites.items.find((item) => item.showId === showId);
+  const favorite = favorites.items.find(
+    (item) => item.showId === showId && item.source === "tvmaze",
+  );
   const reminderOn = Boolean(favorite) && favorite?.reminderEnabled !== false;
 
   const related = useMemo(() => {
@@ -68,7 +68,7 @@ export function ShowDetailsPage() {
     );
   }
 
-  const isFavorite = favoriteIds.has(show.id);
+  const isFavorite = Boolean(favorite);
   const countdown = countdownLabel(show.airstamp);
   const lead = favorite?.reminderLeadHours || getSettings().defaultLeadHours;
   const reminderAt = reminderTimeMsWithLead(show.airstamp, lead);
@@ -80,7 +80,7 @@ export function ShowDetailsPage() {
         <BackButton className="text-ink-400" />
         <button
           type="button"
-          onClick={() => favorites.toggle(show.id)}
+          onClick={() => favorites.toggle(show.id, "tvmaze")}
           className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
             isFavorite ? "bg-amber-400 text-ink-950" : "bg-white/8 text-white"
           }`}
@@ -177,10 +177,10 @@ export function ShowDetailsPage() {
                 type="button"
                 onClick={() => {
                   if (!favorite) {
-                    favorites.add(show.id);
+                    favorites.add(show.id, "tvmaze");
                     return;
                   }
-                  favorites.setReminder(show.id, favorite.reminderEnabled === false);
+                  favorites.setReminder(show.id, "tvmaze", favorite.reminderEnabled === false);
                 }}
                 className={`relative h-6 w-11 shrink-0 rounded-full transition ${
                   reminderOn ? "bg-amber-400" : "bg-white/15"
@@ -203,7 +203,7 @@ export function ShowDetailsPage() {
                     <button
                       key={option.hours}
                       type="button"
-                      onClick={() => favorites.setLead(show.id, option.hours)}
+                      onClick={() => favorites.setLead(show.id, "tvmaze", option.hours)}
                       className={`sr-no-tap rounded-lg px-2.5 py-1 text-[11px] ${
                         lead === option.hours ? "bg-amber-400 font-semibold text-ink-950" : "bg-white/6 text-ink-300"
                       }`}
@@ -261,8 +261,8 @@ export function ShowDetailsPage() {
               <div key={item.id} className="w-[136px] shrink-0">
                 <ShowCard
                   show={item}
-                  favorite={favoriteIds.has(item.id)}
-                  onToggleFavorite={() => favorites.toggle(item.id)}
+                  favorite={favorites.keys.has(`${item.source ?? "tvmaze"}:${item.id}`)}
+                  onToggleFavorite={() => favorites.toggle(item.id, item.source ?? "tvmaze")}
                 />
               </div>
             ))}

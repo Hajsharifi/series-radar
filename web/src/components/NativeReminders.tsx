@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useFavorites } from "../hooks/useFavorites";
+import { useFavoriteEpisodes } from "../hooks/useFavoriteEpisodes";
 import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useMovieCatalog, useMovieFavorites } from "../hooks/useMovies";
 import { useMovieTrack } from "../hooks/useMovieTrack";
@@ -10,6 +11,9 @@ import {
   tehranClock,
 } from "../lib/date";
 import { getSettings } from "../lib/settings";
+import { favoriteKey, nativeShowId } from "../lib/favorites";
+import { showEventKind } from "../lib/show-event";
+import { EVENT_LABEL } from "../lib/labels";
 import {
   fetchMovieDetail,
   isMovieFinished,
@@ -32,6 +36,7 @@ import {
 export function NativeReminders() {
   const { shows } = useScheduleContext();
   const favorites = useFavorites();
+  const favoriteEpisodes = useFavoriteEpisodes();
   const movieFavorites = useMovieFavorites();
   const movieTrack = useMovieTrack();
   const catalog = useMovieCatalog();
@@ -120,25 +125,41 @@ export function NativeReminders() {
 
   useEffect(() => {
     if (!isNativeApp()) return;
-    const byShowId = new Map(shows.map((show) => [show.id, show]));
+    const byShowKey = new Map(
+      shows.map((show) => [favoriteKey(show.id, show.source ?? "tvmaze"), show]),
+    );
     const now = Date.now();
     const defaultLead = getSettings().defaultLeadHours;
     const items: NativeReminder[] = [];
 
-    // Series premieres.
+    // Closest future broadcast for each starred show: a season premiere or the
+    // next episode of a season already on air.
     for (const favorite of favorites.items) {
       if (favorite.reminderEnabled === false) continue;
-      const show = byShowId.get(favorite.showId);
+      const key = favoriteKey(favorite.showId, favorite.source);
+      const candidates = [byShowKey.get(key), favoriteEpisodes.byKey.get(key)].filter(
+        (show): show is NonNullable<typeof show> => Boolean(show?.airstamp),
+      );
+      const future = candidates
+        .filter((show) => new Date(show.airstamp!).getTime() > now)
+        .sort((a, b) => (a.airstamp ?? "").localeCompare(b.airstamp ?? ""));
+      const show = future[0];
       if (!show?.airstamp) continue;
       const lead = favorite.reminderLeadHours || defaultLead;
       const triggerAt = reminderTimeMsWithLead(show.airstamp, lead);
       if (triggerAt === null || triggerAt <= now) continue;
+      const next = show.nextEpisode;
+      const episode = next?.season && next?.number
+        ? `فصل ${next.season} · قسمت ${next.number}`
+        : null;
       items.push({
-        id: show.id,
+        id: nativeShowId(show.id, show.source ?? "tvmaze"),
         kind: "show",
-        route: `/show/${show.id}`,
-        title: `پخش «${show.title}»`,
-        body: `${leadHoursLabel(lead)}، ساعت ${tehranClock(new Date(triggerAt).toISOString())} به وقت تهران.`,
+        route: show.source === "tmdb" ? `/tv/${show.id}` : `/show/${show.id}`,
+        title: `${EVENT_LABEL[showEventKind(show)]} «${show.title}»`,
+        body: [episode, `${leadHoursLabel(lead)}، ساعت ${tehranClock(new Date(triggerAt).toISOString())} به وقت تهران.`]
+          .filter(Boolean)
+          .join(" · "),
         triggerAt,
       });
     }
@@ -261,6 +282,8 @@ export function NativeReminders() {
   }, [
     shows,
     favorites.items,
+    favoriteEpisodes.items,
+    favoriteEpisodes.byKey,
     movieFavorites.items,
     movieTrack.items,
     byId,

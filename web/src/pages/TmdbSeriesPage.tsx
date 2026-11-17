@@ -4,13 +4,15 @@ import { BackButton } from "../components/BackButton";
 import { useQuery } from "@tanstack/react-query";
 import { cachedFetchJson } from "../lib/offline";
 import { openExternalUrl } from "../lib/native";
-import { gregorianDate, jalaliDate, toPersianDigits } from "../lib/date";
+import { gregorianDate, jalaliDate, leadHoursLabel, toPersianDigits } from "../lib/date";
 import { GENRE_MAP } from "../hooks/useSearch";
 import { useEpisodeTracking } from "../hooks/useEpisodeTracking";
 import { Poster } from "../components/Poster";
 import { CreditsSection } from "../components/CreditsSection";
 import type { CastMember } from "../types";
 import { API_BASE } from "../lib/api";
+import { useFavorites } from "../hooks/useFavorites";
+import { LEAD_OPTIONS, getSettings } from "../lib/settings";
 
 const API = API_BASE;
 
@@ -89,6 +91,10 @@ export default function TmdbSeriesPage() {
   const showId = Number(id);
   const [openSeason, setOpenSeason] = useState<number | null>(null);
   const tracking = useEpisodeTracking();
+  const favorites = useFavorites();
+  const favorite = favorites.find(showId, "tmdb");
+  const reminderOn = Boolean(favorite) && favorite?.reminderEnabled !== false;
+  const lead = favorite?.reminderLeadHours ?? getSettings().defaultLeadHours;
 
   const showQuery = useQuery({
     queryKey: ["tmdbSeries", showId],
@@ -158,7 +164,18 @@ export default function TmdbSeriesPage() {
 
   return (
     <div className="space-y-5">
-      <BackButton className="text-ink-400" />
+      <div className="flex items-center justify-between gap-2">
+        <BackButton className="text-ink-400" />
+        <button
+          type="button"
+          onClick={() => favorites.toggle(showId, "tmdb")}
+          className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
+            favorite ? "bg-amber-400 text-ink-950" : "bg-white/8 text-white"
+          }`}
+        >
+          {favorite ? "★ ستاره‌دار" : "☆ ستاره"}
+        </button>
+      </div>
 
       <article className="overflow-hidden rounded-3xl border border-white/8 bg-ink-850/70">
         <div className="relative h-52 sm:h-64">
@@ -214,6 +231,57 @@ export default function TmdbSeriesPage() {
                 label="اولین قسمت ندیده"
                 value={`فصل ${toPersianDigits(nextUnwatched.season ?? 0)} · قسمت ${toPersianDigits(nextUnwatched.number ?? 0)}`}
               />
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] text-ink-400">یادآوری قسمت بعدی · {leadHoursLabel(lead)}</p>
+                <p className="mt-1 text-xs font-semibold text-ink-100">
+                  {!favorite
+                    ? "با ستاره‌کردن سریال فعال می‌شود"
+                    : !show.nextEpisode
+                      ? "قسمت بعدی هنوز اعلام نشده"
+                      : reminderOn
+                        ? `فصل ${toPersianDigits(show.nextEpisode.season ?? 0)} · قسمت ${toPersianDigits(show.nextEpisode.number ?? 0)}`
+                        : "برای این سریال خاموش است"}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="تغییر یادآوری"
+                aria-pressed={reminderOn}
+                onClick={() => {
+                  if (!favorite) {
+                    favorites.add(showId, "tmdb");
+                    return;
+                  }
+                  favorites.setReminder(showId, "tmdb", favorite.reminderEnabled === false);
+                }}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${reminderOn ? "bg-amber-400" : "bg-white/15"}`}
+              >
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${reminderOn ? "left-0.5" : "right-0.5"}`} />
+              </button>
+            </div>
+            {favorite && (
+              <div className="mt-3 border-t border-white/8 pt-3">
+                <p className="mb-1.5 text-[11px] text-ink-400">چقدر قبل یادآوری شود؟</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {LEAD_OPTIONS.map((option) => (
+                    <button
+                      key={option.hours}
+                      type="button"
+                      onClick={() => favorites.setLead(showId, "tmdb", option.hours)}
+                      className={`rounded-lg px-2.5 py-1 text-[11px] ${
+                        lead === option.hours ? "bg-amber-400 font-semibold text-ink-950" : "bg-white/6 text-ink-300"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 

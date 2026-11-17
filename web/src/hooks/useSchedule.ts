@@ -9,7 +9,7 @@ import {
   type CategoryFilter,
   type ScheduleSnapshot,
 } from "../lib/tvmaze";
-import { favoriteIds, subscribeFavorites } from "../lib/favorites";
+import { favoriteIds, favoriteKeys, subscribeFavorites } from "../lib/favorites";
 
 const MINUTE_MS = 60_000;
 const FULL_HOUR_MS = 6 * 60 * 60 * 1000;
@@ -181,6 +181,17 @@ export function useFavoriteIds(): Set<number> {
     return subscribeFavorites(sync);
   }, []);
   return ids;
+}
+
+/** Source-aware favorite keys ("tvmaze:82", "tmdb:94997"). */
+export function useFavoriteKeys(): Set<string> {
+  const [keys, setKeys] = useState<Set<string>>(() => favoriteKeys());
+  useEffect(() => {
+    const sync = () => setKeys(favoriteKeys());
+    sync();
+    return subscribeFavorites(sync);
+  }, []);
+  return keys;
 }
 
 export function useDocumentTitle(title: string) {

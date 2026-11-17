@@ -32,7 +32,7 @@ import java.util.concurrent.Executors;
  * and theatrical releases). */
 public class WatchlistReceiver extends BroadcastReceiver {
 
-    private static final String API = "http://31.56.229.237:8090";
+    private static final String API = "https://radar.hajsharifi.online:8443";
     private static final String CHANNEL_ID = "movie_releases";
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 

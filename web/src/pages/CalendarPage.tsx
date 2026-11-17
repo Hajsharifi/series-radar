@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useScheduleContext } from "../hooks/ScheduleContext";
-import { useFavoriteIds } from "../hooks/useSchedule";
+import { useFavoriteKeys } from "../hooks/useSchedule";
+import { useFavoriteEpisodes } from "../hooks/useFavoriteEpisodes";
+import { favoriteKey } from "../lib/favorites";
 import { useLiveTVSections } from "../hooks/useLiveTV";
 import { useMovieCatalog, useMovieFavorites } from "../hooks/useMovies";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
@@ -37,7 +39,8 @@ function pad(value: number) {
 
 export default function CalendarPage() {
   const schedule = useScheduleContext();
-  const favoriteIds = useFavoriteIds();
+  const favoriteKeys = useFavoriteKeys();
+  const favoriteEpisodes = useFavoriteEpisodes();
   const movieFavorites = useMovieFavorites();
   const catalog = useMovieCatalog();
   const liveTV = useLiveTVSections();
@@ -64,6 +67,7 @@ export default function CalendarPage() {
   const items = useMemo(() => {
     const result: CalendarItem[] = [];
     const validDays = new Set(days.map((day) => day.key));
+    const seenSeries = new Set<string>();
 
     for (const show of schedule.shows) {
       if (!show.airstamp) continue;
@@ -82,7 +86,35 @@ export default function CalendarPage() {
         kind: "series",
         posterPath: show.posterPath,
         posterOriginal: show.posterOriginal,
-        favorite: favoriteIds.has(show.id),
+        favorite: favoriteKeys.has(favoriteKey(show.id, show.source ?? "tvmaze")),
+      });
+      seenSeries.add(favoriteKey(show.id, show.source ?? "tvmaze"));
+    }
+
+    for (const show of favoriteEpisodes.items) {
+      if (!show.airstamp) continue;
+      const parts = tehranParts(show.airstamp);
+      if (!parts) continue;
+      const day = toIsoDay({ y: parts.y, m: parts.m, d: parts.d });
+      if (!validDays.has(day)) continue;
+      const key = favoriteKey(show.id, show.source ?? "tvmaze");
+      if (seenSeries.has(key)) continue;
+      seenSeries.add(key);
+      const next = show.nextEpisode;
+      result.push({
+        key: `fav-${key}-${day}`,
+        day,
+        title: show.title,
+        subtitle: next?.season && next?.number
+          ? `فصل ${toPersianDigits(next.season)} · قسمت ${toPersianDigits(next.number)}`
+          : show.network ?? "سریال",
+        clock: show.source === "tmdb" ? "زمان اعلام نشده" : tehranClock(show.airstamp),
+        path: show.source === "tmdb" ? `/tv/${show.id}` : `/series/${show.id}`,
+        source: show.source ?? "tvmaze",
+        kind: "series",
+        posterPath: show.posterPath,
+        posterOriginal: show.posterOriginal,
+        favorite: true,
       });
     }
 
@@ -106,7 +138,7 @@ export default function CalendarPage() {
         kind: "series",
         posterPath: show.posterPath,
         posterOriginal: show.posterOriginal,
-        favorite: false,
+        favorite: favoriteKeys.has(favoriteKey(show.id, "tmdb")),
       });
     }
 
@@ -139,7 +171,7 @@ export default function CalendarPage() {
       });
     }
     return result;
-  }, [days, favoriteIds, movieFavorites.ids, catalog.all, liveTV.airingToday, liveTV.onTheAir, schedule.shows]);
+  }, [days, favoriteKeys, favoriteEpisodes.items, movieFavorites.ids, catalog.all, liveTV.airingToday, liveTV.onTheAir, schedule.shows]);
 
   const counts = useMemo(() => {
     const map = new Map<string, number>();

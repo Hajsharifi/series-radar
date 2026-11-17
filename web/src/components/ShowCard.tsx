@@ -14,7 +14,7 @@ interface ShowCardProps {
 
 export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
   const countdown = countdownLabel(show.airstamp);
-  const clock = show.airstamp ? tehranClock(show.airstamp) : "";
+  const clock = show.airstamp && show.source !== "tmdb" ? tehranClock(show.airstamp) : "";
   const event = showEventKind(show);
   const dateStamp = show.airstamp ?? (show.nextEpisode?.airdate ? `${show.nextEpisode.airdate}T12:00:00Z` : null);
   const nextSeason = show.nextEpisode?.season ?? show.seasonNumber;
@@ -38,27 +38,17 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
         </div>
       </Link>
 
-      {show.source === "tmdb" ? (
-        <Link
-          to={detailPath}
-          aria-label="جزئیات سریال"
-          className="sr-no-tap absolute top-2 left-2 z-10 grid h-9 w-9 place-items-center rounded-full bg-black/45 text-sm text-white/85 shadow-lg backdrop-blur"
-        >
-          ›
-        </Link>
-      ) : (
-        <button
-          type="button"
-          aria-label={favorite ? "حذف از ستاره‌ها" : "افزودن به ستاره‌ها"}
-          aria-pressed={favorite}
-          onClick={() => onToggleFavorite(show)}
-          className={`sr-no-tap absolute top-2 left-2 z-10 grid h-9 w-9 place-items-center rounded-full text-base shadow-lg backdrop-blur transition ${
-            favorite ? "bg-amber-400 text-ink-950" : "bg-black/45 text-white/85 hover:bg-black/65"
-          }`}
-        >
-          {favorite ? "★" : "☆"}
-        </button>
-      )}
+      <button
+        type="button"
+        aria-label={favorite ? "حذف از ستاره‌ها" : "افزودن به ستاره‌ها"}
+        aria-pressed={favorite}
+        onClick={() => onToggleFavorite(show)}
+        className={`sr-no-tap absolute top-2 left-2 z-10 grid h-9 w-9 place-items-center rounded-full text-base shadow-lg backdrop-blur transition ${
+          favorite ? "bg-amber-400 text-ink-950" : "bg-black/45 text-white/85 hover:bg-black/65"
+        }`}
+      >
+        {favorite ? "★" : "☆"}
+      </button>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <Link
@@ -134,7 +124,7 @@ export function ShowRow({ show, favorite, onToggleFavorite }: ShowCardProps) {
           {show.title}
         </Link>
         <p className="mt-0.5 truncate text-[11px] text-ink-400" dir="rtl">
-          {[show.network ?? show.networkNames?.[0] ?? "—", show.airstamp ? tehranClock(show.airstamp) : null, episodeText, countdown]
+          {[show.network ?? show.networkNames?.[0] ?? "—", show.airstamp && show.source !== "tmdb" ? tehranClock(show.airstamp) : null, episodeText, countdown]
             .filter(Boolean)
             .join(" · ")}
         </p>
@@ -142,27 +132,17 @@ export function ShowRow({ show, favorite, onToggleFavorite }: ShowCardProps) {
           {show.airstamp ? <JalaliSpans stamp={show.airstamp} /> : <span>در حال پخش</span>}
         </div>
       </div>
-      {show.source === "tmdb" ? (
-        <Link
-          to={detailPath}
-          aria-label="جزئیات سریال"
-          className="sr-no-tap grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/6 text-sm text-white/70"
-        >
-          ›
-        </Link>
-      ) : (
-        <button
-          type="button"
-          aria-label={favorite ? "حذف از ستاره‌ها" : "افزودن به ستاره‌ها"}
-          aria-pressed={favorite}
-          onClick={() => onToggleFavorite(show)}
-          className={`sr-no-tap grid h-9 w-9 shrink-0 place-items-center rounded-full ${
-            favorite ? "bg-amber-400 text-ink-950" : "bg-white/6 text-white/70"
-          }`}
-        >
-          {favorite ? "★" : "☆"}
-        </button>
-      )}
+      <button
+        type="button"
+        aria-label={favorite ? "حذف از ستاره‌ها" : "افزودن به ستاره‌ها"}
+        aria-pressed={favorite}
+        onClick={() => onToggleFavorite(show)}
+        className={`sr-no-tap grid h-9 w-9 shrink-0 place-items-center rounded-full ${
+          favorite ? "bg-amber-400 text-ink-950" : "bg-white/6 text-white/70"
+        }`}
+      >
+        {favorite ? "★" : "☆"}
+      </button>
     </article>
   );
 }

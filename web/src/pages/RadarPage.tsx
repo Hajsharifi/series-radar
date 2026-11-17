@@ -6,14 +6,17 @@ import {
   filterShows,
   groupShows,
   useDebounced,
-  useFavoriteIds,
+  useFavoriteKeys,
   useNowTicker,
   type ShowFilters,
 } from "../hooks/useSchedule";
-import { useLiveTVSections, useThisWeekEpisodes } from "../hooks/useLiveTV";
+import { useFavoriteEpisodes } from "../hooks/useFavoriteEpisodes";
+import { useFeaturedDismissed } from "../hooks/useFeaturedDismissed";
+import { useLiveTVSections } from "../hooks/useLiveTV";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { CATEGORY_LABEL, genreLabel } from "../lib/labels";
 import { rankFeaturedShows } from "../lib/featured";
+import { favoriteKey } from "../lib/favorites";
 import {
   toPersianDigits,
   jalaliDate,
@@ -51,7 +54,7 @@ export function RadarPage() {
   const schedule = useScheduleContext();
   const now = useNowTicker(30_000);
   const favorites = useFavorites();
-  const favoriteIds = useFavoriteIds();
+  const favoriteKeys = useFavoriteKeys();
 
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<ShowFilters>({ search: "", category: "all", onlyPopular: true });
@@ -73,13 +76,32 @@ export function RadarPage() {
 
   const groups = useMemo(() => groupShows(filtered, now), [filtered, now]);
 
-  const toggle = useCallback((show: Show) => favorites.toggle(show.id), [favorites]);
+  const toggle = useCallback(
+    (show: Show) => favorites.toggle(show.id, show.source ?? "tvmaze"),
+    [favorites],
+  );
+  const isFavorite = useCallback(
+    (show: Show) => favoriteKeys.has(favoriteKey(show.id, show.source ?? "tvmaze")),
+    [favoriteKeys],
+  );
 
   const hasFilters = filters.category !== "all" || !!genre || !!debouncedSearch;
 
   // Live TV hooks
   const liveTV = useLiveTVSections();
-  const thisWeek = useThisWeekEpisodes(Array.from(favoriteIds));
+  const favoriteEpisodes = useFavoriteEpisodes();
+  const dismissedFeatured = useFeaturedDismissed();
+  const thisWeek = useMemo(() => {
+    const weekLater = now + 7 * 86_400_000;
+    return favoriteEpisodes.items
+      .filter((show) => {
+        if (!show.airstamp) return false;
+        const at = new Date(show.airstamp).getTime();
+        return at >= now - 6 * 3_600_000 && at <= weekLater;
+      })
+      .sort((a, b) => (a.airstamp ?? "").localeCompare(b.airstamp ?? ""))
+      .slice(0, 10);
+  }, [favoriteEpisodes.items, now]);
 
   // Tonight = any episode airing on the current Tehran day, from both sources.
   const tonight = useMemo(() => {
@@ -135,8 +157,12 @@ export function RadarPage() {
   }, [schedule.shows, liveTV.airingToday, liveTV.onTheAir]);
 
   const featured = useMemo(() => {
-    const byId = new Map(schedule.shows.map((show) => [show.id, show]));
-    const favoriteGenres = favorites.items.flatMap((item) => byId.get(item.showId)?.genres ?? []);
+    const byKey = new Map(
+      schedule.shows.map((show) => [favoriteKey(show.id, show.source ?? "tvmaze"), show]),
+    );
+    const favoriteGenres = favorites.items.flatMap(
+      (item) => byKey.get(favoriteKey(item.showId, item.source))?.genres ?? [],
+    );
     const excludedKeys = new Set<string>();
     tonight.forEach((item) => {
       const [source, id] = item.key.split("-");
@@ -145,12 +171,13 @@ export function RadarPage() {
     [...liveTV.onTheAir, ...liveTV.airingToday].forEach((show) => excludedKeys.add(`tmdb:${show.id}`));
     return rankFeaturedShows(filtered, {
       now,
-      favoriteIds,
+      favoriteKeys,
       favoriteGenres,
       excludedKeys,
+      dismissedKeys: dismissedFeatured.keys,
       limit: 6,
     });
-  }, [filtered, now, favorites.items, favoriteIds, schedule.shows, tonight, liveTV.onTheAir, liveTV.airingToday]);
+  }, [filtered, now, favorites.items, favoriteKeys, schedule.shows, tonight, liveTV.onTheAir, liveTV.airingToday, dismissedFeatured.keys]);
 
   return (
     <div className="space-y-6">
@@ -287,11 +314,23 @@ export function RadarPage() {
             <span className="text-[11px] text-ink-400">امتیاز، محبوبیت، نزدیکی پخش و تنوع ژانر</span>
           </div>
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-            {featured.map((show) => (
-              <div key={show.id} className="w-[136px] shrink-0">
-                <ShowCard show={show} favorite={favoriteIds.has(show.id)} onToggleFavorite={toggle} />
-              </div>
-            ))}
+            {featured.map((show) => {
+              const key = favoriteKey(show.id, show.source ?? "tvmaze");
+              return (
+                <div key={key} className="relative w-[136px] shrink-0">
+                  <button
+                    type="button"
+                    aria-label="این پیشنهاد را نشان نده"
+                    title="علاقه ندارم"
+                    onClick={() => dismissedFeatured.dismiss(key)}
+                    className="sr-no-tap absolute right-2 top-2 z-20 grid h-6 w-6 place-items-center rounded-full bg-black/55 text-[11px] text-white/75 backdrop-blur active:bg-black/75"
+                  >
+                    ✕
+                  </button>
+                  <ShowCard show={show} favorite={isFavorite(show)} onToggleFavorite={toggle} />
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
@@ -306,7 +345,7 @@ export function RadarPage() {
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {liveTV.onTheAir.slice(0, 10).map((show: typeof liveTV.onTheAir[0]) => (
               <div key={show.id} className="w-[136px] shrink-0">
-                <ShowCard show={show} favorite={favoriteIds.has(show.id)} onToggleFavorite={toggle} />
+                <ShowCard show={show} favorite={isFavorite(show)} onToggleFavorite={toggle} />
               </div>
             ))}
           </div>
@@ -323,7 +362,7 @@ export function RadarPage() {
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {liveTV.airingToday.slice(0, 10).map((show: typeof liveTV.airingToday[0]) => (
               <div key={show.id} className="w-[136px] shrink-0">
-                <ShowCard show={show} favorite={favoriteIds.has(show.id)} onToggleFavorite={toggle} />
+                <ShowCard show={show} favorite={isFavorite(show)} onToggleFavorite={toggle} />
               </div>
             ))}
           </div>
@@ -331,43 +370,50 @@ export function RadarPage() {
       )}
 
       {/* This Week - Personal Calendar */}
-      {thisWeek.data && thisWeek.data.length > 0 && !hasFilters && (
+      {thisWeek.length > 0 && !hasFilters && (
         <section>
           <div className="mb-2.5 flex items-center justify-between">
             <h2 className="text-sm font-bold text-white">این هفته</h2>
-            <span className="text-[11px] text-ink-400">قسمت‌های پیش‌رو سریال‌های ستاره‌دار</span>
+            <span className="text-[11px] text-ink-400">قسمت‌های پیش‌رو و فصل‌های جدید ستاره‌ها</span>
           </div>
           <div className="space-y-2">
-            {thisWeek.data.slice(0, 10).map((ep) => (
-              <Link key={ep.id} to={"/series/" + ep.showId} className="block">
-                <article className="relative overflow-hidden rounded-2xl border border-white/8 bg-ink-850/70">
-                  <div className="flex items-center gap-3 p-3">
-                    {ep.show?.posterPath && (
-                      <Poster
-                        show={{ id: ep.showId, title: ep.show?.title || "", posterPath: ep.show.posterPath, posterOriginal: ep.show.posterOriginal, category: "returning" as const }}
-                        className="h-16 w-12 shrink-0 rounded-xl"
-                        rounded="rounded-xl"
-                      />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-sky-400/90 px-2 py-0.5 text-[10px] font-bold text-sky-950">سریال</span>
-                        <span className="text-[11px] text-ink-300">{ep.show?.title || "نامشخص"}</span>
-                      </div>
-                      <p className="text-sm font-medium text-white line-clamp-1" dir="auto">{ep.name}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[11px] text-ink-400">فصل {ep.season} • قسمت {ep.number}</span>
-                        {ep.airdate && (
-                          <span className="text-[11px] text-amber-300">
-                            {jalaliDate(new Date(ep.airdate + "T12:00:00"))}
-                          </span>
-                        )}
+            {thisWeek.map((show) => {
+              const next = show.nextEpisode;
+              return (
+                <Link
+                  key={show.favoriteKey}
+                  to={show.source === "tmdb" ? `/tv/${show.id}` : `/series/${show.id}`}
+                  className="block"
+                >
+                  <article className="relative overflow-hidden rounded-2xl border border-white/8 bg-ink-850/70">
+                    <div className="flex items-center gap-3 p-3">
+                      <Poster show={show} className="h-16 w-12 shrink-0 rounded-xl" rounded="rounded-xl" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-sky-400/90 px-2 py-0.5 text-[10px] font-bold text-sky-950">سریال</span>
+                          <span className="text-[11px] text-ink-300">{show.title}</span>
+                        </div>
+                        <p className="text-sm font-medium text-white line-clamp-1" dir="auto">
+                          {next?.name || `قسمت ${toPersianDigits(next?.number ?? 0)}`}
+                        </p>
+                        <div className="mt-1 flex items-center gap-2">
+                          {next?.season && next?.number && (
+                            <span className="text-[11px] text-ink-400">
+                              فصل {toPersianDigits(next.season)} • قسمت {toPersianDigits(next.number)}
+                            </span>
+                          )}
+                          {show.airstamp && (
+                            <span className="text-[11px] text-amber-300">
+                              {jalaliDate(new Date(show.airstamp))}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </article>
-              </Link>
-            ))}
+                  </article>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
@@ -454,7 +500,7 @@ export function RadarPage() {
                     <ShowCard
                       key={show.id}
                       show={show}
-                      favorite={favoriteIds.has(show.id)}
+                      favorite={isFavorite(show)}
                       onToggleFavorite={toggle}
                     />
                   ))}
@@ -475,7 +521,7 @@ export function RadarPage() {
                     <ShowRow
                       key={show.id}
                       show={show}
-                      favorite={favoriteIds.has(show.id)}
+                      favorite={isFavorite(show)}
                       onToggleFavorite={toggle}
                     />
                   ))}

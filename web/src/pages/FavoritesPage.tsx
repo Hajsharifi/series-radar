@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { useFavorites } from "../hooks/useFavorites";
 import { useMovieCatalog, useMovieFavorites } from "../hooks/useMovies";
 import { useScheduleContext } from "../hooks/ScheduleContext";
-import { useFavoriteIds, useNowTicker } from "../hooks/useSchedule";
+import { useNowTicker } from "../hooks/useSchedule";
+import { useFavoriteEpisodes } from "../hooks/useFavoriteEpisodes";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { toPersianDigits } from "../lib/date";
 import { readUiState, writeUiState } from "../lib/ui-state";
@@ -20,7 +21,8 @@ import {
   subscribeMovieRemovals,
   type MovieRemoval,
 } from "../lib/movie-removals";
-import type { Movie } from "../types";
+import type { Movie, Show } from "../types";
+import { favoriteKey } from "../lib/favorites";
 import { ShowRow } from "../components/ShowCard";
 import { MovieRow } from "../components/MovieCard";
 import { MovieHistoryPageLink } from "../components/MovieHistoryLink";
@@ -30,7 +32,7 @@ type Tab = "series" | "movies";
 export function FavoritesPage() {
   const schedule = useScheduleContext();
   const favorites = useFavorites();
-  const favoriteIds = useFavoriteIds();
+  const favoriteEpisodes = useFavoriteEpisodes();
   const movieFavorites = useMovieFavorites();
   const catalog = useMovieCatalog();
   useNowTicker(30_000);
@@ -53,17 +55,49 @@ export function FavoritesPage() {
   }, []);
 
   const shows = useMemo(() => {
-    const map = new Map(schedule.shows.map((show) => [show.id, show]));
-    return favorites.items
-      .map((item) => map.get(item.showId))
-      .filter((show): show is NonNullable<typeof show> => Boolean(show))
+    const scheduled = new Map(
+      schedule.shows.map((show) => [favoriteKey(show.id, show.source ?? "tvmaze"), show]),
+    );
+    const now = Date.now();
+    const merged: Show[] = [];
+    for (const item of favorites.items) {
+      const key = favoriteKey(item.showId, item.source);
+      const scheduledShow = scheduled.get(key);
+      const nextShow = favoriteEpisodes.byKey.get(key);
+      const candidates = [scheduledShow, nextShow].filter((show): show is Show => Boolean(show));
+      if (candidates.length === 0) continue;
+      // A mid-season episode may be closer than the next season premiere.
+      const future = candidates.filter(
+        (show) => show.airstamp && new Date(show.airstamp).getTime() >= now - 6 * 3_600_000,
+      );
+      const chosen = future.sort((a, b) =>
+        (a.airstamp ?? "9999").localeCompare(b.airstamp ?? "9999"),
+      )[0];
+      if (chosen) merged.push(chosen);
+    }
+    return merged
       .filter((show) => show.title.toLowerCase().includes(query.trim().toLowerCase()))
       .sort((a, b) => {
         const aStamp = a.airstamp ? new Date(a.airstamp).getTime() : Number.MAX_SAFE_INTEGER;
         const bStamp = b.airstamp ? new Date(b.airstamp).getTime() : Number.MAX_SAFE_INTEGER;
         return aStamp - bStamp;
       });
-  }, [schedule.shows, favorites.items, query]);
+  }, [schedule.shows, favorites.items, favoriteEpisodes.byKey, query]);
+
+  const availableKeys = useMemo(() => {
+    const now = Date.now() - 6 * 3_600_000;
+    const keys = new Set(
+      schedule.shows
+        .filter((show) => show.airstamp && new Date(show.airstamp).getTime() >= now)
+        .map((show) => favoriteKey(show.id, show.source ?? "tvmaze")),
+    );
+    favoriteEpisodes.items.forEach((show) => {
+      if (show.airstamp && new Date(show.airstamp).getTime() >= now) {
+        keys.add(show.favoriteKey);
+      }
+    });
+    return keys;
+  }, [schedule.shows, favoriteEpisodes.items]);
 
   const moviesById = catalog.byId;
 
@@ -141,7 +175,9 @@ export function FavoritesPage() {
   const upcomingMovies = movies.filter((movie) => movieStage(movie) === "upcoming");
   const qualityMovies = movies.filter((movie) => movieStage(movie) !== "upcoming");
 
-  const missingShows = favorites.items.length - shows.length;
+  const missingShows = favorites.items.filter(
+    (item) => !availableKeys.has(favoriteKey(item.showId, item.source)),
+  ).length;
   const missingMovies = movieFavorites.items.length - movies.length;
   const total = favorites.items.length + movieFavorites.items.length;
 
@@ -244,11 +280,11 @@ export function FavoritesPage() {
         ) : shows.length === 0 ? (
           <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-10 text-center">
             <p className="text-sm text-white">
-              {missingShows > 0 ? "این سریال‌ها دیگر در برنامهٔ آینده نیستند" : "نتیجهای پیدا نشد"}
+              {missingShows > 0 ? "قسمت بعدی این سریال‌ها هنوز اعلام نشده" : "نتیجهای پیدا نشد"}
             </p>
             <p className="mt-1 text-xs text-ink-400">
               {missingShows > 0
-                ? "پخششان گذشته یا برنامهشان از منبع حذف شده است."
+                ? "منبع داده هنوز تاریخ قسمت بعدی را ندارد."
                 : "عبارت دیگری را امتحان کنید."}
             </p>
           </div>
@@ -256,10 +292,10 @@ export function FavoritesPage() {
           <div className="space-y-2">
             {shows.map((show) => (
               <ShowRow
-                key={show.id}
+                key={favoriteKey(show.id, show.source ?? "tvmaze")}
                 show={show}
-                favorite={favoriteIds.has(show.id)}
-                onToggleFavorite={() => favorites.toggle(show.id)}
+                favorite
+                onToggleFavorite={() => favorites.toggle(show.id, show.source ?? "tvmaze")}
               />
             ))}
           </div>
@@ -302,7 +338,7 @@ export function FavoritesPage() {
 
       {tab === "series" && missingShows > 0 && shows.length > 0 && (
         <p className="text-[11px] text-ink-400">
-          {toPersianDigits(missingShows)} سریال ستاره‌شده در برنامهٔ آینده قرار ندارد و نمایش داده نمی‌شود.
+          {toPersianDigits(missingShows)} سریال ستاره‌شده قسمت بعدی اعلام‌شده ندارد و فعلاً نمایش داده نمی‌شود.
         </p>
       )}
       {tab === "movies" && missingMovies > 0 && movies.length > 0 && (
