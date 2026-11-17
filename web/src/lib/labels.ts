@@ -1,4 +1,4 @@
-import type { ShowCategory } from "../types";
+import type { ShowCategory, ShowEventKind } from "../types";
 
 export const CATEGORY_LABEL: Record<ShowCategory, string> = {
   new: "فصل اول",
@@ -10,6 +10,22 @@ export const CATEGORY_CHIP: Record<ShowCategory, string> = {
   new: "bg-amber-400/15 text-amber-300 ring-amber-400/30",
   returning: "bg-sky-400/15 text-sky-300 ring-sky-400/30",
   announced: "bg-violet-400/15 text-violet-300 ring-violet-400/30",
+};
+
+/** Labels for what is actually being awaited. A mid-season episode must not
+ * be advertised as a new season. */
+export const EVENT_LABEL: Record<ShowEventKind, string> = {
+  "series-premiere": "سریال جدید",
+  "season-premiere": "فصل جدید",
+  "new-episode": "قسمت جدید",
+  airing: "در حال پخش",
+};
+
+export const EVENT_CHIP: Record<ShowEventKind, string> = {
+  "series-premiere": "bg-amber-400/15 text-amber-300 ring-amber-400/30",
+  "season-premiere": "bg-sky-400/15 text-sky-300 ring-sky-400/30",
+  "new-episode": "bg-emerald-400/15 text-emerald-300 ring-emerald-400/30",
+  airing: "bg-white/10 text-ink-300 ring-white/15",
 };
 
 const STATUS_MAP: Array<[RegExp, string]> = [

@@ -4,7 +4,8 @@ import { BackButton } from "../components/BackButton";
 import { useFavorites } from "../hooks/useFavorites";
 import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useFavoriteIds } from "../hooks/useSchedule";
-import { CATEGORY_CHIP, CATEGORY_LABEL, genreLabel, statusLabel } from "../lib/labels";
+import { EVENT_CHIP, EVENT_LABEL, genreLabel, statusLabel } from "../lib/labels";
+import { showEventKind } from "../lib/show-event";
 import {
   countdownLabel,
   gregorianFromStamp,
@@ -19,6 +20,8 @@ import { LEAD_OPTIONS, getSettings } from "../lib/settings";
 import { Poster } from "../components/Poster";
 import { JalaliSpans } from "../components/DateChip";
 import { ShowCard } from "../components/ShowCard";
+import { CreditsSection } from "../components/CreditsSection";
+import { useTvmazeCredits } from "../hooks/useTvmazeCredits";
 
 export function ShowDetailsPage() {
   const { id } = useParams();
@@ -26,6 +29,7 @@ export function ShowDetailsPage() {
   const schedule = useScheduleContext();
   const favorites = useFavorites();
   const favoriteIds = useFavoriteIds();
+  const credits = useTvmazeCredits(Number.isFinite(showId) ? showId : null);
 
   const show = useMemo(() => schedule.shows.find((item) => item.id === showId), [schedule.shows, showId]);
   const favorite = favorites.items.find((item) => item.showId === showId);
@@ -90,8 +94,8 @@ export function ShowDetailsPage() {
           <Poster show={show} className="h-[300px] w-full" rounded="rounded-none" />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-850 via-ink-850/40 to-transparent" />
           <div className="absolute inset-x-4 bottom-3">
-            <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${CATEGORY_CHIP[show.category]}`}>
-              {CATEGORY_LABEL[show.category]}
+            <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${EVENT_CHIP[showEventKind(show)]}`}>
+              {EVENT_LABEL[showEventKind(show)]}
             </span>
             <h1 className="mt-1.5 text-2xl font-extrabold leading-tight text-white" dir="auto">
               {show.title}
@@ -233,6 +237,8 @@ export function ShowDetailsPage() {
               ))}
             </div>
           )}
+
+          <CreditsSection kind="series" creators={credits.data?.creators} cast={credits.data?.cast} />
 
           {show.officialSite && (
             <a

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Show } from "../types";
 import { cachedFetchJson } from "../lib/offline";
+import { categoryFromEvent, eventKindFromEpisode } from "../lib/show-event";
 
 const API = import.meta.env.VITE_API_BASE || "http://31.56.229.237:8090";
 
@@ -99,12 +100,16 @@ function safeShows(data: unknown): LiveTVShow[] {
     .filter((item) => item && typeof item === "object" && item.id != null && typeof item.title === "string")
     .map((item) => {
       const next = item.nextEpisode || null;
+      const kind = eventKindFromEpisode(next, item.numberOfSeasons);
       return {
         ...item,
         source: "tmdb" as const,
-        category: "returning" as const,
-        network: item.networkNames?.[0] || item.networks?.[0]?.name || null,
-        airstamp: next?.airdate ? `${next.airdate}T12:00:00Z` : null,
+        category: categoryFromEvent(kind),
+        eventKind: kind,
+        network: item.networkNames?.[0] || item.networks?.[0]?.name || item.network || null,
+        // TMDB lists carry a day, not a broadcast time. Don't invent 15:30.
+        airstamp: null,
+        nextEpisode: next,
         seasonNumber: next?.season ?? item.numberOfSeasons ?? null,
         episode: next
           ? {

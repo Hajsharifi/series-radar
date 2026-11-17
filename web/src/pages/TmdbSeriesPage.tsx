@@ -8,6 +8,8 @@ import { gregorianDate, jalaliDate, toPersianDigits } from "../lib/date";
 import { GENRE_MAP } from "../hooks/useSearch";
 import { useEpisodeTracking } from "../hooks/useEpisodeTracking";
 import { Poster } from "../components/Poster";
+import { CreditsSection } from "../components/CreditsSection";
+import type { CastMember } from "../types";
 
 const API = import.meta.env.VITE_API_BASE || "http://31.56.229.237:8090";
 
@@ -53,6 +55,11 @@ interface TmdbSeries {
   episodeRunTime?: number[];
   trailerKey?: string | null;
   imdbRating?: string | null;
+  createdBy?: string[];
+  directors?: string[];
+  cast?: CastMember[];
+  omdbDirector?: string | null;
+  omdbActors?: string | null;
   seasons?: TmdbSeason[];
   nextEpisode?: { season?: number; number?: number; name?: string; airdate?: string } | null;
 }
@@ -208,6 +215,15 @@ export default function TmdbSeriesPage() {
               />
             )}
           </div>
+
+          <CreditsSection
+            kind="series"
+            creators={show.createdBy}
+            directors={show.directors}
+            cast={show.cast}
+            fallbackDirector={show.omdbDirector}
+            fallbackActors={show.omdbActors}
+          />
 
           {show.trailerKey && (
             <button

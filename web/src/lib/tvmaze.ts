@@ -3,6 +3,7 @@ import { toIsoDay, tehranParts } from "./date";
 import SEED from "./seed.json";
 import { fetchPopularTV, fetchTopRatedTV, fetchOnTheAirTV } from "./tmdb-tv";
 import { cachedFetchJson } from "./offline";
+import { eventKindFromEpisode } from "./show-event";
 
 const API = "https://api.tvmaze.com";
 const CACHE_KEY = "sr:schedule:v1";
@@ -90,6 +91,7 @@ function toShow(episode: TvmazeEpisode): Show {
     id: show.id,
     title: show.name,
     category: makeCategory(episode.season),
+    eventKind: eventKindFromEpisode({ season: episode.season, number: episode.number }),
     overview: stripHtml(show.summary) || undefined,
     posterPath: show.image?.medium ?? show.image?.original ?? null,
     posterOriginal: show.image?.original ?? show.image?.medium ?? null,
@@ -139,7 +141,11 @@ function sortByWeight(items: Show[]): Show[] {
 function mergeById(current: Show[], incoming: Show[]): Show[] {
   const map = new Map<number, Show>();
   current.forEach((item) => map.set(item.id, item));
-  incoming.forEach((item) => map.set(item.id, item));
+  // TVMaze and TMDB ids are unrelated and can collide. Never let a TMDB item
+  // replace a real schedule entry (which would break reminders and routing).
+  incoming.forEach((item) => {
+    if (!map.has(item.id)) map.set(item.id, item);
+  });
   return sortByWeight([...map.values()]);
 }
 

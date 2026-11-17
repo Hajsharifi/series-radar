@@ -1,5 +1,15 @@
 export type ShowCategory = "new" | "returning" | "announced";
 
+/** What the next broadcast actually is - a season premiere is not the same
+ * thing as the next episode of a season that is already airing. */
+export type ShowEventKind = "series-premiere" | "season-premiere" | "new-episode" | "airing";
+
+export interface CastMember {
+  name: string;
+  character?: string | null;
+  profilePath?: string | null;
+}
+
 export interface Show {
   /** TVMaze show id */
   id: number;
@@ -10,6 +20,7 @@ export interface Show {
   posterOriginal?: string | null;
   status?: string;
   category: ShowCategory;
+  eventKind?: ShowEventKind;
   seasonNumber?: number | null;
   /** ISO date (YYYY-MM-DD) in the broadcaster's own calendar */
   airDate?: string | null;
@@ -21,7 +32,9 @@ export interface Show {
   genres?: string[];
   language?: string | null;
   rating?: number | null;
+  votes?: number | null;
   weight?: number;
+  popularity?: number | null;
   isDateConfirmed?: boolean;
   officialSite?: string | null;
   updatedAt?: string | null;
@@ -94,6 +107,9 @@ export interface Movie {
   omdbGenre?: string | null;
   omdbDirector?: string | null;
   omdbActors?: string | null;
+  /** TMDB credits - preferred over the OMDB fallback strings. */
+  directors?: string[];
+  cast?: CastMember[];
   omdbPlot?: string | null;
   productionCountries?: string[];
   spokenLanguages?: string[];
@@ -177,6 +193,9 @@ export interface SeriesDetail {
   _links: { self: { href: string }; previousepisode: { href: string } | null; nextepisode: { href: string } | null } | null;
   /** All episodes from TVMaze */
   episodes: Episode[];
+  /** TVMaze cast & creators (?embed[]=cast&embed[]=crew) */
+  cast?: CastMember[];
+  creators?: string[];
   /** Local tracking state */
   watchedEpisodes: Set<number>;   // episode ids
   /** Progress: watched / total */

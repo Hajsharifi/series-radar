@@ -13,6 +13,7 @@ import {
 import { useLiveTVSections, useThisWeekEpisodes } from "../hooks/useLiveTV";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { CATEGORY_LABEL, genreLabel } from "../lib/labels";
+import { rankFeaturedShows } from "../lib/featured";
 import {
   toPersianDigits,
   jalaliDate,
@@ -71,19 +72,6 @@ export function RadarPage() {
   }, [schedule.shows, effectiveFilters, genre, now]);
 
   const groups = useMemo(() => groupShows(filtered, now), [filtered, now]);
-
-  const featured = useMemo(() => {
-    const upcoming = filtered.filter((show) => show.airstamp);
-    const soon = upcoming.filter((show) => new Date(show.airstamp!).getTime() - now < 14 * 86_400_000);
-    const pool = soon.length >= 4 ? soon : upcoming;
-    return [...pool]
-      .sort((a, b) => {
-        const weightDiff = (b.weight ?? 0) - (a.weight ?? 0);
-        if (weightDiff !== 0) return weightDiff;
-        return (a.airstamp ?? "").localeCompare(b.airstamp ?? "");
-      })
-      .slice(0, 6);
-  }, [filtered, now]);
 
   const toggle = useCallback((show: Show) => favorites.toggle(show.id), [favorites]);
 
@@ -145,6 +133,24 @@ export function RadarPage() {
     }
     return found.slice(0, 4);
   }, [schedule.shows, liveTV.airingToday, liveTV.onTheAir]);
+
+  const featured = useMemo(() => {
+    const byId = new Map(schedule.shows.map((show) => [show.id, show]));
+    const favoriteGenres = favorites.items.flatMap((item) => byId.get(item.showId)?.genres ?? []);
+    const excludedKeys = new Set<string>();
+    tonight.forEach((item) => {
+      const [source, id] = item.key.split("-");
+      excludedKeys.add(`${source}:${id}`);
+    });
+    [...liveTV.onTheAir, ...liveTV.airingToday].forEach((show) => excludedKeys.add(`tmdb:${show.id}`));
+    return rankFeaturedShows(filtered, {
+      now,
+      favoriteIds,
+      favoriteGenres,
+      excludedKeys,
+      limit: 6,
+    });
+  }, [filtered, now, favorites.items, favoriteIds, schedule.shows, tonight, liveTV.onTheAir, liveTV.airingToday]);
 
   return (
     <div className="space-y-6">
@@ -278,7 +284,7 @@ export function RadarPage() {
         <section>
           <div className="mb-2.5 flex items-center justify-between">
             <h2 className="text-sm font-bold text-white">پیشنهاد رادار</h2>
-            <span className="text-[11px] text-ink-400">محبوب‌ترین‌های نزدیک</span>
+            <span className="text-[11px] text-ink-400">امتیاز، محبوبیت، نزدیکی پخش و تنوع ژانر</span>
           </div>
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {featured.map((show) => (

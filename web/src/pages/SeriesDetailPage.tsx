@@ -5,6 +5,7 @@ import { useSeriesDetail } from "../hooks/useSeriesDetail";
 import { toPersianDigits, jalaliDate, tehranClock } from "../lib/date";
 import { EpisodeList } from "../components/EpisodeList";
 import { Poster } from "../components/Poster";
+import { CreditsSection } from "../components/CreditsSection";
 
 function formatDate(date?: string | null) {
   if (!date) return { jalali: "—", gregorian: "—" };
@@ -216,6 +217,8 @@ export default function SeriesDetailPage() {
               </p>
             </div>
           )}
+
+          <CreditsSection kind="series" creators={series.creators} cast={series.cast} />
 
           <div className="flex flex-wrap gap-2">
             {series.officialSite && (

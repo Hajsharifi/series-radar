@@ -32,6 +32,7 @@ import { getSettings } from "../lib/settings";
 import { usdFull, usdShort } from "../lib/format";
 import { MoviePoster } from "../components/MoviePoster";
 import { JalaliSpans } from "../components/DateChip";
+import { CreditsSection } from "../components/CreditsSection";
 
 function formatDay(day?: string | null): { jalali: Date | null; gregorian: string } {
   const date = tehranDateFromStamp(day ? `${day}T12:00:00Z` : null);
@@ -365,19 +366,25 @@ export function MovieDetailsPage() {
             </div>
           ) : null}
 
-          {(movie.productionCountries?.length || movie.spokenLanguages?.length || movie.omdbDirector || movie.certification) ? (
+          {(movie.productionCountries?.length || movie.spokenLanguages?.length || movie.certification) ? (
             <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
               <h2 className="mb-2 text-sm font-bold text-white">اطلاعات بیشتر</h2>
               <div className="grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-3">
                 {movie.certification && <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-ink-400">درجهبندی</p><p className="mt-0.5 font-semibold text-ink-100">{movie.certification}</p></div>}
                 {movie.productionCountries?.length ? <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-ink-400">کشور</p><p className="mt-0.5 font-semibold text-ink-100">{movie.productionCountries.join(" · ")}</p></div> : null}
                 {movie.spokenLanguages?.length ? <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-ink-400">زبان</p><p className="mt-0.5 font-semibold text-ink-100">{movie.spokenLanguages.join(" · ")}</p></div> : null}
-                {movie.omdbDirector && <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-ink-400">کارگردان</p><p className="mt-0.5 font-semibold text-ink-100" dir="auto">{movie.omdbDirector}</p></div>}
-                {movie.omdbActors && <div className="rounded-xl bg-white/5 px-3 py-2 sm:col-span-2"><p className="text-ink-400">بازیگران</p><p className="mt-0.5 font-semibold text-ink-100" dir="auto">{movie.omdbActors}</p></div>}
                 {movie.omdbAwards && <div className="rounded-xl bg-white/5 px-3 py-2 sm:col-span-2"><p className="text-ink-400">جوایز</p><p className="mt-0.5 font-semibold text-ink-100" dir="auto">{movie.omdbAwards}</p></div>}
               </div>
             </div>
           ) : null}
+
+          <CreditsSection
+            kind="movie"
+            directors={movie.directors}
+            cast={movie.cast}
+            fallbackDirector={movie.omdbDirector}
+            fallbackActors={movie.omdbActors}
+          />
 
           {movie.overview && (
             <div>

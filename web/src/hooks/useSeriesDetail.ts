@@ -7,7 +7,9 @@ const TVMAZE_API = "https://api.tvmaze.com";
 
 async function fetchSeriesDetail(showId: number) {
   try {
-    const show = await cachedFetchJson<any>(`${TVMAZE_API}/shows/${showId}?embed[]=episodes`);
+    const show = await cachedFetchJson<any>(
+      `${TVMAZE_API}/shows/${showId}?embed[]=episodes&embed[]=cast&embed[]=crew`,
+    );
     const episodes = (show._embedded?.episodes || []).map((ep: any) => ({
       id: ep.id,
       season: ep.season,
@@ -21,7 +23,19 @@ async function fetchSeriesDetail(showId: number) {
       summary: ep.summary,
       image: ep.image,
     }));
-    return { ...show, episodes };
+    const cast = ((show._embedded?.cast ?? []) as any[])
+      .slice(0, 8)
+      .map((item) => ({ name: item?.person?.name ?? "", character: item?.character?.name ?? null }))
+      .filter((item: { name: string }) => Boolean(item.name));
+    const creators = Array.from(
+      new Set(
+        ((show._embedded?.crew ?? []) as any[])
+          .filter((item) => item?.type === "Creator")
+          .map((item) => item?.person?.name)
+          .filter((name): name is string => Boolean(name)),
+      ),
+    );
+    return { ...show, episodes, cast, creators };
   } catch {
     return null;
   }
