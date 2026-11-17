@@ -66,6 +66,13 @@ INSTALL_UNIT=1 ./server/deploy.sh
 تنظیمات حساس در `/opt/series-radar-api/env` و `/opt/series-radar-api/token`
 هستند (خارج از گیت، mode 600).
 
+## نکتهٔ محیط فعلی
+
+روی این سرور، workerهای nginx با کاربر `nobody` اجرا می‌شوند و لاگ‌ها به
+`/tmp/nginx-*.log` منتقل شده‌اند تا فرایند استقرار بدون دسترسی chown کار کند.
+روی یک هاست معمولی می‌توانید `user www-data;` و مسیرهای
+`/var/log/nginx/` را برگردانید.
+
 ## بررسی سلامت
 
 ```bash
