@@ -136,7 +136,7 @@ jobs:
           TAG=${{ steps.version.outputs.tag }}
           VER=${TAG#v}
           # Prefer the curated CHANGELOG section; fall back to commit subjects.
-          SECTION=$(awk -v ver="## [v$VER]" '$0==ver{flag=1;next} /^## \[/{if(flag)exit} flag{print}' CHANGELOG.md)
+          SECTION=$(awk -v ver="## [v$VER]" 'index($0, ver)==1{flag=1;next} /^## \[/{if(flag)exit} flag{print}' CHANGELOG.md)
           if [ -n "$SECTION" ]; then
             CHANGELOG="$SECTION"
           else
