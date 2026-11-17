@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { cachedFetchJson } from "../lib/offline";
+import { API_BASE } from "../lib/api";
 
-const API = import.meta.env.VITE_API_BASE || "http://31.56.229.237:8090";
+const API = API_BASE;
 
 export interface SearchFilters {
   query: string;

@@ -33,6 +33,7 @@ import { usdFull, usdShort } from "../lib/format";
 import { MoviePoster } from "../components/MoviePoster";
 import { JalaliSpans } from "../components/DateChip";
 import { CreditsSection } from "../components/CreditsSection";
+import { API_BASE } from "../lib/api";
 
 function formatDay(day?: string | null): { jalali: Date | null; gregorian: string } {
   const date = tehranDateFromStamp(day ? `${day}T12:00:00Z` : null);
@@ -78,7 +79,7 @@ export function MovieDetailsPage() {
   const [failed, setFailed] = useState(false);
   const similarQuery = useQuery({
     queryKey: ["similar", "movie", movieId],
-    queryFn: () => cachedFetchJson<{ items: Movie[] }>(`http://31.56.229.237:8090/api/movie/${movieId}/similar`),
+    queryFn: () => cachedFetchJson<{ items: Movie[] }>(`${API_BASE}/api/movie/${movieId}/similar`),
     enabled: Number.isFinite(movieId),
     staleTime: 6 * 60 * 60 * 1000,
   });

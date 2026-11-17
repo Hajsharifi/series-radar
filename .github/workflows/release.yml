@@ -64,6 +64,20 @@ jobs:
         working-directory: ./web
         run: npm ci
 
+      - name: Lint web
+        working-directory: ./web
+        run: npm run lint
+
+      - name: Test web
+        working-directory: ./web
+        run: npm test
+
+      - name: Install Python test dependencies
+        run: python3 -m pip install --quiet pytest
+
+      - name: Test API
+        run: python3 -m pytest server/tests -q
+
       - name: Check Persian text escapes
         run: python3 scripts/check-persian.py
 
@@ -134,6 +148,14 @@ jobs:
         run: |
           cp android-native/app/build/outputs/apk/release/app-release.apk \
              android-native/app/build/outputs/apk/release/series-radar.apk
+          cp android-native/app/build/outputs/apk/release/app-release.apk \
+             android-native/app/build/outputs/apk/release/series-radar-${{ steps.version.outputs.version }}.apk
+
+      - name: Compute APK checksum
+        id: checksum
+        run: |
+          SHA=$(sha256sum android-native/app/build/outputs/apk/release/series-radar.apk | awk '{print $1}')
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -142,15 +164,18 @@ jobs:
           name: Series Radar ${{ steps.version.outputs.tag }}
           body: |
             ## ${{ steps.version.outputs.tag }}
-            
+
             ${{ steps.changelog.outputs.changelog }}
-            
+
             ---
             **Download:** [series-radar.apk](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag }}/series-radar.apk)
-            
+
+            **SHA-256:** `${{ steps.checksum.outputs.sha }}`
+
             **Install:** Enable "Install unknown apps" for your browser, then open the APK.
-            
-            **HTTP Install:** `http://31.56.229.237:8080/series-radar.apk` (always latest)
+
+            **HTTPS:** `https://radar.hajsharifi.online:8443/apk/series-radar.apk` (always latest)
+            **Legacy HTTP:** `http://31.56.229.237:8080/series-radar.apk`
           files: |
             android-native/app/build/outputs/apk/release/series-radar.apk
           draft: false
@@ -167,6 +192,9 @@ jobs:
           scp -o StrictHostKeyChecking=no -i deploy_key \
             android-native/app/build/outputs/apk/release/app-release.apk \
             "$DEPLOY_USER@$DEPLOY_HOST:/var/www/apk/series-radar.apk"
+          scp -o StrictHostKeyChecking=no -i deploy_key \
+            android-native/app/build/outputs/apk/release/series-radar-${{ steps.version.outputs.version }}.apk \
+            "$DEPLOY_USER@$DEPLOY_HOST:/var/www/apk/series-radar-${{ steps.version.outputs.version }}.apk"
           ssh -o StrictHostKeyChecking=no -i deploy_key \
             "$DEPLOY_USER@$DEPLOY_HOST" \
             "systemctl restart series-radar-share.service"

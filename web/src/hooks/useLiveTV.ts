@@ -2,8 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import type { Show } from "../types";
 import { cachedFetchJson } from "../lib/offline";
 import { categoryFromEvent, eventKindFromEpisode } from "../lib/show-event";
+import { API_BASE } from "../lib/api";
 
-const API = import.meta.env.VITE_API_BASE || "http://31.56.229.237:8090";
+const API = API_BASE;
 
 export interface LiveTVShow extends Show {
   episode?: {

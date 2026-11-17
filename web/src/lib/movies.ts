@@ -1,24 +1,14 @@
 import type { Movie, MovieTab } from "../types";
 import { cachedFetchJson } from "./offline";
+import { API_BASE } from "./api";
 import MOVIE_SEED from "./movies-seed.json";
 
 /**
- * The movie data comes from the Series Radar API (a small server that proxies
- * TMDB and Box Office Mojo). Inside the Android APK local assets are loaded
- * from https, so the API lives on the public host; in local previews the
- * server is on 127.0.0.1.
+ * Movies come from the Series Radar API (a small server that proxies TMDB and
+ * Box Office Mojo). The base URL lives in lib/api.ts; local previews use the
+ * loopback server automatically.
  */
-const LOCAL_API = "http://127.0.0.1:8090";
-const PUBLIC_API = "http://31.56.229.237:8090";
-
-function pickApiBase(): string {
-  if (typeof window === "undefined") return PUBLIC_API;
-  const host = window.location.hostname;
-  if (host === "localhost" || host === "127.0.0.1" || host === "::1") return LOCAL_API;
-  return PUBLIC_API;
-}
-
-export const MOVIE_API = pickApiBase();
+export const MOVIE_API = API_BASE;
 
 const CACHE_PREFIX = "sr:movies:v2:";
 const LIST_TTL_MS = 30 * 60 * 1000;

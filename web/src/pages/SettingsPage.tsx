@@ -352,8 +352,22 @@ export function SettingsPage() {
         <Row label="وضعیت ورود" value="محلی، بدون حساب" />
         <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
           سریال‌ها از TVMaze، فیلم‌ها و تاریخ‌های انتشار از TMDB و اعداد گیشه از Box Office Mojo گرفته
-          می‌شوند. فعلاً نیازی به ورود یا Firebase نیست.
+          می‌شوند. همهٔ داده‌های تو محلی است و نیازی به ورود یا حساب ابری نیست.
         </p>
+        <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
+          This product uses the TMDB API but is not endorsed or certified by TMDB.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <button type="button" onClick={() => openExternalUrl("https://www.themoviedb.org/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-[11px] text-ink-200">
+            TMDB
+          </button>
+          <button type="button" onClick={() => openExternalUrl("https://www.tvmaze.com/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-[11px] text-ink-200">
+            TVMaze
+          </button>
+          <button type="button" onClick={() => openExternalUrl("https://www.boxofficemojo.com/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-[11px] text-ink-200">
+            Box Office Mojo
+          </button>
+        </div>
         {isNativeApp() && (
           <button
             type="button"

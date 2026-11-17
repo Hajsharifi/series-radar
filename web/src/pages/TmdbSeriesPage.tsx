@@ -10,8 +10,9 @@ import { useEpisodeTracking } from "../hooks/useEpisodeTracking";
 import { Poster } from "../components/Poster";
 import { CreditsSection } from "../components/CreditsSection";
 import type { CastMember } from "../types";
+import { API_BASE } from "../lib/api";
 
-const API = import.meta.env.VITE_API_BASE || "http://31.56.229.237:8090";
+const API = API_BASE;
 
 interface TmdbEpisode {
   id: number;

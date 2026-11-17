@@ -43,8 +43,13 @@ android-native/app/src/main/assets/web/
 
 # Secrets
 *.jks
-/opt/series-radar-api/token
-/opt/series-radar-api/cache/
+server/token
+server/env
+server/cache/
+server/.pytest_cache/
+__pycache__/
+*.pyc
+.pytest_cache/
 
 # Test coverage
 coverage/

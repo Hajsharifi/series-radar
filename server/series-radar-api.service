@@ -1,0 +1,15 @@
+[Unit]
+Description=Series Radar data API (TMDB + Box Office Mojo)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/series-radar-api/server.py
+Restart=always
+RestartSec=5
+User=root
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/opt/series-radar-api/env
+
+[Install]
+WantedBy=multi-user.target

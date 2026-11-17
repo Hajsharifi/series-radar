@@ -13,7 +13,6 @@ export interface FeaturedOptions {
 const DAY = 86_400_000;
 const CORE_WINDOW = 21 * DAY;
 const MAX_WINDOW = 45 * DAY;
-const PRIOR_VOTES = 120;
 
 const GENRE_ALIASES: Record<string, string> = {
   drama: "drama", درام: "drama", دراما: "drama",
@@ -43,15 +42,20 @@ function showKey(show: Show): string {
   return `${show.source ?? "tvmaze"}:${show.id}`;
 }
 
-/** Slightly shrink ratings with few votes toward the pool average, so a lone
- * 9.0 from 12 voters cannot outrank a steady 8.2 from 20k. Missing ratings
- * are penalized rather than treated as a perfect score. */
+/** Lower confidence bound for a rating, so a lone 9.0 from a handful of
+ * voters cannot outrank a steady 8.2 from thousands. Missing ratings are
+ * penalized rather than treated as a perfect score. */
 function qualityScore(show: Show, poolMean: number): number {
   const rating = typeof show.rating === "number" && show.rating > 0 ? show.rating : null;
   const votes = typeof show.votes === "number" && show.votes > 0 ? show.votes : 0;
   if (rating === null) return poolMean * 0.82;
-  if (votes === 0) return rating * 0.96;
-  return (votes * rating + PRIOR_VOTES * poolMean) / (votes + PRIOR_VOTES);
+  if (votes === 0) return rating * 0.94;
+  const p = Math.min(1, Math.max(0, rating / 10));
+  const z = 1.64;
+  const denominator = 1 + (z * z) / votes;
+  const centre = p + (z * z) / (2 * votes);
+  const margin = z * Math.sqrt((p * (1 - p) + (z * z) / (4 * votes)) / votes);
+  return ((centre - margin) / denominator) * 10;
 }
 
 function percentile(value: number, sorted: number[]): number {
