@@ -1,4 +1,5 @@
 import type { Movie, MovieTab } from "../types";
+import { cachedFetchJson } from "./offline";
 import MOVIE_SEED from "./movies-seed.json";
 
 /**
@@ -135,15 +136,7 @@ function writeCache(key: string, payload: ListPayload) {
 }
 
 async function getJson<T>(path: string, timeoutMs = 25000): Promise<T> {
-  const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(MOVIE_API + path, { signal: controller.signal, cache: "no-store" });
-    if (!response.ok) throw new Error(`API HTTP ${response.status}`);
-    return (await response.json()) as T;
-  } finally {
-    window.clearTimeout(timer);
-  }
+  return cachedFetchJson<T>(MOVIE_API + path, timeoutMs);
 }
 
 function seedFor(tab: MovieTab): Movie[] {

@@ -2,6 +2,7 @@ import type { Show, ShowCategory } from "../types";
 import { toIsoDay, tehranParts } from "./date";
 import SEED from "./seed.json";
 import { fetchPopularTV, fetchTopRatedTV, fetchOnTheAirTV } from "./tmdb-tv";
+import { cachedFetchJson } from "./offline";
 
 const API = "https://api.tvmaze.com";
 const CACHE_KEY = "sr:schedule:v1";
@@ -124,15 +125,7 @@ function fromEpisodes(episodes: TvmazeEpisode[]): Show[] {
 }
 
 async function getJson<T>(url: string, timeoutMs = 20000): Promise<T> {
-  const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, { signal: controller.signal, cache: "no-store" });
-    if (!response.ok) throw new Error(`TVMaze HTTP ${response.status}`);
-    return (await response.json()) as T;
-  } finally {
-    window.clearTimeout(timer);
-  }
+  return cachedFetchJson<T>(url, timeoutMs);
 }
 
 function sortByWeight(items: Show[]): Show[] {

@@ -1,14 +1,13 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEpisodeTracking } from "./useEpisodeTracking";
+import { cachedFetchJson } from "../lib/offline";
 
 const TVMAZE_API = "https://api.tvmaze.com";
 
 async function fetchSeriesDetail(showId: number) {
   try {
-    const res = await fetch(`${TVMAZE_API}/shows/${showId}?embed[]=episodes`);
-    if (!res.ok) throw new Error("Failed to fetch");
-    const show = await res.json();
+    const show = await cachedFetchJson<any>(`${TVMAZE_API}/shows/${showId}?embed[]=episodes`);
     const episodes = (show._embedded?.episodes || []).map((ep: any) => ({
       id: ep.id,
       season: ep.season,

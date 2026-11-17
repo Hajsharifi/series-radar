@@ -39,6 +39,7 @@ export default function SearchPage() {
   };
 
   const live = useLiveSearch(query, type);
+  const suggestion = live.suggestion;
   const advanced = useAdvancedSearch(filters);
 
   const isLive = query.trim().length >= 2;
@@ -113,6 +114,16 @@ export default function SearchPage() {
             </button>
           )}
         </div>
+
+        {suggestion && (
+          <button
+            type="button"
+            onClick={() => setQuery(suggestion.text)}
+            className="w-full rounded-xl border border-amber-400/25 bg-amber-500/10 px-3 py-2 text-right text-xs text-amber-200"
+          >
+            منظورت «<span className="font-bold">{suggestion.text}</span>» بود؟ بزن تا جستجو شود
+          </button>
+        )}
 
         {/* Type chips + filter toggle */}
         <div className="flex flex-wrap items-center gap-2">
@@ -260,7 +271,7 @@ function SearchResultCard({ item }: { item: SearchResult }) {
     (isTV ? "bg-sky-400/90 text-sky-950" : "bg-violet-400/90 text-violet-950");
 
   return (
-    <Link to={isTV ? `/series/${item.id}` : `/movie/${item.id}`} className="sr-no-tap block">
+    <Link to={isTV ? `/tv/${item.id}` : `/movie/${item.id}`} className="sr-no-tap block">
       <article className="sr-card-hover group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/8 bg-ink-850/80">
         <div className="relative">
           <Poster
@@ -285,6 +296,9 @@ function SearchResultCard({ item }: { item: SearchResult }) {
           <h3 className="line-clamp-2 min-h-[2.4em] text-sm font-bold leading-snug text-white" dir="auto">
             {item.title || "بدون عنوان"}
           </h3>
+          {item.originalTitle && item.originalTitle !== item.title && (
+            <p className="truncate text-[10px] text-ink-400" dir="auto">{item.originalTitle}</p>
+          )}
           {item.overview && (
             <p className="line-clamp-2 text-[10px] leading-relaxed text-ink-400" dir="auto">
               {item.overview}

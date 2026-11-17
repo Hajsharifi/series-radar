@@ -25,6 +25,19 @@ export interface Show {
   isDateConfirmed?: boolean;
   officialSite?: string | null;
   updatedAt?: string | null;
+  /** "tmdb" titles use /tv/:id, TVMaze titles use /show/:id */
+  source?: "tmdb" | "tvmaze";
+  mediaType?: "movie" | "tv";
+  nextEpisode?: {
+    id?: number;
+    season?: number;
+    number?: number;
+    name?: string;
+    airdate?: string;
+    overview?: string;
+  } | null;
+  numberOfSeasons?: number | null;
+  networkNames?: string[];
 }
 
 export interface Favorite {
@@ -82,6 +95,11 @@ export interface Movie {
   omdbDirector?: string | null;
   omdbActors?: string | null;
   omdbPlot?: string | null;
+  productionCountries?: string[];
+  spokenLanguages?: string[];
+  externalIds?: Record<string, string | null>;
+  matchScore?: number;
+  mediaType?: "movie" | "tv";
 }
 
 export interface MovieFavorite {

@@ -117,3 +117,36 @@ body {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
 }
+
+/* Pure-black AMOLED theme (optional, toggle in Settings). */
+:root[data-amoled="true"] {
+  --color-ink-950: #000000;
+  --color-ink-900: #000000;
+  --color-ink-850: #000000;
+  --color-ink-800: #050505;
+  --color-ink-700: #0a0a0a;
+  --color-ink-600: #121212;
+  --bg: #000000;
+  --surface: #000000;
+  --surface-2: #050505;
+  --border: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-amoled="true"] body,
+:root[data-amoled="true"] .app-shell,
+:root[data-amoled="true"] .sr-sticky,
+:root[data-amoled="true"] body > nav,
+:root[data-amoled="true"] .fixed.inset-x-0.bottom-0 {
+  background: #000000 !important;
+  background-image: none !important;
+}
+
+:root[data-amoled="true"] [class*="bg-gradient-to-"],
+:root[data-amoled="true"] [class*="blur-3xl"] {
+  background-image: none !important;
+}
+
+:root[data-amoled="true"] .sr-skeleton {
+  background: linear-gradient(90deg, #050505 25%, #141414 37%, #050505 63%);
+  background-size: 200% 100%;
+}

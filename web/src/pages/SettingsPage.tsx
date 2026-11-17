@@ -5,7 +5,14 @@ import { useFavorites } from "../hooks/useFavorites";
 import { useMovieFavorites } from "../hooks/useMovies";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { relativeSyncLabel, toPersianDigits } from "../lib/date";
-import { isNativeApp, openExactAlarmSettings, requestNotificationPermission } from "../lib/native";
+import {
+  downloadAndInstallApk,
+  isNativeApp,
+  openExactAlarmSettings,
+  openExternalUrl,
+  requestNotificationPermission,
+} from "../lib/native";
+import { setAmoled, useAmoled } from "../lib/theme";
 import { downloadBackup, importBackup, readBackupFile } from "../lib/backup";
 
 declare const __APP_VERSION__: string;
@@ -24,6 +31,8 @@ export function SettingsPage() {
   const favorites = useFavorites();
   const movieFavorites = useMovieFavorites();
   const [message, setMessage] = useState("");
+  const [updateInfo, setUpdateInfo] = useState<{ version: string; apkUrl: string; pageUrl: string } | null>(null);
+  const amoled = useAmoled();
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
 
@@ -49,13 +58,26 @@ export function SettingsPage() {
         { cache: "no-store" },
       );
       if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = (await res.json()) as { tag_name?: string; html_url?: string };
+      const data = (await res.json()) as {
+        tag_name?: string;
+        html_url?: string;
+        assets?: Array<{ name?: string; browser_download_url?: string }>;
+      };
       const latest = (data.tag_name || "").replace(/^v/, "");
       if (!latest) throw new Error("not found");
+      setUpdateInfo(null);
       if (latest === __APP_VERSION__) {
         setMessage(`شما روی آخرین نسخه هستید (${toPersianDigits(__APP_VERSION__)}).`);
       } else {
-        setMessage(`نسخهٔ جدید ${toPersianDigits(latest)} موجود است — از صفحه releases در GitHub دانلود و نصب کنید.`);
+        const apk = (data.assets || []).find((asset) => asset.name?.endsWith(".apk") && asset.browser_download_url);
+        if (apk?.browser_download_url) {
+          setUpdateInfo({
+            version: latest,
+            apkUrl: apk.browser_download_url,
+            pageUrl: data.html_url || "https://github.com/Hajsharifi/series-radar/releases",
+          });
+        }
+        setMessage(`نسخهٔ جدید ${toPersianDigits(latest)} موجود است — دانلود از GitHub releases.`);
       }
     } catch {
       setMessage("بررسی آپدیت ممکن نشد — اتصال اینترنت را چک کنید.");
@@ -130,6 +152,26 @@ export function SettingsPage() {
           برنامهٔ امروز و فردا هر دقیقه بررسی می‌شود و فهرست کامل هر ۶ ساعت به‌روزرسانی می‌شود. تاریخ‌ها و ساعت
           پخش به وقت تهران هستند.
         </p>
+      </section>
+
+      <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-white">حالت AMOLED</h2>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-ink-400">
+              پسزمینهٔ مشکی مطلق؛ مصرف باتری را در صفحههای OLED کاهش میدهد.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={amoled}
+            onClick={() => setAmoled(!amoled)}
+            className={`relative h-7 w-12 shrink-0 rounded-full transition ${amoled ? "bg-amber-400" : "bg-white/15"}`}
+          >
+            <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${amoled ? "left-1" : "right-1"}`} />
+          </button>
+        </div>
       </section>
 
       <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
@@ -243,6 +285,26 @@ export function SettingsPage() {
           >
             بررسی نسخهٔ جدید
           </button>
+        )}
+        {updateInfo && (
+          <div className="mt-2 space-y-2 rounded-xl border border-sky-400/25 bg-sky-500/10 p-2.5">
+            {isNativeApp() && (
+              <button
+                type="button"
+                onClick={() => downloadAndInstallApk(updateInfo.apkUrl, updateInfo.version)}
+                className="w-full rounded-lg bg-sky-400 px-3.5 py-2 text-xs font-semibold text-sky-950 active:bg-sky-300"
+              >
+                دانلود و نصب نسخهٔ {toPersianDigits(updateInfo.version)}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => openExternalUrl(updateInfo.pageUrl)}
+              className="w-full rounded-lg border border-sky-400/30 px-3.5 py-2 text-xs text-sky-200"
+            >
+              صفحهٔ releases در GitHub
+            </button>
+          </div>
         )}
         <button
           type="button"

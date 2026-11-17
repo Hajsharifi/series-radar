@@ -1,0 +1,269 @@
+import { useMemo, useState, type ReactNode } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { cachedFetchJson } from "../lib/offline";
+import { openExternalUrl } from "../lib/native";
+import { gregorianDate, jalaliDate, toPersianDigits } from "../lib/date";
+import { GENRE_MAP } from "../hooks/useSearch";
+import { Poster } from "../components/Poster";
+
+const API = import.meta.env.VITE_API_BASE || "http://31.56.229.237:8090";
+
+interface TmdbEpisode {
+  id: number;
+  season: number;
+  number: number;
+  name?: string;
+  airdate?: string | null;
+  summary?: string | null;
+  image?: { medium?: string; original?: string } | null;
+}
+
+interface TmdbSeason {
+  seasonNumber?: number;
+  name?: string;
+  episodeCount?: number;
+  airDate?: string | null;
+  posterPath?: string | null;
+}
+
+interface TmdbSeries {
+  id: number;
+  title: string;
+  originalTitle?: string | null;
+  overview?: string | null;
+  tagline?: string | null;
+  posterPath?: string | null;
+  backdropPath?: string | null;
+  firstAirDate?: string | null;
+  lastAirDate?: string | null;
+  rating?: number | null;
+  votes?: number | null;
+  status?: string | null;
+  numberOfSeasons?: number | null;
+  numberOfEpisodes?: number | null;
+  networkNames?: string[];
+  genres?: string[];
+  genreIds?: number[];
+  language?: string | null;
+  productionCountries?: string[];
+  spokenLanguages?: string[];
+  episodeRunTime?: number[];
+  trailerKey?: string | null;
+  imdbRating?: string | null;
+  seasons?: TmdbSeason[];
+  nextEpisode?: { season?: number; number?: number; name?: string; airdate?: string } | null;
+}
+
+function backdrop(path?: string | null): string | null {
+  return path ? `https://image.tmdb.org/t/p/w780${path}` : null;
+}
+
+function formatDay(value?: string | null) {
+  if (!value) return "—";
+  const date = new Date(`${value}T12:00:00`);
+  return `${jalaliDate(date)} (${gregorianDate(date)})`;
+}
+
+function Info({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="rounded-xl border border-white/6 bg-white/4 px-3 py-2">
+      <p className="text-[10px] text-ink-400">{label}</p>
+      <p className="mt-0.5 text-xs font-semibold text-ink-100" dir="auto">{value || "—"}</p>
+    </div>
+  );
+}
+
+export default function TmdbSeriesPage() {
+  const { id } = useParams<{ id: string }>();
+  const showId = Number(id);
+  const [openSeason, setOpenSeason] = useState<number | null>(null);
+
+  const showQuery = useQuery({
+    queryKey: ["tmdbSeries", showId],
+    queryFn: () => cachedFetchJson<TmdbSeries>(`${API}/api/tv/${showId}`),
+    enabled: Number.isFinite(showId),
+    staleTime: 6 * 60 * 60 * 1000,
+  });
+
+  const episodesQuery = useQuery({
+    queryKey: ["tmdbEpisodes", showId],
+    queryFn: () => cachedFetchJson<{ episodes: TmdbEpisode[] }>(`${API}/api/tv/${showId}/episodes`),
+    enabled: Number.isFinite(showId),
+    staleTime: 6 * 60 * 60 * 1000,
+  });
+
+  const similarQuery = useQuery({
+    queryKey: ["tmdbSimilar", "tv", showId],
+    queryFn: () => cachedFetchJson<{ results: TmdbSeries[] }>(`${API}/api/tv/${showId}/similar`),
+    enabled: Number.isFinite(showId),
+    staleTime: 6 * 60 * 60 * 1000,
+  });
+
+  const show = showQuery.data;
+  const episodes = episodesQuery.data?.episodes || [];
+  const seasons = useMemo(() => {
+    const map = new Map<number, TmdbEpisode[]>();
+    for (const episode of episodes) {
+      const key = episode.season || 0;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(episode);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0] - b[0]);
+  }, [episodes]);
+
+  if (showQuery.isLoading) {
+    return <div className="rounded-2xl bg-ink-850/60 px-4 py-16 text-center text-sm text-ink-300">در حال بارگذاری…</div>;
+  }
+
+  if (!show || !show.id) {
+    return (
+      <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-14 text-center">
+        <p className="text-sm font-semibold text-white">این سریال پیدا نشد</p>
+        <Link to="/" className="mt-4 inline-block rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-ink-950">
+          بازگشت به رادار
+        </Link>
+      </div>
+    );
+  }
+
+  const similar = (similarQuery.data?.results || []).filter((item) => item.id && item.title);
+  const hero = backdrop(show.backdropPath);
+  const genreNames = show.genres?.length
+    ? show.genres
+    : (show.genreIds ?? []).map((id) => GENRE_MAP[id]).filter(Boolean);
+
+  return (
+    <div className="space-y-5">
+      <Link to="/" className="inline-block text-xs text-ink-400">→ بازگشت به رادار</Link>
+
+      <article className="overflow-hidden rounded-3xl border border-white/8 bg-ink-850/70">
+        <div className="relative h-52 sm:h-64">
+          {hero && <img src={hero} alt="" className="h-full w-full object-cover opacity-70" />}
+          <div className="absolute inset-0 bg-gradient-to-t from-ink-900 via-ink-900/50 to-transparent" />
+          <div className="absolute bottom-4 right-4 flex items-end gap-3">
+            <Poster
+              show={{ id: show.id, title: show.title, posterPath: show.posterPath, posterOriginal: show.backdropPath, category: "returning", source: "tmdb" }}
+              className="h-32 w-24 shrink-0 rounded-xl"
+              rounded="rounded-xl"
+            />
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold text-amber-300">سریال</p>
+              <h1 className="line-clamp-2 text-lg font-extrabold leading-snug text-white" dir="auto">{show.title}</h1>
+              {show.originalTitle && show.originalTitle !== show.title && (
+                <p className="truncate text-xs text-ink-300" dir="auto">{show.originalTitle}</p>
+              )}
+              {show.tagline && <p className="mt-1 line-clamp-1 text-[11px] italic text-ink-400" dir="auto">{show.tagline}</p>}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4 p-4">
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+            {typeof show.rating === "number" && show.rating > 0 && (
+              <span className="rounded-lg bg-amber-400/15 px-2 py-1 font-bold text-amber-200">★ {toPersianDigits(show.rating.toFixed(1))}</span>
+            )}
+            {show.imdbRating && <span className="rounded-lg bg-white/6 px-2 py-1 text-ink-200">IMDb {show.imdbRating}</span>}
+            {genreNames.slice(0, 4).map((genre) => (
+              <span key={genre} className="rounded-lg bg-white/6 px-2 py-1 text-ink-300">{genre}</span>
+            ))}
+          </div>
+
+          {show.overview && <p className="text-xs leading-relaxed text-ink-200" dir="auto">{show.overview}</p>}
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <Info label="وضعیت" value={show.status === "Returning Series" ? "در حال پخش" : show.status === "Ended" ? "پایان یافته" : show.status} />
+            <Info label="اولین پخش" value={formatDay(show.firstAirDate)} />
+            <Info label="آخرین پخش" value={formatDay(show.lastAirDate)} />
+            <Info label="فصل / قسمت" value={`${toPersianDigits(show.numberOfSeasons ?? 0)} / ${toPersianDigits(show.numberOfEpisodes ?? 0)}`} />
+            <Info label="شبکه" value={show.networkNames?.join(" · ")} />
+            <Info label="زبان" value={show.language ?? show.spokenLanguages?.[0]} />
+            <Info label="کشور" value={show.productionCountries?.join(" · ")} />
+            <Info label="مدت قسمت" value={show.episodeRunTime?.[0] ? `${toPersianDigits(show.episodeRunTime[0])} دقیقه` : null} />
+            {show.nextEpisode && (
+              <Info
+                label="قسمت بعدی"
+                value={`فصل ${toPersianDigits(show.nextEpisode.season ?? 0)} · قسمت ${toPersianDigits(show.nextEpisode.number ?? 0)} — ${formatDay(show.nextEpisode.airdate)}`}
+              />
+            )}
+          </div>
+
+          {show.trailerKey && (
+            <button
+              type="button"
+              onClick={() => openExternalUrl(`https://www.youtube.com/watch?v=${show.trailerKey}`)}
+              className="w-full rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-200 active:bg-rose-500/20"
+            >
+              ▶ تماشای تریلر
+            </button>
+          )}
+        </div>
+      </article>
+
+      {/* Seasons / episodes */}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-white">قسمتها</h2>
+          <span className="text-[11px] text-ink-400">{toPersianDigits(episodes.length)} قسمت</span>
+        </div>
+        {seasons.length === 0 ? (
+          <p className="rounded-xl border border-white/8 bg-ink-850/60 px-3 py-5 text-center text-xs text-ink-400">
+            اطلاعات قسمتها در دسترس نیست.
+          </p>
+        ) : (
+          seasons.map(([seasonNumber, items]) => {
+            const open = openSeason === seasonNumber || (openSeason === null && seasonNumber === seasons[0][0]);
+            return (
+              <div key={seasonNumber} className="overflow-hidden rounded-2xl border border-white/8 bg-ink-850/60">
+                <button
+                  type="button"
+                  onClick={() => setOpenSeason(open ? -1 : seasonNumber)}
+                  className="flex w-full items-center justify-between px-3 py-2.5 text-right text-xs font-semibold text-white"
+                >
+                  <span>فصل {toPersianDigits(seasonNumber)}</span>
+                  <span className="text-ink-400">{toPersianDigits(items.length)} قسمت · {open ? "▲" : "▼"}</span>
+                </button>
+                {open && (
+                  <div className="divide-y divide-white/6">
+                    {items.map((episode) => (
+                      <div key={episode.id} className="flex gap-3 px-3 py-2.5">
+                        <span className="w-7 shrink-0 text-xs font-bold tabular-nums text-amber-300/90">
+                          {toPersianDigits(episode.number)}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-white" dir="auto">{episode.name || `قسمت ${episode.number}`}</p>
+                          {episode.summary && <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-ink-400" dir="auto">{episode.summary}</p>}
+                        </div>
+                        {episode.airdate && <span className="shrink-0 text-[10px] text-ink-400">{formatDay(episode.airdate)}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </section>
+
+      {similar.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-bold text-white">عنوانهای مشابه</h2>
+          <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+            {similar.map((item) => (
+              <Link key={item.id} to={`/tv/${item.id}`} className="sr-no-tap w-[120px] shrink-0">
+                <Poster
+                  show={{ id: item.id, title: item.title, posterPath: item.posterPath, posterOriginal: item.backdropPath, category: "returning", source: "tmdb" }}
+                  className="aspect-[2/3] w-full"
+                />
+                <p className="mt-1 line-clamp-2 text-[11px] font-semibold text-white" dir="auto">{item.title}</p>
+                {item.originalTitle && item.originalTitle !== item.title && (
+                  <p className="truncate text-[10px] text-ink-400" dir="auto">{item.originalTitle}</p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}

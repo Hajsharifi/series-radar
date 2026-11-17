@@ -195,8 +195,8 @@ export function RadarPage() {
       {liveTV.onTheAir.length > 0 && !hasFilters && (
         <section>
           <div className="mb-2.5 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white">On the Air</h2>
-            <span className="text-[11px] text-ink-400">در حال پخش</span>
+            <h2 className="text-sm font-bold text-white">در حال پخش</h2>
+            <span className="text-[11px] text-ink-400">روی آنتن</span>
           </div>
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {liveTV.onTheAir.slice(0, 10).map((show: typeof liveTV.onTheAir[0]) => (
@@ -212,8 +212,8 @@ export function RadarPage() {
       {liveTV.airingToday.length > 0 && !hasFilters && (
         <section>
           <div className="mb-2.5 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white">Airing Today</h2>
-            <span className="text-[11px] text-ink-400">امروز پخش می‌شود</span>
+            <h2 className="text-sm font-bold text-white">امروز پخش می‌شود</h2>
+            <span className="text-[11px] text-ink-400">قسمت تازه</span>
           </div>
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {liveTV.airingToday.slice(0, 10).map((show: typeof liveTV.airingToday[0]) => (

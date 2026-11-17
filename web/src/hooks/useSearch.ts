@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
+import { cachedFetchJson } from "../lib/offline";
 
 const API = import.meta.env.VITE_API_BASE || "http://31.56.229.237:8090";
 
@@ -19,6 +20,7 @@ export interface SearchResult {
   id: number;
   title: string;
   mediaType?: "movie" | "tv";
+  source?: "tmdb";
   originalTitle?: string;
   overview?: string;
   posterPath?: string | null;
@@ -33,30 +35,29 @@ export interface SearchResult {
   genres?: string[];
   status?: string | null;
   networks?: { name: string }[];
+  networkNames?: string[];
   imdbRating?: string | null;
   imdbId?: string | null;
+  matchScore?: number;
 }
 
-async function fetchMovieSearch(query: string, page = 1) {
-  const res = await fetch(`${API}/api/movies/search?q=${encodeURIComponent(query)}&page=${page}`);
-  if (!res.ok) throw new Error("Search failed");
-  return res.json();
+interface MultiSearchResponse {
+  items: SearchResult[];
+  suggestion?: { text: string; type?: "movie" | "tv" } | null;
+  queries?: string[];
 }
 
-async function fetchTVSearch(query: string, page = 1) {
-  const res = await fetch(`${API}/api/tv/search?q=${encodeURIComponent(query)}&page=${page}`);
-  if (!res.ok) throw new Error("Search failed");
-  return res.json();
+async function fetchMulti(query: string, type: "movie" | "tv" | "all") {
+  const url = `${API}/api/search/multi?q=${encodeURIComponent(query)}&type=${type}`;
+  return cachedFetchJson<MultiSearchResponse>(url);
 }
 
 async function fetchDiscover(params: Record<string, string>, type: "movie" | "tv") {
   const queryString = new URLSearchParams(params).toString();
-  const res = await fetch(`${API}/api/${type === "movie" ? "movies" : "tv"}/discover?${queryString}`);
-  if (!res.ok) throw new Error("Discover failed");
-  return res.json();
+  return cachedFetchJson<any>(`${API}/api/${type === "movie" ? "movies" : "tv"}/discover?${queryString}`);
 }
 
-/** Live text search (debounced). Results are tagged with mediaType for correct routing. */
+/** Live Persian-aware search (debounced) with typo tolerance. */
 export function useLiveSearch(query: string, type: "movie" | "tv" | "all" = "all") {
   const [debouncedQuery, setDebouncedQuery] = useState(query);
 
@@ -65,38 +66,31 @@ export function useLiveSearch(query: string, type: "movie" | "tv" | "all" = "all
     return () => clearTimeout(timer);
   }, [query]);
 
-  const movieQuery = useQuery({
-    queryKey: ["search", "movie", debouncedQuery],
-    queryFn: () => fetchMovieSearch(debouncedQuery),
-    enabled: debouncedQuery.length >= 2 && (type === "movie" || type === "all"),
+  const search = useQuery({
+    queryKey: ["search", "multi", debouncedQuery, type],
+    queryFn: () => fetchMulti(debouncedQuery, type),
+    enabled: debouncedQuery.length >= 2,
     staleTime: 5 * 60 * 1000,
   });
 
-  const tvQuery = useQuery({
-    queryKey: ["search", "tv", debouncedQuery],
-    queryFn: () => fetchTVSearch(debouncedQuery),
-    enabled: debouncedQuery.length >= 2 && (type === "tv" || type === "all"),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Tag results explicitly so routing never depends on fragile field presence.
-  const results: SearchResult[] = [
-    ...(movieQuery.data?.items || []).map((r: SearchResult) => ({ ...r, mediaType: "movie" as const })),
-    ...(tvQuery.data?.results || []).map((r: SearchResult) => ({ ...r, mediaType: "tv" as const })),
-  ];
+  const results: SearchResult[] = (search.data?.items || []).map((item) => ({
+    ...item,
+    source: "tmdb",
+    mediaType: item.mediaType === "tv" ? "tv" : "movie",
+  }));
 
   return {
     results,
-    isLoading: movieQuery.isFetching || tvQuery.isFetching,
-    isFetching: movieQuery.isFetching || tvQuery.isFetching,
-    isError: movieQuery.isError || tvQuery.isError,
+    suggestion: search.data?.suggestion || null,
+    isLoading: search.isFetching,
+    isFetching: search.isFetching,
+    isError: search.isError,
   };
 }
 
 /** Discover/browse when no text query is present. */
 export function useAdvancedSearch(filters: SearchFilters) {
   const params: Record<string, string> = {
-    language: "en-US",
     sort_by: `${filters.sortBy}.${filters.sortOrder}`,
     include_adult: "false",
     page: "1",
@@ -113,10 +107,10 @@ export function useAdvancedSearch(filters: SearchFilters) {
     queryFn: async () => {
       if (filters.type === "movie") {
         const data = await fetchDiscover(params, "movie");
-        return { items: (data.items || []).map((r: SearchResult) => ({ ...r, mediaType: "movie" as const })) };
+        return { items: (data.items || []).map((r: SearchResult) => ({ ...r, mediaType: "movie" as const, source: "tmdb" as const })) };
       } else if (filters.type === "tv") {
         const data = await fetchDiscover(params, "tv");
-        return { items: (data.results || []).map((r: SearchResult) => ({ ...r, mediaType: "tv" as const })) };
+        return { items: (data.results || []).map((r: SearchResult) => ({ ...r, mediaType: "tv" as const, source: "tmdb" as const })) };
       }
       const [movies, tv] = await Promise.all([
         fetchDiscover(params, "movie"),
@@ -124,8 +118,8 @@ export function useAdvancedSearch(filters: SearchFilters) {
       ]);
       return {
         items: [
-          ...(movies.items || []).map((r: SearchResult) => ({ ...r, mediaType: "movie" as const })),
-          ...(tv.results || []).map((r: SearchResult) => ({ ...r, mediaType: "tv" as const })),
+          ...(movies.items || []).map((r: SearchResult) => ({ ...r, mediaType: "movie" as const, source: "tmdb" as const })),
+          ...(tv.results || []).map((r: SearchResult) => ({ ...r, mediaType: "tv" as const, source: "tmdb" as const })),
         ],
       };
     },

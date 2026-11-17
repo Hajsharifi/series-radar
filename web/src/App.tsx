@@ -6,6 +6,10 @@ import { NativeReminders } from "./components/NativeReminders";
 import { Layout } from "./components/Layout";
 import { queryClient } from "./lib/queryClient";
 import { Loader } from "./components/Loader";
+import TmdbSeriesPage from "./pages/TmdbSeriesPage";
+import { initTheme } from "./lib/theme";
+
+initTheme();
 
 const RadarPage = lazy(() => import("./pages/RadarPage"));
 const MoviesPage = lazy(() => import("./pages/MoviesPage"));
@@ -32,6 +36,7 @@ export default function App() {
                 <Route path="/favorites" element={<FavoritesPage />} />
                 <Route path="/show/:id" element={<ShowDetailsPage />} />
                 <Route path="/series/:id" element={<SeriesDetailPage />} />
+                <Route path="/tv/:id" element={<TmdbSeriesPage />} />
                 <Route path="/movie/:id" element={<MovieDetailsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
 <Route path="/search" element={<SearchPage />} />

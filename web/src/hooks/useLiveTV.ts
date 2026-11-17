@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Show } from "../types";
+import { cachedFetchJson } from "../lib/offline";
 
 const API = import.meta.env.VITE_API_BASE || "http://31.56.229.237:8090";
 
@@ -17,15 +18,15 @@ export interface LiveTVShow extends Show {
 }
 
 async function fetchLiveTVShows(endpoint: string) {
-  const res = await fetch(`${API}${endpoint}`);
-  if (!res.ok) throw new Error("Failed to fetch");
-  return res.json();
+  return cachedFetchJson<any>(`${API}${endpoint}`);
 }
 
 async function fetchShowEpisodes(showId: number) {
-  const res = await fetch(`${API}/api/tv/${showId}/episodes`);
-  if (!res.ok) return { episodes: [] };
-  return res.json();
+  try {
+    return await cachedFetchJson<{ episodes: any[] }>(`${API}/api/tv/${showId}/episodes`);
+  } catch {
+    return { episodes: [] };
+  }
 }
 
 export function useOnTheAir() {
@@ -91,12 +92,34 @@ export function useThisWeekEpisodes(favoriteIds: number[]) {
   });
 }
 
-/** Keep only items that can be safely rendered (id + title). */
+/** Map TMDB API items to the Show shape used by cards, tagging them as tmdb. */
 function safeShows(data: unknown): LiveTVShow[] {
   if (!Array.isArray(data)) return [];
-  return (data as LiveTVShow[]).filter(
-    (item) => item && typeof item === "object" && item.id != null && typeof item.title === "string",
-  );
+  return (data as any[])
+    .filter((item) => item && typeof item === "object" && item.id != null && typeof item.title === "string")
+    .map((item) => {
+      const next = item.nextEpisode || null;
+      return {
+        ...item,
+        source: "tmdb" as const,
+        category: "returning" as const,
+        network: item.networkNames?.[0] || item.networks?.[0]?.name || null,
+        airstamp: next?.airdate ? `${next.airdate}T12:00:00Z` : null,
+        seasonNumber: next?.season ?? item.numberOfSeasons ?? null,
+        episode: next
+          ? {
+              id: next.id,
+              name: next.name,
+              season: next.season,
+              number: next.number,
+              airdate: next.airdate,
+              airtime: "",
+              airstamp: next.airdate ? `${next.airdate}T12:00:00Z` : "",
+              summary: next.overview ?? null,
+            }
+          : undefined,
+      } as LiveTVShow;
+    });
 }
 
 export function useLiveTVSections() {

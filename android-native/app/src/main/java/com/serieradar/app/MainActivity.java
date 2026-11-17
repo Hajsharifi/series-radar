@@ -4,13 +4,18 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlarmManager;
+import android.app.DownloadManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -18,7 +23,11 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
+import androidx.core.content.FileProvider;
+
 import org.json.JSONArray;
+
+import java.io.File;
 
 public class MainActivity extends Activity {
 
@@ -29,6 +38,11 @@ public class MainActivity extends Activity {
     private WebView webView;
     private String pendingRoute = null;
     private boolean pageLoaded = false;
+
+    // In-app APK update state.
+    private BroadcastReceiver downloadReceiver;
+    private long pendingDownloadId = -1L;
+    private File pendingApk;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -163,6 +177,100 @@ public class MainActivity extends Activity {
         });
     }
 
+    /** Opens external links (trailer, GitHub) in the proper external app. */
+    private void openExternalLink(String url) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } catch (Exception ignored) {
+            /* no browser installed */
+        }
+    }
+
+    private void setBarsColor(String color) {
+        try {
+            int parsed = Color.parseColor(color);
+            getWindow().setStatusBarColor(parsed);
+            getWindow().setNavigationBarColor(parsed);
+        } catch (Exception ignored) {
+            /* keep current colors */
+        }
+    }
+
+    /** Downloads the GitHub release APK via DownloadManager, then opens the installer. */
+    private void downloadApk(String url, String version) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && !getPackageManager().canRequestPackageInstalls()) {
+            try {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            } catch (Exception ignored) {
+                openExternalLink(url);
+            }
+            return;
+        }
+        try {
+            File dir = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "updates");
+            if (!dir.exists() && !dir.mkdirs()) return;
+            File target = new File(dir, "series-radar-" + version + ".apk");
+            if (target.exists() && !target.delete()) return;
+            pendingApk = target;
+
+            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));
+            request.setTitle("Series Radar " + version);
+            request.setDescription("در حال دانلود بستهٔ به\u200cروزرسانی…");
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.setDestinationUri(Uri.fromFile(target));
+
+            DownloadManager manager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+            if (manager == null) return;
+            pendingDownloadId = manager.enqueue(request);
+
+            if (downloadReceiver != null) {
+                try { unregisterReceiver(downloadReceiver); } catch (Exception ignored) { }
+            }
+            downloadReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (pendingDownloadId < 0 || pendingApk == null) return;
+                    long id = intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L);
+                    if (id != pendingDownloadId) return;
+                    try {
+                        Uri uri;
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            uri = FileProvider.getUriForFile(
+                                    getApplicationContext(),
+                                    "com.serieradar.app.fileprovider",
+                                    pendingApk);
+                        } else {
+                            uri = Uri.fromFile(pendingApk);
+                        }
+                        Intent install = new Intent(Intent.ACTION_VIEW);
+                        install.setDataAndType(uri, "application/vnd.android.package-archive");
+                        install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(install);
+                    } catch (Exception ignored) {
+                        openExternalLink(url);
+                    }
+                }
+            };
+            registerReceiver(downloadReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+        } catch (Exception ignored) {
+            openExternalLink(url);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (downloadReceiver != null) {
+            try { unregisterReceiver(downloadReceiver); } catch (Exception ignored) { }
+        }
+        super.onDestroy();
+    }
+
     private class ReminderBridge {
         @JavascriptInterface
         public void sync(String payload) {
@@ -214,6 +322,21 @@ public class MainActivity extends Activity {
                     }
                 }
             });
+        }
+
+        @JavascriptInterface
+        public void openExternal(String url) {
+            runOnUiThread(() -> openExternalLink(url));
+        }
+
+        @JavascriptInterface
+        public void setSystemBarsColor(String color) {
+            runOnUiThread(() -> setBarsColor(color));
+        }
+
+        @JavascriptInterface
+        public void downloadAndInstall(String url, String version) {
+            runOnUiThread(() -> downloadApk(url, version));
         }
 
         @JavascriptInterface

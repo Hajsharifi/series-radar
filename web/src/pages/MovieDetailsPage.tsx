@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { cachedFetchJson } from "../lib/offline";
+import { openExternalUrl } from "../lib/native";
 import type { Movie } from "../types";
 import { useMovieFavorites } from "../hooks/useMovies";
 import { useMovieTrack } from "../hooks/useMovieTrack";
@@ -58,6 +61,12 @@ export function MovieDetailsPage() {
   const [movie, setMovie] = useState<Movie | null>(() => findCachedMovie(movieId));
   const [loading, setLoading] = useState(!movie);
   const [failed, setFailed] = useState(false);
+  const similarQuery = useQuery({
+    queryKey: ["similar", "movie", movieId],
+    queryFn: () => cachedFetchJson<{ items: Movie[] }>(`http://31.56.229.237:8090/api/movie/${movieId}/similar`),
+    enabled: Number.isFinite(movieId),
+    staleTime: 6 * 60 * 60 * 1000,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -294,11 +303,25 @@ export function MovieDetailsPage() {
             </div>
           ) : null}
 
+          {(movie.productionCountries?.length || movie.spokenLanguages?.length || movie.omdbDirector || movie.certification) ? (
+            <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
+              <h2 className="mb-2 text-sm font-bold text-white">اطلاعات بیشتر</h2>
+              <div className="grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-3">
+                {movie.certification && <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-ink-400">درجهبندی</p><p className="mt-0.5 font-semibold text-ink-100">{movie.certification}</p></div>}
+                {movie.productionCountries?.length ? <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-ink-400">کشور</p><p className="mt-0.5 font-semibold text-ink-100">{movie.productionCountries.join(" · ")}</p></div> : null}
+                {movie.spokenLanguages?.length ? <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-ink-400">زبان</p><p className="mt-0.5 font-semibold text-ink-100">{movie.spokenLanguages.join(" · ")}</p></div> : null}
+                {movie.omdbDirector && <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-ink-400">کارگردان</p><p className="mt-0.5 font-semibold text-ink-100" dir="auto">{movie.omdbDirector}</p></div>}
+                {movie.omdbActors && <div className="rounded-xl bg-white/5 px-3 py-2 sm:col-span-2"><p className="text-ink-400">بازیگران</p><p className="mt-0.5 font-semibold text-ink-100" dir="auto">{movie.omdbActors}</p></div>}
+                {movie.omdbAwards && <div className="rounded-xl bg-white/5 px-3 py-2 sm:col-span-2"><p className="text-ink-400">جوایز</p><p className="mt-0.5 font-semibold text-ink-100" dir="auto">{movie.omdbAwards}</p></div>}
+              </div>
+            </div>
+          ) : null}
+
           {movie.overview && (
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-white">داستان</h2>
-                <span className="text-[10px] text-ink-400">خلاصه به انگلیسی</span>
+                <span className="text-[10px] text-ink-400">ترجمهٔ TMDB</span>
               </div>
               <p className="text-left text-[13px] leading-7 text-ink-300" dir="auto">
                 {movie.overview}
@@ -308,14 +331,13 @@ export function MovieDetailsPage() {
 
           <div className="flex flex-wrap gap-2">
             {movie.trailerKey && (
-              <a
-                href={`https://www.youtube.com/watch?v=${movie.trailerKey}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-center text-xs text-ink-200"
+              <button
+                type="button"
+                onClick={() => openExternalUrl(`https://www.youtube.com/watch?v=${movie.trailerKey}`)}
+                className="flex-1 rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-2.5 text-center text-xs font-semibold text-rose-200 active:bg-rose-500/20"
               >
-                ▶ تریلر
-              </a>
+                ▶ تماشای تریلر
+              </button>
             )}
             {movie.imdbId && (
               <a
@@ -340,6 +362,23 @@ export function MovieDetailsPage() {
           </div>
         </div>
       </article>
+
+      {(similarQuery.data?.items?.length ?? 0) > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-bold text-white">عنوانهای مشابه</h2>
+          <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+            {similarQuery.data!.items.map((item) => (
+              <Link key={item.id} to={`/movie/${item.id}`} className="sr-no-tap w-[120px] shrink-0">
+                <MoviePoster movie={item} className="aspect-[2/3] w-full" />
+                <p className="mt-1 line-clamp-2 text-[11px] font-semibold text-white" dir="auto">{item.title}</p>
+                {item.originalTitle && item.originalTitle !== item.title && (
+                  <p className="truncate text-[10px] text-ink-400" dir="auto">{item.originalTitle}</p>
+                )}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <p className="text-[11px] leading-relaxed text-ink-400">
         دادهٔ این صفحه از TMDB می‌آید و ممکن است تاریخ‌های انتشار بعد از اعلام رسمی تغییر کنند.

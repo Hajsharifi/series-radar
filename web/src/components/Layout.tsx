@@ -4,6 +4,8 @@ import { useMovieFavorites } from "../hooks/useMovies";
 import { useScheduleContext } from "../hooks/ScheduleContext";
 import { RelativeUpdated } from "./DateChip";
 import { toPersianDigits } from "../lib/date";
+import { useNetworkState, retryNetwork } from "../lib/offline";
+import { queryClient } from "../lib/queryClient";
 
 const NAV = [
   { to: "/", label: "رادار", icon: "◉" },
@@ -20,9 +22,28 @@ export function Layout() {
   const { updatedAt, refresh, refreshing } = useScheduleContext();
   const location = useLocation();
   const totalStars = items.length + movies.items.length;
+  const network = useNetworkState();
 
   return (
     <div className="app-shell">
+      {network.offline && (
+        <div className="border-b border-amber-400/25 bg-amber-500/15 px-4 py-2 text-center text-[11px] text-amber-200">
+          <span>
+            اتصال برقرار نشد — نمایش آخرین داده
+            {network.savedAt ? ` (${new Date(network.savedAt).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })})` : ""}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              retryNetwork();
+              queryClient.invalidateQueries();
+            }}
+            className="mr-2 rounded-md bg-amber-400/20 px-2 py-0.5 font-semibold"
+          >
+            تلاش مجدد
+          </button>
+        </div>
+      )}
       <header className="sr-sticky">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-center gap-2.5">
