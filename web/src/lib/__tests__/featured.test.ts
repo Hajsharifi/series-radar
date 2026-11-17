@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rankFeaturedShows } from "../featured";
+import { rankFeaturedShows, rankFeaturedSuggestions } from "../featured";
 import type { Show } from "../../types";
 
 const NOW = Date.parse("2026-11-17T12:00:00Z");
@@ -53,6 +53,16 @@ describe("rankFeaturedShows", () => {
       excludedKeys: new Set(["tvmaze:2"]),
     });
     expect(ranked.map((item) => item.title)).toEqual(["Fine"]);
+  });
+
+  it("explains why a show was suggested", () => {
+    const shows = [
+      show({ id: 1, title: "Soon", rating: 8.6, votes: 12000, weight: 100, airstamp: "2026-11-18T12:00:00Z", genres: ["Drama"] }),
+    ];
+    const suggestions = rankFeaturedSuggestions(shows, { now: NOW });
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0].reasons.length).toBeGreaterThan(0);
+    expect(suggestions[0].reasons.join(" ")).toContain("پخش نزدیک");
   });
 
   it("ignores shows without a poster or a real date", () => {

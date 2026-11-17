@@ -1,4 +1,6 @@
 import type { Show } from "../types";
+import { EVENT_LABEL } from "./labels";
+import { showEventKind } from "./show-event";
 
 export interface FeaturedOptions {
   now?: number;
@@ -74,12 +76,20 @@ function percentile(value: number, sorted: number[]): number {
   return lo / (sorted.length - 1);
 }
 
+export interface FeaturedSuggestion {
+  show: Show;
+  reasons: string[];
+}
+
 /**
  * Strict, multi-criteria selection for the "پیشنهاد رادار" shelf. The old code
  * only sorted by `weight`; this compares rating quality, popularity, air-date
  * proximity, data confidence and genre fit, then enforces genre diversity.
  */
-export function rankFeaturedShows(shows: Show[], options: FeaturedOptions = {}): Show[] {
+export function rankFeaturedSuggestions(
+  shows: Show[],
+  options: FeaturedOptions = {},
+): FeaturedSuggestion[] {
   const now = options.now ?? Date.now();
   const limit = options.limit ?? 6;
   const favoriteIds = options.favoriteIds ?? new Set<number>();
@@ -126,7 +136,7 @@ export function rankFeaturedShows(shows: Show[], options: FeaturedOptions = {}):
     const score = favoriteGenres.size
       ? 0.4 * quality + 0.2 * popularity + 0.2 * proximity + 0.1 * confidence + 0.1 * taste
       : 0.45 * quality + 0.22 * popularity + 0.22 * proximity + 0.11 * confidence;
-    return { show, score };
+    return { show, score, quality, popularity, proximity, taste, days };
   });
 
   const qualified = scored
@@ -151,5 +161,23 @@ export function rankFeaturedShows(shows: Show[], options: FeaturedOptions = {}):
     if (primary) genreCount.set(primary, (genreCount.get(primary) ?? 0) + 1);
   }
 
-  return chosen.map((entry) => entry.show);
+  return chosen.map((entry) => {
+    const reasons: string[] = [];
+    const event = showEventKind(entry.show);
+    if (event !== "airing") reasons.push(EVENT_LABEL[event]);
+    if (entry.days <= 3) reasons.push("پخش نزدیک");
+    if (entry.quality >= 8) reasons.push("امتیاز بالا");
+    else if (entry.quality >= 7.2) reasons.push("امتیاز خوب");
+    if (entry.taste >= 0.5) reasons.push("مطابق سلیقه");
+    if (entry.popularity >= 0.75) reasons.push("محبوب");
+    return {
+      show: entry.show,
+      reasons: reasons.length > 0 ? reasons.slice(0, 2) : ["انتخاب رادار"],
+    };
+  });
+}
+
+/** Backwards-compatible list of shows. */
+export function rankFeaturedShows(shows: Show[], options: FeaturedOptions = {}): Show[] {
+  return rankFeaturedSuggestions(shows, options).map((entry) => entry.show);
 }

@@ -15,7 +15,7 @@ import { useFeaturedDismissed } from "../hooks/useFeaturedDismissed";
 import { useLiveTVSections } from "../hooks/useLiveTV";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { CATEGORY_LABEL, genreLabel } from "../lib/labels";
-import { rankFeaturedShows } from "../lib/featured";
+import { rankFeaturedSuggestions } from "../lib/featured";
 import { favoriteKey } from "../lib/favorites";
 import { readUiState, writeUiState } from "../lib/ui-state";
 import {
@@ -29,6 +29,7 @@ import {
 } from "../lib/date";
 import type { Show } from "../types";
 import { ShowCard, ShowRow } from "../components/ShowCard";
+import { CompactShowRow } from "../components/CompactShowRow";
 import { Poster } from "../components/Poster";
 
 const FILTERS: Array<{ key: ShowFilters["category"]; label: string }> = [
@@ -45,6 +46,32 @@ const UNSCRIPTED_GENRES = new Set([
 
 function isUnscripted(show: Show): boolean {
   return (show.genres ?? []).some((genre) => UNSCRIPTED_GENRES.has(genre));
+}
+
+const LANGUAGE_FILTERS = [
+  { key: "all", label: "همهٔ زبان‌ها" },
+  { key: "en", label: "انگلیسی" },
+  { key: "ko", label: "کره‌ای" },
+  { key: "ja", label: "ژاپنی" },
+  { key: "es", label: "اسپانیایی" },
+  { key: "tr", label: "ترکی" },
+  { key: "hi", label: "هندی" },
+  { key: "ar", label: "عربی" },
+];
+
+function languageKey(value?: string | null): string {
+  if (!value) return "";
+  const key = value.trim().toLowerCase();
+  const map: Record<string, string> = {
+    en: "en", english: "en",
+    ko: "ko", korean: "ko",
+    ja: "ja", japanese: "ja",
+    es: "es", spanish: "es",
+    tr: "tr", turkish: "tr",
+    hi: "hi", hindi: "hi",
+    ar: "ar", arabic: "ar",
+  };
+  return map[key] ?? key;
 }
 
 function SkeletonCard() {
@@ -72,14 +99,16 @@ export function RadarPage() {
     onlyPopular: readUiState("radar.onlyPopular", true),
   }));
   const [genre, setGenre] = useState<string | null>(() => readUiState("radar.genre", null));
-  const [view, setView] = useState<"grid" | "list">(() => readUiState("radar.view", "grid"));
+  const [view, setView] = useState<"grid" | "list" | "compact">(() => readUiState("radar.view", "grid"));
   const [hideUnscripted, setHideUnscripted] = useState<boolean>(() => readUiState("radar.hideUnscripted", false));
+  const [language, setLanguage] = useState<string>(() => readUiState("radar.language", "all"));
 
   useEffect(() => writeUiState("radar.category", filters.category), [filters.category]);
   useEffect(() => writeUiState("radar.onlyPopular", filters.onlyPopular), [filters.onlyPopular]);
   useEffect(() => writeUiState("radar.genre", genre), [genre]);
   useEffect(() => writeUiState("radar.view", view), [view]);
   useEffect(() => writeUiState("radar.hideUnscripted", hideUnscripted), [hideUnscripted]);
+  useEffect(() => writeUiState("radar.language", language), [language]);
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
 
@@ -93,8 +122,9 @@ export function RadarPage() {
     let base = filterShows(schedule.shows, scoped, now);
     if (genre) base = base.filter((show) => (show.genres ?? []).includes(genre));
     if (hideUnscripted) base = base.filter((show) => !isUnscripted(show));
+    if (language !== "all") base = base.filter((show) => languageKey(show.language) === language);
     return base;
-  }, [schedule.shows, effectiveFilters, genre, hideUnscripted, now]);
+  }, [schedule.shows, effectiveFilters, genre, hideUnscripted, language, now]);
 
   const groups = useMemo(() => groupShows(filtered, now), [filtered, now]);
 
@@ -107,7 +137,7 @@ export function RadarPage() {
     [favoriteKeys],
   );
 
-  const hasFilters = filters.category !== "all" || !!genre || !!debouncedSearch || hideUnscripted;
+  const hasFilters = filters.category !== "all" || !!genre || !!debouncedSearch || hideUnscripted || language !== "all";
 
   // Live TV hooks
   const liveTV = useLiveTVSections();
@@ -191,7 +221,7 @@ export function RadarPage() {
       excludedKeys.add(`${source}:${id}`);
     });
     [...liveTV.onTheAir, ...liveTV.airingToday].forEach((show) => excludedKeys.add(`tmdb:${show.id}`));
-    return rankFeaturedShows(filtered, {
+    return rankFeaturedSuggestions(filtered, {
       now,
       favoriteKeys,
       favoriteGenres,
@@ -299,6 +329,19 @@ export function RadarPage() {
               </button>
             ))}
           </div>
+          <div className="mt-2 flex items-center gap-2">
+            <label htmlFor="radar-language" className="text-[11px] text-ink-400">زبان</label>
+            <select
+              id="radar-language"
+              value={language}
+              onChange={(event) => setLanguage(event.target.value)}
+              className="rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] text-ink-200"
+            >
+              {LANGUAGE_FILTERS.map((item) => (
+                <option key={item.key} value={item.key}>{item.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </section>
 
@@ -347,7 +390,8 @@ export function RadarPage() {
             <span className="text-[11px] text-ink-400">امتیاز، محبوبیت، نزدیکی پخش و تنوع ژانر</span>
           </div>
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-            {featured.map((show) => {
+            {featured.map((suggestion) => {
+              const show = suggestion.show;
               const key = favoriteKey(show.id, show.source ?? "tvmaze");
               return (
                 <div key={key} className="relative w-[136px] shrink-0">
@@ -361,6 +405,9 @@ export function RadarPage() {
                     ✕
                   </button>
                   <ShowCard show={show} favorite={isFavorite(show)} onToggleFavorite={toggle} />
+                  <p className="mt-1 truncate text-center text-[9px] text-ink-400" title={suggestion.reasons.join(" · ")}>
+                    {suggestion.reasons.join(" · ")}
+                  </p>
                 </div>
               );
             })}
@@ -480,6 +527,14 @@ export function RadarPage() {
             </button>
             <button
               type="button"
+              onClick={() => setView("compact")}
+              aria-label="نمایش فشرده"
+              className={`rounded-lg px-2.5 py-1.5 text-xs ${view === "compact" ? "bg-white/15 text-white" : "bg-white/4 text-ink-400"}`}
+            >
+              ≣
+            </button>
+            <button
+              type="button"
               onClick={schedule.refresh}
               className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-ink-200 active:bg-white/10"
             >
@@ -513,6 +568,7 @@ export function RadarPage() {
                   setSearch("");
                   setGenre(null);
                   setHideUnscripted(false);
+                  setLanguage("all");
                   setFilters({ search: "", category: "all", onlyPopular: true });
                 }}
                 className="mt-3 rounded-lg bg-amber-400 px-3.5 py-1.5 text-xs font-semibold text-ink-950"
@@ -532,6 +588,27 @@ export function RadarPage() {
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {group.shows.map((show) => (
                     <ShowCard
+                      key={show.id}
+                      show={show}
+                      favorite={isFavorite(show)}
+                      onToggleFavorite={toggle}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : view === "compact" ? (
+          <div className="space-y-6">
+            {groups.map((group) => (
+              <div key={group.key}>
+                <div className="mb-2 flex items-baseline gap-2">
+                  <h3 className="text-sm font-bold text-white">{group.title}</h3>
+                  <span className="text-[11px] text-ink-400">{toPersianDigits(group.shows.length)} سریال</span>
+                </div>
+                <div className="space-y-1">
+                  {group.shows.map((show) => (
+                    <CompactShowRow
                       key={show.id}
                       show={show}
                       favorite={isFavorite(show)}
