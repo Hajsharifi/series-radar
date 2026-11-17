@@ -98,7 +98,8 @@ function shiftDay(iso: string, days: number): string {
 /**
  * The single source of truth for a movie's lifecycle stage.
  * - upcoming: theatrical release is still in the future (Tehran).
- * - quality: released, but no good digital release yet.
+ * - quality: released, but no good digital release yet. A film with no known
+ *   theatrical date but a future digital date also belongs here.
  * - available: good (digital) quality is already out.
  * - expired: no digital date and more than 90 days since release - archived.
  */
@@ -106,7 +107,9 @@ export function movieStage(movie: Movie, today = tehranTodayISO()): MovieStage {
   const digital = plainDay(movie.digitalDate);
   const theatrical = plainDay(movie.theatricalDate) ?? plainDay(movie.releaseDate);
   if ((digital && digital <= today) || movie.availableNow === true) return "available";
-  if (!theatrical) return "unknown";
+  // Some films have a digital date announced before/without a cinema date.
+  // They are still "waiting for quality", not unknown - keep them in the list.
+  if (!theatrical) return digital ? "quality" : "unknown";
   if (theatrical > today) return "upcoming";
   if (!digital && theatrical <= shiftDay(today, -90)) return "expired";
   return "quality";

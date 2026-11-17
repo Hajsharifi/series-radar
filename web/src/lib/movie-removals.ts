@@ -8,6 +8,7 @@ export interface MovieRemoval {
 }
 
 const STORAGE_KEY = "sr:movie-removals:v1";
+const DISMISS_KEY = "sr:movie-removals-dismissed:v1";
 const EVENT = "sr-movie-removals-changed";
 const KEEP_DAYS = 90;
 
@@ -51,9 +52,35 @@ export function recordMovieRemoval(
   window.dispatchEvent(new Event(EVENT));
 }
 
+/** Removals added after the banner was last dismissed. Hiding the banner never
+ * deletes the history - only the explicit button in Settings/History does. */
+export function getPendingMovieRemovals(): MovieRemoval[] {
+  let dismissedAt = 0;
+  try {
+    dismissedAt = Number(localStorage.getItem(DISMISS_KEY)) || 0;
+  } catch {
+    /* ignore */
+  }
+  return getMovieRemovals().filter((item) => {
+    const at = new Date(item.at).getTime();
+    return Number.isFinite(at) && at > dismissedAt;
+  });
+}
+
+/** Hides the current banner without touching the stored history. */
+export function dismissMovieRemovals(): void {
+  try {
+    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+  window.dispatchEvent(new Event(EVENT));
+}
+
 export function clearMovieRemovals(): void {
   try {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(DISMISS_KEY);
   } catch {
     /* ignore */
   }

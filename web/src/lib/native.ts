@@ -16,6 +16,8 @@ interface AndroidReminderBridge {
   openExactAlarmSettings?(): void;
   updateWidgetData?(json: string): void;
   syncMovieWatchlist?(json: string): void;
+  backgroundCheckStatus?(): string;
+  checkMovieWatchlistNow?(): void;
   openExternal?(url: string): void;
   downloadAndInstall?(url: string, version: string): void;
   setSystemBarsColor?(color: string): void;
@@ -114,6 +116,45 @@ export function syncMovieWatchlist(items: WatchedMovie[]): void {
     window.AndroidReminders?.syncMovieWatchlist?.(JSON.stringify(items));
   } catch {
     /* bridge must never break the UI */
+  }
+}
+
+export interface BackgroundCheckStatus {
+  /** Epoch milliseconds of the last background attempt, 0 if never. */
+  lastCheck: number;
+  /** Whether that attempt reached the movie API successfully. */
+  lastOk: boolean;
+  /** Number of starred movies handed to the background checker. */
+  watched: number;
+  /** Whether a periodic check is currently armed. */
+  armed: boolean;
+}
+
+/** Reads the native watchlist checker's status (synchronous bridge call). */
+export function getBackgroundCheckStatus(): BackgroundCheckStatus | null {
+  if (!isNativeApp()) return null;
+  try {
+    const raw = window.AndroidReminders?.backgroundCheckStatus?.();
+    if (!raw) return null;
+    const value = JSON.parse(raw) as Partial<BackgroundCheckStatus>;
+    return {
+      lastCheck: Number(value.lastCheck) || 0,
+      lastOk: Boolean(value.lastOk),
+      watched: Number(value.watched) || 0,
+      armed: Boolean(value.armed),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Asks the native checker to run now (throttled to one check / 30s). */
+export function checkMovieWatchlistNow(): void {
+  if (!isNativeApp()) return;
+  try {
+    window.AndroidReminders?.checkMovieWatchlistNow?.();
+  } catch {
+    /* ignore */
   }
 }
 

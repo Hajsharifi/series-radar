@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useFavorites } from "../hooks/useFavorites";
@@ -7,7 +7,9 @@ import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { leadHoursLabel, relativeSyncLabel, toPersianDigits } from "../lib/date";
 import { LEAD_OPTIONS, getSettings, setDefaultLeadHours } from "../lib/settings";
 import {
+  checkMovieWatchlistNow,
   downloadAndInstallApk,
+  getBackgroundCheckStatus,
   isNativeApp,
   openExactAlarmSettings,
   openExternalUrl,
@@ -35,8 +37,16 @@ export function SettingsPage() {
   const [updateInfo, setUpdateInfo] = useState<{ version: string; apkUrl: string; pageUrl: string } | null>(null);
   const amoled = useAmoled();
   const [defaultLead, setLead] = useState(() => getSettings().defaultLeadHours);
+  const [bgCheck, setBgCheck] = useState(() => getBackgroundCheckStatus());
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
+
+  useEffect(() => {
+    const sync = () => setBgCheck(getBackgroundCheckStatus());
+    sync();
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, []);
 
   function clearScheduleCache() {
     try {
@@ -234,6 +244,51 @@ export function SettingsPage() {
           </div>
         )}
       </section>
+
+      {isNativeApp() && (
+        <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
+          <h2 className="mb-2 text-sm font-bold text-white">بررسی پسزمینهٔ فیلمها</h2>
+          <p className="mb-1 text-[11px] leading-relaxed text-ink-400">
+            فیلمهای ستارهداری که تاریخ دیجیتالشان نامشخص است، هر ۶ ساعت یکبار از سرور بررسی میشوند.
+            این بررسی تقریبی است و ممکن است در حالت کممصرف با تأخیر اجرا شود.
+          </p>
+          <Row
+            label="آخرین بررسی"
+            value={
+              bgCheck?.lastCheck
+                ? relativeSyncLabel(new Date(bgCheck.lastCheck).toISOString())
+                : "هنوز انجام نشده"
+            }
+          />
+          <Row
+            label="نتیجهٔ آخرین بررسی"
+            value={
+              !bgCheck?.lastCheck
+                ? "—"
+                : bgCheck.lastOk
+                  ? "موفق"
+                  : "ناموفق (اتصال)"
+            }
+          />
+          <Row label="فیلمهای تحت بررسی" value={`${toPersianDigits(bgCheck?.watched ?? 0)} فیلم`} />
+          {!bgCheck?.armed && (
+            <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
+              با ستارهزدن یک فیلم بررسی پسزمینه فعال میشود؛ اولین بار حدود ۱۵ دقیقه بعد انجام میشود.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              checkMovieWatchlistNow();
+              setMessage("درخواست بررسی ارسال شد؛ چند ثانیه بعد دوباره نگاه کنید.");
+              window.setTimeout(() => setBgCheck(getBackgroundCheckStatus()), 2500);
+            }}
+            className="mt-3 rounded-lg border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-ink-200 active:bg-white/10"
+          >
+            بررسی فیلمها همین حالا
+          </button>
+        </section>
+      )}
 
       <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
         <h2 className="mb-2 text-sm font-bold text-white">ستاره‌ها</h2>

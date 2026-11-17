@@ -26,6 +26,7 @@ import android.webkit.WebViewClient;
 import androidx.core.content.FileProvider;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.File;
 
@@ -280,6 +281,16 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void syncMovieWatchlist(String payload) {
             WatchlistScheduler.sync(getApplicationContext(), payload);
+        }
+
+        @JavascriptInterface
+        public String backgroundCheckStatus() {
+            return WatchlistScheduler.statusJson(getApplicationContext());
+        }
+
+        @JavascriptInterface
+        public void checkMovieWatchlistNow() {
+            WatchlistScheduler.triggerNow(getApplicationContext());
         }
 
         @JavascriptInterface

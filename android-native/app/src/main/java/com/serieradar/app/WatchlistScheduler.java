@@ -17,6 +17,9 @@ public final class WatchlistScheduler {
     static final String PREFS = "sr_watchlist";
     static final String KEY_ITEMS = "items";
     static final String KEY_STAGES = "stages";
+    static final String KEY_LAST_CHECK = "lastCheck";
+    static final String KEY_LAST_OK = "lastOk";
+    static final String KEY_LAST_TRIGGER = "lastTrigger";
     static final String ACTION = "com.serieradar.app.WATCHLIST_CHECK";
 
     private static final int REQUEST_CODE = 91001;
@@ -47,6 +50,34 @@ public final class WatchlistScheduler {
         }
         prefs.edit().putString(KEY_STAGES, stages.toString()).apply();
         arm(context);
+    }
+
+    /** Manual check from Settings. Throttled so repeated taps cannot spam the API. */
+    public static void triggerNow(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        long now = System.currentTimeMillis();
+        if (now - prefs.getLong(KEY_LAST_TRIGGER, 0L) < 30_000L) return;
+        prefs.edit().putLong(KEY_LAST_TRIGGER, now).apply();
+        Intent intent = new Intent(context, WatchlistReceiver.class);
+        intent.setAction(ACTION);
+        context.sendBroadcast(intent);
+    }
+
+    /** Status read synchronously by the Settings page through the JS bridge. */
+    public static String statusJson(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        JSONObject status = new JSONObject();
+        try {
+            String items = prefs.getString(KEY_ITEMS, "[]");
+            if (items == null) items = "[]";
+            status.put("lastCheck", prefs.getLong(KEY_LAST_CHECK, 0L));
+            status.put("lastOk", prefs.getBoolean(KEY_LAST_OK, false));
+            status.put("watched", new JSONArray(items).length());
+            status.put("armed", !items.isEmpty() && !"[]".equals(items));
+        } catch (Exception ignored) {
+            /* return an empty status rather than breaking the WebView */
+        }
+        return status.toString();
     }
 
     /** Called after boot / app update; only re-arms when there is a watchlist. */

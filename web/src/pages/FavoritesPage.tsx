@@ -13,8 +13,8 @@ import {
   movieStage,
 } from "../lib/movies";
 import {
-  clearMovieRemovals,
-  getMovieRemovals,
+  dismissMovieRemovals,
+  getPendingMovieRemovals,
   recordMovieRemoval,
   subscribeMovieRemovals,
   type MovieRemoval,
@@ -36,7 +36,7 @@ export function FavoritesPage() {
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<Tab>("series");
   const [detailMap, setDetailMap] = useState<Record<number, Movie>>({});
-  const [removals, setRemovals] = useState<MovieRemoval[]>(() => getMovieRemovals());
+  const [removals, setRemovals] = useState<MovieRemoval[]>(() => getPendingMovieRemovals());
   // Last time we asked the server about a favorite that was absent from both
   // lists. Recheck after 30 minutes so a later digital release is still seen.
   const checked = useRef(new Map<number, number>());
@@ -44,7 +44,7 @@ export function FavoritesPage() {
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
 
   useEffect(() => {
-    const sync = () => setRemovals(getMovieRemovals());
+    const sync = () => setRemovals(getPendingMovieRemovals());
     sync();
     return subscribeMovieRemovals(sync);
   }, []);
@@ -219,13 +219,14 @@ export function FavoritesPage() {
                 {toPersianDigits(removals.filter((item) => item.reason === "expired").length)} فیلم حذف شدند چون بیش از ۹۰ روز از اکرانشان گذشت و تاریخ دیجیتالی اعلام نشد.
               </p>
             )}
+            <p className="text-[10px] text-emerald-200/70">با بستن این پیام، تاریخچه پاک نمیشود.</p>
           </div>
           <div className="flex gap-2">
             <MovieHistoryPageLink />
             <button
               type="button"
-              onClick={clearMovieRemovals}
-              aria-label="بستن پیام"
+              onClick={dismissMovieRemovals}
+              aria-label="بستن پیام (تاریخچه حفظ میشود)"
               className="rounded-md px-1.5 text-emerald-200/80 hover:text-white"
             >
               ✕

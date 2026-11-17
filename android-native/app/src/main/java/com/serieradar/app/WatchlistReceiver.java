@@ -53,6 +53,15 @@ public class WatchlistReceiver extends BroadcastReceiver {
     }
 
     private static void check(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(
+                WatchlistScheduler.PREFS, Context.MODE_PRIVATE);
+        // Record the attempt before fetching so Settings can show an honest
+        // "last check" even when the network is unavailable.
+        prefs.edit()
+                .putLong(WatchlistScheduler.KEY_LAST_CHECK, System.currentTimeMillis())
+                .putBoolean(WatchlistScheduler.KEY_LAST_OK, false)
+                .apply();
+
         String qualityJson = fetch(API + "/api/movies/quality");
         String upcomingJson = fetch(API + "/api/movies/upcoming");
         if (qualityJson == null && upcomingJson == null) return;
@@ -64,8 +73,6 @@ public class WatchlistReceiver extends BroadcastReceiver {
         collect(upcomingJson, stages, today, archiveFrom);
         if (stages.isEmpty()) return;
 
-        SharedPreferences prefs = context.getSharedPreferences(
-                WatchlistScheduler.PREFS, Context.MODE_PRIVATE);
         JSONArray items;
         JSONObject oldStages;
         try {
@@ -103,6 +110,7 @@ public class WatchlistReceiver extends BroadcastReceiver {
         prefs.edit()
                 .putString(WatchlistScheduler.KEY_ITEMS, items.toString())
                 .putString(WatchlistScheduler.KEY_STAGES, newStages.toString())
+                .putBoolean(WatchlistScheduler.KEY_LAST_OK, true)
                 .apply();
     }
 
@@ -129,7 +137,8 @@ public class WatchlistReceiver extends BroadcastReceiver {
         if (theatrical.isEmpty()) theatrical = day(movie.optString("releaseDate"));
         if ((!digital.isEmpty() && digital.compareTo(today) <= 0)
                 || movie.optBoolean("availableNow", false)) return "available";
-        if (theatrical.isEmpty()) return "unknown";
+        // A future digital date is "quality" even when no cinema date is known.
+        if (theatrical.isEmpty()) return digital.isEmpty() ? "unknown" : "quality";
         if (theatrical.compareTo(today) > 0) return "upcoming";
         if (digital.isEmpty() && theatrical.compareTo(archiveFrom) <= 0) return "expired";
         return "quality";
