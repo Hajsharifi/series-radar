@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.DownloadManager;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -16,12 +17,14 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Toast;
 
 import androidx.core.content.FileProvider;
 
@@ -29,6 +32,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
 
@@ -363,6 +369,48 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 // ignore
             }
+        }
+
+        @JavascriptInterface
+        public boolean saveCalendarFile(String filename, String content) {
+            return saveCalendar(filename, content);
+        }
+    }
+
+    /** Saves an .ics file where the user can find it without extra permissions. */
+    private boolean saveCalendar(String filename, String content) {
+        try {
+            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Downloads.DISPLAY_NAME, filename);
+                values.put(MediaStore.Downloads.MIME_TYPE, "text/calendar");
+                values.put(MediaStore.Downloads.IS_PENDING, 1);
+                Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                if (uri == null) return false;
+                try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+                    if (out == null) return false;
+                    out.write(bytes);
+                }
+                values.clear();
+                values.put(MediaStore.Downloads.IS_PENDING, 0);
+                getContentResolver().update(uri, values, null, null);
+                runOnUiThread(() -> Toast.makeText(this, "فایل تقویم در Downloads ذخیره شد", Toast.LENGTH_LONG).show());
+                return true;
+            }
+            File dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+            if (dir == null) dir = new File(getFilesDir(), "downloads");
+            if (!dir.exists() && !dir.mkdirs()) return false;
+            File target = new File(dir, filename);
+            try (FileOutputStream out = new FileOutputStream(target)) {
+                out.write(bytes);
+            }
+            final String path = target.getAbsolutePath();
+            runOnUiThread(() -> Toast.makeText(this, "فایل تقویم ذخیره شد: " + path, Toast.LENGTH_LONG).show());
+            return true;
+        } catch (Exception error) {
+            runOnUiThread(() -> Toast.makeText(this, "ذخیرهٔ فایل تقویم ممکن نشد", Toast.LENGTH_SHORT).show());
+            return false;
         }
     }
 

@@ -20,6 +20,7 @@ interface AndroidReminderBridge {
   checkMovieWatchlistNow?(): void;
   openExternal?(url: string): void;
   downloadAndInstall?(url: string, version: string): void;
+  saveCalendarFile?(filename: string, content: string): boolean;
   setSystemBarsColor?(color: string): void;
 }
 
@@ -79,6 +80,16 @@ export function openExternalUrl(url: string): void {
 }
 
 /** Downloads the GitHub release APK and hands it to the package installer. */
+/** Saves an .ics file through the native Downloads bridge. Returns false on web. */
+export function saveCalendarFile(filename: string, content: string): boolean {
+  if (!isNativeApp()) return false;
+  try {
+    return window.AndroidReminders?.saveCalendarFile?.(filename, content) === true;
+  } catch {
+    return false;
+  }
+}
+
 export function downloadAndInstallApk(url: string, version: string): void {
   if (!isNativeApp()) {
     window.open(url, "_blank", "noopener");

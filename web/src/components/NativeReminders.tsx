@@ -6,10 +6,12 @@ import { useMovieCatalog, useMovieFavorites } from "../hooks/useMovies";
 import { useMovieTrack } from "../hooks/useMovieTrack";
 import {
   leadHoursLabel,
+  releaseMorningMs,
   reminderTimeForDayWithLead,
   reminderTimeMsWithLead,
   tehranClock,
 } from "../lib/date";
+import { applyQuietHours } from "../lib/quiet-hours";
 import { getSettings } from "../lib/settings";
 import { favoriteKey, nativeShowId } from "../lib/favorites";
 import { showEventKind } from "../lib/show-event";
@@ -28,6 +30,12 @@ import {
   type NativeReminder,
   updateWidgetData,
 } from "../lib/native";
+
+function adjustForQuietHours(triggerAt: number | null, eventAt: number | null): number | null {
+  if (triggerAt === null) return null;
+  const adjusted = applyQuietHours(triggerAt, eventAt);
+  return adjusted < 0 ? null : adjusted;
+}
 
 /**
  * Keeps Android alarms in sync with starred shows, starred movies (both
@@ -146,7 +154,10 @@ export function NativeReminders() {
       const show = future[0];
       if (!show?.airstamp) continue;
       const lead = favorite.reminderLeadHours || defaultLead;
-      const triggerAt = reminderTimeMsWithLead(show.airstamp, lead);
+      const triggerAt = adjustForQuietHours(
+        reminderTimeMsWithLead(show.airstamp, lead),
+        new Date(show.airstamp).getTime(),
+      );
       if (triggerAt === null || triggerAt <= now) continue;
       const next = show.nextEpisode;
       const episode = next?.season && next?.number
@@ -170,7 +181,10 @@ export function NativeReminders() {
       const movie = byId.get(favorite.movieId);
       if (!movie || movieStage(movie) !== "upcoming") continue;
       const day = movie.theatricalDate ?? movie.releaseDate;
-      const triggerAt = reminderTimeForDayWithLead(day, 0);
+      const triggerAt = adjustForQuietHours(
+        reminderTimeForDayWithLead(day, 0),
+        releaseMorningMs(day),
+      );
       if (triggerAt === null || triggerAt <= now) continue;
       items.push({
         id: movie.id,
@@ -188,7 +202,10 @@ export function NativeReminders() {
       if (favorite.reminderEnabled === false) continue;
       const movie = byId.get(favorite.movieId);
       if (!movie) continue;
-      const triggerAt = reminderTimeForDayWithLead(movie.digitalDate ?? null, defaultLead);
+      const triggerAt = adjustForQuietHours(
+        reminderTimeForDayWithLead(movie.digitalDate ?? null, defaultLead),
+        reminderTimeForDayWithLead(movie.digitalDate ?? null, 0),
+      );
       if (triggerAt === null || triggerAt <= now) continue;
       remindedMovieIds.add(movie.id);
       items.push({
@@ -205,7 +222,10 @@ export function NativeReminders() {
       if (tracked.reminderEnabled === false || remindedMovieIds.has(tracked.movieId)) continue;
       const movie = byId.get(tracked.movieId);
       if (!movie) continue;
-      const triggerAt = reminderTimeForDayWithLead(movie.digitalDate ?? null, defaultLead);
+      const triggerAt = adjustForQuietHours(
+        reminderTimeForDayWithLead(movie.digitalDate ?? null, defaultLead),
+        reminderTimeForDayWithLead(movie.digitalDate ?? null, 0),
+      );
       if (triggerAt === null || triggerAt <= now) continue;
       items.push({
         // Plain id: ReminderScheduler assigns the separate request-code range

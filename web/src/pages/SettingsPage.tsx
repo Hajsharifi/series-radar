@@ -5,7 +5,7 @@ import { useFavorites } from "../hooks/useFavorites";
 import { useMovieFavorites } from "../hooks/useMovies";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { leadHoursLabel, relativeSyncLabel, toPersianDigits } from "../lib/date";
-import { LEAD_OPTIONS, getSettings, setDefaultLeadHours } from "../lib/settings";
+import { LEAD_OPTIONS, getSettings, setDefaultLeadHours, setQuietHours } from "../lib/settings";
 import {
   checkMovieWatchlistNow,
   downloadAndInstallApk,
@@ -38,6 +38,9 @@ export function SettingsPage() {
   const [updateInfo, setUpdateInfo] = useState<{ version: string; apkUrl: string; pageUrl: string } | null>(null);
   const amoled = useAmoled();
   const [defaultLead, setLead] = useState(() => getSettings().defaultLeadHours);
+  const [quietEnabled, setQuietEnabled] = useState(() => getSettings().quietHoursEnabled);
+  const [quietStart, setQuietStart] = useState(() => getSettings().quietStart);
+  const [quietEnd, setQuietEnd] = useState(() => getSettings().quietEnd);
   const [bgCheck, setBgCheck] = useState(() => getBackgroundCheckStatus());
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
@@ -111,6 +114,7 @@ export function SettingsPage() {
     if (!window.confirm("همهٔ ستاره‌ها (سریال و فیلم) حذف شوند؟")) return;
     try {
       localStorage.removeItem("sr:favorites:v1");
+      localStorage.removeItem("sr:favorites:v2");
       localStorage.removeItem("sr:movie-favorites:v1");
       localStorage.removeItem("sr:movie-track:v1");
       window.dispatchEvent(new Event("sr-favorites-changed"));
@@ -221,6 +225,57 @@ export function SettingsPage() {
         <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
           یادآوری هر سریال در صفحهٔ جزئیات آن قابل تنظیم است. یادآوریها در ساعت مناسب ۰۸:۰۰ تا ۲۲:۰۰ به وقت تهران ارسال میشوند تا مزاحم خواب نشوند.
         </p>
+        <div className="mt-3 rounded-xl border border-white/8 bg-black/25 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold text-white">ساعت سکوت</p>
+              <p className="mt-0.5 text-[10px] leading-relaxed text-ink-400">
+                اعلان‌های این بازه به پایان آن موکول می‌شوند؛ اگر بعد از پخش بیفتند، ارسال نمی‌شوند.
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="تغییر ساعت سکوت"
+              aria-pressed={quietEnabled}
+              onClick={() => {
+                const next = !quietEnabled;
+                setQuietEnabled(next);
+                setQuietHours(next, quietStart, quietEnd);
+              }}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition ${quietEnabled ? "bg-amber-400" : "bg-white/15"}`}
+            >
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${quietEnabled ? "left-0.5" : "right-0.5"}`} />
+            </button>
+          </div>
+          {quietEnabled && (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <label className="text-[10px] text-ink-400">
+                از
+                <input
+                  type="time"
+                  value={quietStart}
+                  onChange={(event) => {
+                    setQuietStart(event.target.value);
+                    setQuietHours(true, event.target.value, quietEnd);
+                  }}
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white"
+                />
+              </label>
+              <label className="text-[10px] text-ink-400">
+                تا
+                <input
+                  type="time"
+                  value={quietEnd}
+                  onChange={(event) => {
+                    setQuietEnd(event.target.value);
+                    setQuietHours(true, quietStart, event.target.value);
+                  }}
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white"
+                />
+              </label>
+            </div>
+          )}
+        </div>
         {isNativeApp() && (
           <div className="mt-3 flex flex-wrap gap-2">
             <button

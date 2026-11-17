@@ -10,6 +10,8 @@ import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import {
   dateAfterDays,
   jalaliDate,
+  jalaliDateParts,
+  jalaliParts,
   tehranClock,
   tehranParts,
   toIsoDay,
@@ -18,6 +20,8 @@ import {
 } from "../lib/date";
 import { movieStage, tehranTodayISO } from "../lib/movies";
 import { Poster } from "../components/Poster";
+import { buildIcs, downloadTextFile, icsFilename } from "../lib/ics";
+import { isNativeApp, saveCalendarFile } from "../lib/native";
 
 interface CalendarItem {
   key: string;
@@ -45,12 +49,14 @@ export default function CalendarPage() {
   const catalog = useMovieCatalog();
   const liveTV = useLiveTVSections();
   const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [view, setView] = useState<"week" | "month">("week");
+  const [notice, setNotice] = useState("");
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
 
-  const days = useMemo(
-    () =>
-      Array.from({ length: 7 }, (_, index) => {
+  const days = useMemo(() => {
+    if (view === "week") {
+      return Array.from({ length: 7 }, (_, index) => {
         const parts = dateAfterDays(index);
         const stamp = `${parts.y}-${pad(parts.m)}-${pad(parts.d)}T12:00:00Z`;
         const tehran = tehranParts(stamp);
@@ -59,10 +65,38 @@ export default function CalendarPage() {
           label: index === 0 ? "امروز" : index === 1 ? "فردا" : weekdayName(stamp),
           jalali: tehran ? jalaliDate(tehran.date) : "—",
           count: 0,
+          today: index === 0,
         };
-      }),
-    [],
-  );
+      });
+    }
+    const today = dateAfterDays(0);
+    const todayKey = toIsoDay(today);
+    const todayDate = new Date(today.y, today.m - 1, today.d, 12);
+    const todayJalali = jalaliParts(todayDate);
+    const startOffset = -(todayJalali.jd - 1);
+    const result: Array<{
+      key: string;
+      label: string;
+      jalali: string;
+      count: number;
+      today: boolean;
+    }> = [];
+    for (let index = 0; index < 32; index += 1) {
+      const parts = dateAfterDays(startOffset + index);
+      const date = new Date(parts.y, parts.m - 1, parts.d, 12);
+      const jalali = jalaliParts(date);
+      if (index > 0 && jalali.jd === 1) break;
+      const key = toIsoDay(parts);
+      result.push({
+        key,
+        label: toPersianDigits(jalali.jd),
+        jalali: "",
+        count: 0,
+        today: key === todayKey,
+      });
+    }
+    return result;
+  }, [view]);
 
   const items = useMemo(() => {
     const result: CalendarItem[] = [];
@@ -142,7 +176,7 @@ export default function CalendarPage() {
       });
     }
 
-    // Movie theatrical releases and digital-quality releases in the same week.
+    // Movie theatrical releases and digital-quality releases in the visible range.
     const today = tehranTodayISO();
     for (const movie of catalog.all) {
       const stage = movieStage(movie);
@@ -188,39 +222,144 @@ export default function CalendarPage() {
     .filter((item) => item.day === selected && (!onlyFavorites || item.favorite))
     .sort((a, b) => a.clock.localeCompare(b.clock) || a.title.localeCompare(b.title, "fa"));
 
+  const monthLabel = useMemo(() => {
+    if (view !== "month" || days.length === 0) return "";
+    const parts = jalaliDateParts(new Date(`${days[0].key}T12:00:00`));
+    return `${parts.month} ${parts.year}`;
+  }, [days, view]);
+
+  const leadingBlanks = view === "month" && days.length > 0
+    ? (new Date(`${days[0].key}T12:00:00`).getDay() + 1) % 7
+    : 0;
+
+  function exportCalendar() {
+    const source = items.filter((item) => !onlyFavorites || item.favorite);
+    if (source.length === 0) {
+      setNotice("موردی برای خروجی وجود ندارد.");
+      return;
+    }
+    const content = buildIcs(
+      source.map((item) => ({
+        key: item.key,
+        day: item.day,
+        title: item.title,
+        subtitle: item.subtitle,
+        clock: item.clock,
+      })),
+    );
+    const filename = icsFilename();
+    if (isNativeApp() && saveCalendarFile(filename, content)) {
+      setNotice("فایل تقویم ذخیره شد.");
+      window.setTimeout(() => setNotice(""), 4000);
+      return;
+    }
+    downloadTextFile(filename, content, "text/calendar;charset=utf-8");
+    setNotice("فایل تقویم دانلود شد.");
+    window.setTimeout(() => setNotice(""), 4000);
+  }
+
   return (
     <div className="space-y-5">
-      <header>
-        <p className="text-[11px] font-medium tracking-wide text-amber-300/90">برنامهٔ هفت روزه</p>
-        <h1 className="mt-1 text-2xl font-extrabold text-white">تقویم سریالها و فیلمها</h1>
-        <p className="mt-1.5 text-xs leading-relaxed text-ink-300">
-          قسمتهای پیشرو، اکران سینمایی و انتشار دیجیتال فیلمها در هفت روز آینده به وقت تهران — هم موارد ستارهدار و هم آنهایی که در رادارند.
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-medium tracking-wide text-amber-300/90">
+            {view === "week" ? "برنامهٔ هفت روزه" : "برنامهٔ ماهانه"}
+          </p>
+          <h1 className="mt-1 text-2xl font-extrabold text-white">تقویم سریال‌ها و فیلم‌ها</h1>
+          <p className="mt-1.5 text-xs leading-relaxed text-ink-300">
+            قسمت‌های پیشرو، اکران سینمایی و انتشار دیجیتال فیلم‌ها در {view === "week" ? "هفت روز آینده" : "ماه جاری"} به وقت تهران — هم ستاره‌دارها و هم آن‌هایی که در رادارند.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setView(view === "week" ? "month" : "week")}
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-ink-200"
+          >
+            {view === "week" ? "نمای ماهانه" : "نمای هفتگی"}
+          </button>
+          <button
+            type="button"
+            onClick={exportCalendar}
+            className="rounded-lg bg-emerald-400 px-3 py-2 text-[11px] font-semibold text-emerald-950"
+          >
+            خروجی تقویم
+          </button>
+        </div>
       </header>
 
-      <div className="sr-hide-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        {days.map((day) => {
-          const count = counts.get(day.key) ?? 0;
-          const active = selected === day.key;
-          return (
-            <button
-              key={day.key}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setActiveDay(day.key)}
-              className={`sr-no-tap flex w-[74px] shrink-0 flex-col items-center rounded-2xl border px-2 py-2.5 transition ${
-                active ? "border-amber-400/60 bg-amber-400/15" : "border-white/8 bg-ink-850/60"
-              }`}
-            >
-              <span className={`text-[11px] font-semibold ${active ? "text-amber-200" : "text-ink-300"}`}>{day.label}</span>
-              <span className="mt-1 text-[10px] leading-tight text-ink-400">{day.jalali}</span>
-              <span className="mt-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-white/8 px-1 text-[10px] font-bold text-white">
-                {toPersianDigits(count)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      {notice && (
+        <p className="rounded-xl border border-emerald-400/20 bg-emerald-500/8 px-3 py-2 text-[11px] text-emerald-200">
+          {notice}
+        </p>
+      )}
+
+      {view === "week" ? (
+        <div className="sr-hide-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
+          {days.map((day) => {
+            const count = counts.get(day.key) ?? 0;
+            const active = selected === day.key;
+            return (
+              <button
+                key={day.key}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setActiveDay(day.key)}
+                className={`sr-no-tap flex w-[74px] shrink-0 flex-col items-center rounded-2xl border px-2 py-2.5 transition ${
+                  active ? "border-amber-400/60 bg-amber-400/15" : "border-white/8 bg-ink-850/60"
+                }`}
+              >
+                <span className={`text-[11px] font-semibold ${active ? "text-amber-200" : "text-ink-300"}`}>{day.label}</span>
+                <span className="mt-1 text-[10px] leading-tight text-ink-400">{day.jalali}</span>
+                <span className="mt-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-white/8 px-1 text-[10px] font-bold text-white">
+                  {toPersianDigits(count)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-white/8 bg-ink-850/60 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-white">{monthLabel}</h2>
+            <span className="text-[11px] text-ink-400">{toPersianDigits(days.length)} روز</span>
+          </div>
+          <div className="grid grid-cols-7 gap-1 text-center">
+            {["ش", "ی", "د", "س", "چ", "پ", "ج"].map((label) => (
+              <span key={label} className="py-1 text-[10px] text-ink-400">{label}</span>
+            ))}
+            {Array.from({ length: leadingBlanks }).map((_, index) => (
+              <span key={`blank-${index}`} />
+            ))}
+            {days.map((day) => {
+              const count = counts.get(day.key) ?? 0;
+              const active = selected === day.key;
+              return (
+                <button
+                  key={day.key}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setActiveDay(day.key)}
+                  className={`sr-no-tap flex min-h-12 flex-col items-center justify-center rounded-xl border text-[11px] transition ${
+                    active
+                      ? "border-amber-400/60 bg-amber-400/15 text-amber-100"
+                      : day.today
+                        ? "border-sky-400/40 bg-sky-400/10 text-sky-100"
+                        : "border-white/8 bg-black/20 text-ink-200"
+                  }`}
+                >
+                  <span className="font-bold">{day.label}</span>
+                  {count > 0 && (
+                    <span className="mt-0.5 rounded-full bg-white/10 px-1.5 text-[9px] text-white">
+                      {toPersianDigits(count)}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-bold text-white">

@@ -249,7 +249,7 @@ export function countdownLabel(stamp?: string | null): string {
 /** 09:00 Asia/Tehran as a real epoch (Iran is UTC+03:30, no DST since 2022). */
 const TEHRAN_OFFSET_MS = 3.5 * 60 * 60 * 1000;
 
-function tehranWallToEpoch(y: number, m: number, d: number, hh: number, mm: number): number {
+export function tehranWallToEpoch(y: number, m: number, d: number, hh: number, mm: number): number {
   return Date.UTC(y, m - 1, d, hh, mm, 0, 0) - TEHRAN_OFFSET_MS;
 }
 
