@@ -52,6 +52,11 @@ public class WatchlistReceiver extends BroadcastReceiver {
         });
     }
 
+    /** Entry point for WorkManager (runs on a worker thread). */
+    public static void checkNow(Context context) {
+        check(context);
+    }
+
     private static void check(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(
                 WatchlistScheduler.PREFS, Context.MODE_PRIVATE);

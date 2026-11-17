@@ -10,6 +10,7 @@ import { readUiState, writeUiState } from "../lib/ui-state";
 import { RelativeUpdated } from "../components/DateChip";
 import { MovieCard } from "../components/MovieCard";
 import { MovieHistoryPageLink } from "../components/MovieHistoryLink";
+import { EmptyState, SkeletonCards } from "../components/StateViews";
 
 const TABS: Array<{ key: MovieTab; label: string; hint: string }> = [
   {
@@ -23,18 +24,6 @@ const TABS: Array<{ key: MovieTab; label: string; hint: string }> = [
 type QualityFilter = "all" | "dated" | "undated";
 
 const GENRES = ["Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Fantasy", "History", "Horror", "Music", "Mystery", "Romance", "Science Fiction", "TV Movie", "Thriller", "War", "Western"];
-
-function SkeletonCard() {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-white/8 bg-ink-850/60">
-      <div className="sr-skeleton aspect-[2/3] w-full" />
-      <div className="space-y-2 p-3">
-        <div className="sr-skeleton h-3.5 w-3/4 rounded" />
-        <div className="sr-skeleton h-2.5 w-1/2 rounded" />
-      </div>
-    </div>
-  );
-}
 
 export function MoviesPage() {
   // Tabs and filters survive navigation, so pressing back after opening a film
@@ -320,26 +309,26 @@ export function MoviesPage() {
 
       {searchingActive ? (
         shown.length === 0 ? (
-          <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-10 text-center">
-            <p className="text-sm font-semibold text-white">فیلمی با این نام پیدا نشد</p>
-            <p className="mt-1 text-xs text-ink-300">نام انگلیسی فیلم را کاملتر بنویسید.</p>
-          </div>
+          <EmptyState
+            icon="▤"
+            title="فیلمی با این نام پیدا نشد"
+            description="نام انگلیسی فیلم را کامل‌تر بنویسید."
+            compact
+          />
         ) : (
           <div className="space-y-6">
             {section("نتایج جستوجو", shown)}
           </div>
         )
       ) : catalog.loading && catalog.all.length <= 6 ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, index) => (
-            <SkeletonCard key={index} />
-          ))}
-        </div>
+        <SkeletonCards count={8} />
       ) : shown.length === 0 ? (
-        <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-10 text-center">
-          <p className="text-sm font-semibold text-white">فعلاً فیلمی در این بخش نیست</p>
-          <p className="mt-1 text-xs text-ink-300">کمی بعد دوباره بهروزرسانی کنید.</p>
-        </div>
+        <EmptyState
+          icon="▤"
+          title="فعلاً فیلمی در این بخش نیست"
+          description="کمی بعد دوباره به‌روزرسانی کنید."
+          compact
+        />
       ) : tab === "quality" ? (
         <div className="space-y-6">
           {qualityFilter !== "undated" &&

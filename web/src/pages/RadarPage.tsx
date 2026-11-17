@@ -30,6 +30,7 @@ import {
 import type { Show } from "../types";
 import { ShowCard, ShowRow } from "../components/ShowCard";
 import { CompactShowRow } from "../components/CompactShowRow";
+import { EmptyState, SkeletonCards } from "../components/StateViews";
 import { Poster } from "../components/Poster";
 
 const FILTERS: Array<{ key: ShowFilters["category"]; label: string }> = [
@@ -59,6 +60,21 @@ const LANGUAGE_FILTERS = [
   { key: "ar", label: "عربی" },
 ];
 
+const COUNTRY_FILTERS = [
+  { key: "all", label: "همهٔ کشورها" },
+  { key: "US", label: "آمریکا" },
+  { key: "GB", label: "بریتانیا" },
+  { key: "KR", label: "کره جنوبی" },
+  { key: "JP", label: "ژاپن" },
+  { key: "ES", label: "اسپانیا" },
+  { key: "TR", label: "ترکیه" },
+  { key: "IN", label: "هند" },
+  { key: "CA", label: "کانادا" },
+  { key: "AU", label: "استرالیا" },
+  { key: "FR", label: "فرانسه" },
+  { key: "DE", label: "آلمان" },
+];
+
 function languageKey(value?: string | null): string {
   if (!value) return "";
   const key = value.trim().toLowerCase();
@@ -72,18 +88,6 @@ function languageKey(value?: string | null): string {
     ar: "ar", arabic: "ar",
   };
   return map[key] ?? key;
-}
-
-function SkeletonCard() {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-white/8 bg-ink-850/60">
-      <div className="sr-skeleton aspect-[2/3] w-full" />
-      <div className="space-y-2 p-3">
-        <div className="sr-skeleton h-3.5 w-3/4 rounded" />
-        <div className="sr-skeleton h-2.5 w-1/2 rounded" />
-      </div>
-    </div>
-  );
 }
 
 export function RadarPage() {
@@ -102,6 +106,7 @@ export function RadarPage() {
   const [view, setView] = useState<"grid" | "list" | "compact">(() => readUiState("radar.view", "grid"));
   const [hideUnscripted, setHideUnscripted] = useState<boolean>(() => readUiState("radar.hideUnscripted", false));
   const [language, setLanguage] = useState<string>(() => readUiState("radar.language", "all"));
+  const [country, setCountry] = useState<string>(() => readUiState("radar.country", "all"));
 
   useEffect(() => writeUiState("radar.category", filters.category), [filters.category]);
   useEffect(() => writeUiState("radar.onlyPopular", filters.onlyPopular), [filters.onlyPopular]);
@@ -109,6 +114,7 @@ export function RadarPage() {
   useEffect(() => writeUiState("radar.view", view), [view]);
   useEffect(() => writeUiState("radar.hideUnscripted", hideUnscripted), [hideUnscripted]);
   useEffect(() => writeUiState("radar.language", language), [language]);
+  useEffect(() => writeUiState("radar.country", country), [country]);
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
 
@@ -123,8 +129,9 @@ export function RadarPage() {
     if (genre) base = base.filter((show) => (show.genres ?? []).includes(genre));
     if (hideUnscripted) base = base.filter((show) => !isUnscripted(show));
     if (language !== "all") base = base.filter((show) => languageKey(show.language) === language);
+    if (country !== "all") base = base.filter((show) => (show.countryCode ?? "").toUpperCase() === country);
     return base;
-  }, [schedule.shows, effectiveFilters, genre, hideUnscripted, language, now]);
+  }, [schedule.shows, effectiveFilters, genre, hideUnscripted, language, country, now]);
 
   const groups = useMemo(() => groupShows(filtered, now), [filtered, now]);
 
@@ -137,7 +144,7 @@ export function RadarPage() {
     [favoriteKeys],
   );
 
-  const hasFilters = filters.category !== "all" || !!genre || !!debouncedSearch || hideUnscripted || language !== "all";
+  const hasFilters = filters.category !== "all" || !!genre || !!debouncedSearch || hideUnscripted || language !== "all" || country !== "all";
 
   // Live TV hooks
   const liveTV = useLiveTVSections();
@@ -329,18 +336,33 @@ export function RadarPage() {
               </button>
             ))}
           </div>
-          <div className="mt-2 flex items-center gap-2">
-            <label htmlFor="radar-language" className="text-[11px] text-ink-400">زبان</label>
-            <select
-              id="radar-language"
-              value={language}
-              onChange={(event) => setLanguage(event.target.value)}
-              className="rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] text-ink-200"
-            >
-              {LANGUAGE_FILTERS.map((item) => (
-                <option key={item.key} value={item.key}>{item.label}</option>
-              ))}
-            </select>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label htmlFor="radar-language" className="text-[11px] text-ink-400">زبان</label>
+              <select
+                id="radar-language"
+                value={language}
+                onChange={(event) => setLanguage(event.target.value)}
+                className="rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] text-ink-200"
+              >
+                {LANGUAGE_FILTERS.map((item) => (
+                  <option key={item.key} value={item.key}>{item.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="radar-country" className="text-[11px] text-ink-400">کشور</label>
+              <select
+                id="radar-country"
+                value={country}
+                onChange={(event) => setCountry(event.target.value)}
+                className="rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] text-ink-200"
+              >
+                {COUNTRY_FILTERS.map((item) => (
+                  <option key={item.key} value={item.key}>{item.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </section>
@@ -550,18 +572,14 @@ export function RadarPage() {
         )}
 
         {schedule.loading && schedule.shows.length <= 6 ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <SkeletonCard key={index} />
-            ))}
-          </div>
+          <SkeletonCards count={8} />
         ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-10 text-center">
-            <p className="text-sm font-semibold text-white">سریالی با این فیلترها پیدا نشد</p>
-            <p className="mt-1 text-xs text-ink-400">
-              فیلترها را پاک کنید، «فقط محبوب‌ها» را خاموش کنید یا عبارت دیگری جست‌وجو کنید.
-            </p>
-            {hasFilters && (
+          <EmptyState
+            icon="◉"
+            title="سریالی با این فیلترها پیدا نشد"
+            description="فیلترها را پاک کنید، «فقط محبوب‌ها» را خاموش کنید یا عبارت دیگری جست‌وجو کنید."
+            compact
+            action={hasFilters ? (
               <button
                 type="button"
                 onClick={() => {
@@ -569,14 +587,15 @@ export function RadarPage() {
                   setGenre(null);
                   setHideUnscripted(false);
                   setLanguage("all");
+                  setCountry("all");
                   setFilters({ search: "", category: "all", onlyPopular: true });
                 }}
-                className="mt-3 rounded-lg bg-amber-400 px-3.5 py-1.5 text-xs font-semibold text-ink-950"
+                className="rounded-lg bg-amber-400 px-3.5 py-1.5 text-xs font-semibold text-ink-950"
               >
                 پاک کردن فیلترها
               </button>
-            )}
-          </div>
+            ) : undefined}
+          />
         ) : view === "grid" ? (
           <div className="space-y-6">
             {groups.map((group) => (

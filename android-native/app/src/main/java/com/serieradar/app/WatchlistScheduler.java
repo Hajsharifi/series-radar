@@ -1,17 +1,22 @@
 package com.serieradar.app;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.Build;
+
+import androidx.work.Constraints;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/** Periodic background check for starred movies whose digital date was not
- * known when the app was last open. Exact alarms cover the dated films. */
+import java.util.concurrent.TimeUnit;
+
+/** Periodic background check for starred movies. WorkManager survives reboots
+ * and honors network constraints; exact alarms remain only for user reminders. */
 public final class WatchlistScheduler {
 
     static final String PREFS = "sr_watchlist";
@@ -22,7 +27,8 @@ public final class WatchlistScheduler {
     static final String KEY_LAST_TRIGGER = "lastTrigger";
     static final String ACTION = "com.serieradar.app.WATCHLIST_CHECK";
 
-    private static final int REQUEST_CODE = 91001;
+    private static final String WORK_NAME = "series_radar_watchlist";
+    private static final long INTERVAL_HOURS = 6;
 
     private WatchlistScheduler() {}
 
@@ -31,12 +37,11 @@ public final class WatchlistScheduler {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         prefs.edit().putString(KEY_ITEMS, json).apply();
 
-        // The page has the freshest stage information while it is open; seed the
-        // comparison map so the background job only reports changes that happen
-        // while the app is closed (no duplicate "already released" notifications).
         JSONObject stages = new JSONObject();
+        boolean hasItems = false;
         try {
             JSONArray items = new JSONArray(json);
+            hasItems = items.length() > 0;
             for (int i = 0; i < items.length(); i++) {
                 JSONObject item = items.optJSONObject(i);
                 if (item == null) continue;
@@ -49,7 +54,7 @@ public final class WatchlistScheduler {
             /* keep an empty map */
         }
         prefs.edit().putString(KEY_STAGES, stages.toString()).apply();
-        arm(context);
+        setPeriodic(context, hasItems);
     }
 
     /** Manual check from Settings. Throttled so repeated taps cannot spam the API. */
@@ -58,9 +63,17 @@ public final class WatchlistScheduler {
         long now = System.currentTimeMillis();
         if (now - prefs.getLong(KEY_LAST_TRIGGER, 0L) < 30_000L) return;
         prefs.edit().putLong(KEY_LAST_TRIGGER, now).apply();
-        Intent intent = new Intent(context, WatchlistReceiver.class);
-        intent.setAction(ACTION);
-        context.sendBroadcast(intent);
+        try {
+            Constraints constraints = new Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build();
+            OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(WatchlistWorker.class)
+                    .setConstraints(constraints)
+                    .build();
+            WorkManager.getInstance(context).enqueue(request);
+        } catch (Exception ignored) {
+            /* background scheduling must never crash the settings screen */
+        }
     }
 
     /** Status read synchronously by the Settings page through the JS bridge. */
@@ -74,31 +87,40 @@ public final class WatchlistScheduler {
             status.put("lastOk", prefs.getBoolean(KEY_LAST_OK, false));
             status.put("watched", new JSONArray(items).length());
             status.put("armed", !items.isEmpty() && !"[]".equals(items));
+            status.put("scheduler", "workmanager");
         } catch (Exception ignored) {
             /* return an empty status rather than breaking the WebView */
         }
         return status.toString();
     }
 
-    /** Called after boot / app update; only re-arms when there is a watchlist. */
+    /** Called after boot / app update. WorkManager persists by itself; this is
+     * a cheap safety net for devices that cleared work during an upgrade. */
     public static void armIfNeeded(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         String items = prefs.getString(KEY_ITEMS, "[]");
         if (items == null || items.isEmpty() || "[]".equals(items)) return;
-        arm(context);
+        setPeriodic(context, true);
     }
 
-    private static void arm(Context context) {
-        AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        if (manager == null) return;
-        Intent intent = new Intent(context, WatchlistReceiver.class);
-        intent.setAction(ACTION);
-        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) flags |= PendingIntent.FLAG_IMMUTABLE;
-        PendingIntent pending = PendingIntent.getBroadcast(context, REQUEST_CODE, intent, flags);
-        manager.cancel(pending);
-        long first = System.currentTimeMillis() + 15 * 60 * 1000L;
-        manager.setInexactRepeating(
-                AlarmManager.RTC_WAKEUP, first, 6 * 60 * 60 * 1000L, pending);
+    private static void setPeriodic(Context context, boolean enabled) {
+        try {
+            WorkManager manager = WorkManager.getInstance(context);
+            if (!enabled) {
+                manager.cancelUniqueWork(WORK_NAME);
+                return;
+            }
+            Constraints constraints = new Constraints.Builder()
+                    .setRequiredNetworkType(NetworkType.CONNECTED)
+                    .build();
+            PeriodicWorkRequest request = new PeriodicWorkRequest.Builder(
+                    WatchlistWorker.class, INTERVAL_HOURS, TimeUnit.HOURS)
+                    .setConstraints(constraints)
+                    .setInitialDelay(15, TimeUnit.MINUTES)
+                    .build();
+            manager.enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.KEEP, request);
+        } catch (Exception ignored) {
+            /* if WorkManager is unavailable, the app still works in the foreground */
+        }
     }
 }

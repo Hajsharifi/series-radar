@@ -26,6 +26,7 @@ import { favoriteKey } from "../lib/favorites";
 import { ShowRow } from "../components/ShowCard";
 import { MovieRow } from "../components/MovieCard";
 import { MovieHistoryPageLink } from "../components/MovieHistoryLink";
+import { EmptyState } from "../components/StateViews";
 
 type Tab = "series" | "movies";
 
@@ -352,31 +353,31 @@ export function FavoritesPage() {
 
 function EmptySeries() {
   return (
-    <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-12 text-center">
-      <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white/5 text-xl text-ink-400">☆</div>
-      <p className="mt-3 text-sm font-semibold text-white">هنوز سریالی را ستاره نکرده‌اید</p>
-      <p className="mt-1 text-xs text-ink-400">
-        در صفحهٔ رادار روی ستارهٔ هر سریال بزنید تا یادآوری برایش فعال شود.
-      </p>
-      <Link to="/" className="mt-4 inline-block rounded-lg bg-white/8 px-4 py-2 text-xs text-white">
-        رفتن به رادار
-      </Link>
-    </div>
+    <EmptyState
+      icon="☆"
+      title="هنوز سریالی را ستاره نکرده‌اید"
+      description="در صفحهٔ رادار روی ستارهٔ هر سریال بزنید تا یادآوری برایش فعال شود."
+      action={
+        <Link to="/" className="rounded-lg bg-white/8 px-4 py-2 text-xs text-white">
+          رفتن به رادار
+        </Link>
+      }
+    />
   );
 }
 
 function EmptyMovies() {
   return (
-    <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-12 text-center">
-      <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white/5 text-xl text-ink-400">☆</div>
-      <p className="mt-3 text-sm font-semibold text-white">هنوز فیلمی را ستاره نکرده‌اید</p>
-      <p className="mt-1 text-xs text-ink-400">
-        در بخش فیلم‌ها روی ستارهٔ هر فیلم بزنید تا مشخص شود منتظر اکرانش هستید یا کیفیت خوبش.
-      </p>
-      <Link to="/movies" className="mt-4 inline-block rounded-lg bg-white/8 px-4 py-2 text-xs text-white">
-        رفتن به فیلم‌ها
-      </Link>
-    </div>
+    <EmptyState
+      icon="☆"
+      title="هنوز فیلمی را ستاره نکرده‌اید"
+      description="در بخش فیلم‌ها روی ستارهٔ هر فیلم بزنید تا مشخص شود منتظر اکرانش هستید یا کیفیت خوبش."
+      action={
+        <Link to="/movies" className="rounded-lg bg-white/8 px-4 py-2 text-xs text-white">
+          رفتن به فیلم‌ها
+        </Link>
+      }
+    />
   );
 }
 

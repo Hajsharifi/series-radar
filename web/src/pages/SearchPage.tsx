@@ -11,6 +11,7 @@ import {
   getGenreName,
 } from "../hooks/useSearch";
 import { Poster } from "../components/Poster";
+import { EmptyState, SkeletonCards } from "../components/StateViews";
 import { toPersianDigits, jalaliDate } from "../lib/date";
 import { useSearchHistory } from "../lib/searchHistory";
 import { useMovieCatalog } from "../hooks/useMovies";
@@ -263,21 +264,14 @@ export default function SearchPage() {
         )}
 
         {loading ? (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="overflow-hidden rounded-2xl border border-white/8 bg-ink-850/60">
-                <div className="sr-skeleton aspect-[2/3] w-full" />
-                <div className="space-y-2 p-2.5"><div className="sr-skeleton h-3 w-3/4 rounded" /><div className="sr-skeleton h-2.5 w-1/2 rounded" /></div>
-              </div>
-            ))}
-          </div>
+          <SkeletonCards count={6} />
         ) : results.length === 0 ? (
-          <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-14 text-center">
-            <p className="text-sm font-semibold text-white">نتیجهای پیدا نشد</p>
-            <p className="mt-1 text-xs text-ink-400">
-              {isLive ? "عبارت دیگری امتحان کنید یا فیلترها را تغییر دهید." : "فیلترها را پاک کنید."}
-            </p>
-          </div>
+          <EmptyState
+            icon="⌕"
+            title="نتیجه‌ای پیدا نشد"
+            description={isLive ? "عبارت دیگری امتحان کنید یا فیلترها را تغییر دهید." : "فیلترها را پاک کنید."}
+            compact
+          />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {results.map((item, i) => (

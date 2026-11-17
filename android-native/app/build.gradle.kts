@@ -10,8 +10,8 @@ android {
         applicationId = "com.serieradar.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 33
-        versionName = "1.13.0"
+        versionCode = 34
+        versionName = "1.14.0"
     }
 
     signingConfigs {
@@ -65,6 +65,7 @@ tasks.named("preBuild") {
 }
 
 dependencies {
+    implementation("androidx.work:work-runtime:2.9.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.webkit:webkit:1.11.0")
 }

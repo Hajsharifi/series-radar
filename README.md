@@ -19,6 +19,8 @@
 
 ## توسعهٔ رابط وب
 
+پیش‌نیاز: **Node.js 22+** (Vite 8 و Vitest روی Node 18 اجرا نمی‌شوند).
+
 ```bash
 cd web
 npm install

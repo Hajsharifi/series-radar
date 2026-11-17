@@ -7,6 +7,7 @@ import { usdFull, usdShort } from "../lib/format";
 import { toPersianDigits } from "../lib/date";
 import { RelativeUpdated } from "../components/DateChip";
 import { MoviePoster } from "../components/MoviePoster";
+import { EmptyState, SkeletonRows } from "../components/StateViews";
 
 function EntryTitle({ entry }: { entry: BoxOfficeEntry }) {
   const content = (
@@ -198,15 +199,9 @@ export function BoxOfficePage() {
           <span className="text-[11px] text-ink-400">{toPersianDigits(weekend.length)} فیلم</span>
         </div>
         {loading && weekend.length === 0 ? (
-          <div className="space-y-2">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="sr-skeleton h-24 rounded-2xl" />
-            ))}
-          </div>
+          <SkeletonRows count={4} />
         ) : weekend.length === 0 ? (
-          <p className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-6 text-center text-xs text-ink-400">
-            جدول آخر هفته در دسترس نیست.
-          </p>
+          <EmptyState icon="◫" title="جدول آخر هفته در دسترس نیست" compact />
         ) : (
           <div className="grid gap-2.5 sm:grid-cols-2">
             {weekend.map((entry) => (

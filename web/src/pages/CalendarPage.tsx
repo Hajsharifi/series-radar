@@ -21,6 +21,7 @@ import {
 import { movieStage, tehranTodayISO } from "../lib/movies";
 import { Poster } from "../components/Poster";
 import { buildIcs, downloadTextFile, icsFilename } from "../lib/ics";
+import { EmptyState } from "../components/StateViews";
 import { isNativeApp, saveCalendarFile } from "../lib/native";
 
 interface CalendarItem {
@@ -378,10 +379,12 @@ export default function CalendarPage() {
       </div>
 
       {visible.length === 0 ? (
-        <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-12 text-center">
-          <p className="text-sm font-semibold text-white">موردی برای این روز ثبت نشده</p>
-          <p className="mt-1 text-xs text-ink-300">روز دیگری را از بالا انتخاب کنید یا فیلتر ستارهها را خاموش کنید.</p>
-        </div>
+        <EmptyState
+          icon="▦"
+          title="موردی برای این روز ثبت نشده"
+          description="روز دیگری را از بالا انتخاب کنید یا فیلتر ستاره‌ها را خاموش کنید."
+          compact
+        />
       ) : (
         <div className="space-y-2">
           {visible.map((item) => {
