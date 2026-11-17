@@ -121,6 +121,7 @@ def cast_from_credits(credits, limit=8):
         if not name:
             continue
         result.append({
+            "id": person.get("id"),
             "name": name,
             "character": person.get("character") or None,
             "profilePath": person.get("profile_path") or None,
@@ -135,6 +136,15 @@ def directors_from_credits(credits):
         name = person.get("name")
         if person.get("job") in ("Director", "Co-Director") and name and name not in result:
             result.append(name)
+    return result
+
+
+def director_ids_from_credits(credits):
+    result = []
+    for person in ((credits or {}).get("crew") or []):
+        person_id = person.get("id")
+        if person.get("job") in ("Director", "Co-Director") and person_id and person_id not in result:
+            result.append(person_id)
     return result
 
 
@@ -165,6 +175,7 @@ def norm_detail(detail):
             "spokenLanguages": [l.get("name") for l in (detail.get("spoken_languages") or []) if l.get("name")],
             "externalIds": {k: v for k, v in external.items() if k in ("imdb_id", "wikidata_id", "facebook_id", "instagram_id", "twitter_id")},
             "directors": directors_from_credits(credits),
+            "directorIds": director_ids_from_credits(credits),
             "cast": cast_from_credits(credits),
         }
     )
@@ -226,7 +237,9 @@ def norm_tv_detail(detail):
         "trailerKey": trailer_key(detail),
         "imdbId": (detail.get("external_ids") or {}).get("imdb_id"),
         "createdBy": [p.get("name") for p in (detail.get("created_by") or []) if p.get("name")],
+        "createdByIds": [p.get("id") for p in (detail.get("created_by") or []) if p.get("id")],
         "directors": directors_from_credits(detail.get("credits")),
+        "directorIds": director_ids_from_credits(detail.get("credits")),
         "cast": cast_from_credits(detail.get("credits")),
         "seasons": [{
             "seasonNumber": s.get("season_number"),
@@ -250,7 +263,7 @@ def norm_tv_detail(detail):
 
 
 def tv_detail(show_id, force=False):
-    key = "tv_detail_v2_%s" % show_id
+    key = "tv_detail_v3_%s" % show_id
     if not force:
         cached = cache_get(key, 86400)
         if cached is not None:
@@ -294,7 +307,7 @@ def localized_season(show_id, season_number):
 
 
 def movie_detail(movie_id, force=False):
-    key = "movie_detail_v2_%s" % movie_id
+    key = "movie_detail_v3_%s" % movie_id
     if not force:
         cached = cache_get(key, 86400)
         if cached is not None:

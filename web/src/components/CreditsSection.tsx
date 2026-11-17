@@ -1,9 +1,12 @@
+import { Link } from "react-router-dom";
 import type { CastMember } from "../types";
 
 interface CreditsSectionProps {
   kind: "movie" | "series";
   directors?: string[];
+  directorIds?: number[];
   creators?: string[];
+  creatorIds?: number[];
   cast?: CastMember[];
   /** OMDB strings are only used when TMDB credits are unavailable. */
   fallbackDirector?: string | null;
@@ -18,10 +21,25 @@ function splitNames(value?: string | null): string[] {
     .filter(Boolean);
 }
 
+function PersonChip({ id, name }: { id?: number; name: string }) {
+  const className =
+    "rounded-lg bg-white/6 px-2 py-1 text-[11px] font-semibold text-ink-100 transition hover:bg-white/10";
+  if (id) {
+    return (
+      <Link to={`/person/${id}`} className={className} dir="auto">
+        {name}
+      </Link>
+    );
+  }
+  return <span className={className} dir="auto">{name}</span>;
+}
+
 export function CreditsSection({
   kind,
   directors,
+  directorIds,
   creators,
+  creatorIds,
   cast,
   fallbackDirector,
   fallbackActors,
@@ -31,6 +49,11 @@ export function CreditsSection({
     : creators?.length
       ? creators
       : splitNames(fallbackDirector);
+  const leadIds = directors?.length
+    ? directorIds
+    : creators?.length
+      ? creatorIds
+      : undefined;
   const people: CastMember[] = cast?.length
     ? cast
     : splitNames(fallbackActors).map((name) => ({ name }));
@@ -44,14 +67,8 @@ export function CreditsSection({
         <div className="mb-3">
           <p className="text-[10px] text-ink-400">{kind === "movie" ? "کارگردان" : "سازنده"}</p>
           <div className="mt-1 flex flex-wrap gap-1.5">
-            {leadNames.map((name) => (
-              <span
-                key={name}
-                className="rounded-lg bg-white/6 px-2 py-1 text-[11px] font-semibold text-ink-100"
-                dir="auto"
-              >
-                {name}
-              </span>
+            {leadNames.map((name, index) => (
+              <PersonChip key={`${name}-${index}`} id={leadIds?.[index]} name={name} />
             ))}
           </div>
         </div>
@@ -66,7 +83,13 @@ export function CreditsSection({
                 className="rounded-lg bg-white/6 px-2 py-1 text-[11px]"
                 dir="auto"
               >
-                <span className="font-semibold text-ink-100">{person.name}</span>
+                {person.id ? (
+                  <Link to={`/person/${person.id}`} className="font-semibold text-ink-100 hover:text-white">
+                    {person.name}
+                  </Link>
+                ) : (
+                  <span className="font-semibold text-ink-100">{person.name}</span>
+                )}
                 {person.character && <span className="text-ink-400"> · {person.character}</span>}
               </span>
             ))}

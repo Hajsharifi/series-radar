@@ -17,6 +17,7 @@ os.environ.setdefault("TMDB_BEARER_TOKEN", "test-token")
 sys.path.insert(0, str(ROOT))
 
 from series_radar import cache as cache_module  # noqa: E402
+from series_radar.people import norm_person  # noqa: E402
 
 
 def load_server():
@@ -144,3 +145,28 @@ def test_prune_cache_removes_only_stale_json(tmp_path, monkeypatch):
     server.prune_cache(force=True)
     assert not old.exists()
     assert fresh.exists()
+
+
+def test_norm_person_dedupes_and_sorts_credits():
+    data = {
+        "id": 1,
+        "name": "Actor",
+        "biography": "Bio",
+        "profile_path": "/p.jpg",
+        "known_for_department": "Acting",
+        "combined_credits": {
+            "cast": [
+                {"media_type": "movie", "id": 10, "title": "Old", "release_date": "2020-01-01", "poster_path": "/a.jpg", "vote_average": 7.0},
+                {"media_type": "tv", "id": 11, "name": "New Show", "first_air_date": "2026-01-01", "poster_path": "/b.jpg", "vote_average": 8.0},
+                {"media_type": "movie", "id": 10, "title": "Old duplicate", "release_date": "2020-01-01"},
+                {"media_type": "person", "id": 12, "name": "Ignore"},
+            ],
+            "crew": [],
+        },
+    }
+    person = norm_person(data)
+    assert person["name"] == "Actor"
+    assert person["profilePath"] == "/p.jpg"
+    assert len(person["credits"]) == 2
+    assert person["credits"][0]["id"] == 11
+    assert person["credits"][1]["id"] == 10

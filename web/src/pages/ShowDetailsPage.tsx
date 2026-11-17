@@ -238,7 +238,7 @@ export function ShowDetailsPage() {
             </div>
           )}
 
-          <CreditsSection kind="series" creators={credits.data?.creators} cast={credits.data?.cast} />
+          <CreditsSection kind="series" creators={credits.data?.creators} creatorIds={credits.data?.creatorIds} cast={credits.data?.cast} />
 
           {show.officialSite && (
             <a

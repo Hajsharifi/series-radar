@@ -218,7 +218,7 @@ export default function SeriesDetailPage() {
             </div>
           )}
 
-          <CreditsSection kind="series" creators={series.creators} cast={series.cast} />
+          <CreditsSection kind="series" creators={series.creators} creatorIds={series.creatorIds} cast={series.cast} />
 
           <div className="flex flex-wrap gap-2">
             {series.officialSite && (

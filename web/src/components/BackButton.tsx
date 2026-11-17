@@ -11,6 +11,7 @@ const FALLBACKS: Array<[RegExp, BackTarget]> = [
   [/^\/movie\//, { to: "/movies", label: "بازگشت به فیلمها" }],
   [/^\/(show|tv|series)\//, { to: "/", label: "بازگشت به رادار" }],
   [/^\/movie-history$/, { to: "/favorites", label: "بازگشت به ستارهها" }],
+  [/^\/person\//, { to: "/", label: "بازگشت به رادار" }],
   [/^\/settings$/, { to: "/", label: "بازگشت به رادار" }],
   [/^\/search$/, { to: "/", label: "بازگشت به رادار" }],
   [/^\/calendar$/, { to: "/", label: "بازگشت به رادار" }],

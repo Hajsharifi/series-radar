@@ -59,7 +59,9 @@ interface TmdbSeries {
   trailerKey?: string | null;
   imdbRating?: string | null;
   createdBy?: string[];
+  createdByIds?: number[];
   directors?: string[];
+  directorIds?: number[];
   cast?: CastMember[];
   omdbDirector?: string | null;
   omdbActors?: string | null;
@@ -288,7 +290,9 @@ export default function TmdbSeriesPage() {
           <CreditsSection
             kind="series"
             creators={show.createdBy}
+            creatorIds={show.createdByIds}
             directors={show.directors}
+            directorIds={show.directorIds}
             cast={show.cast}
             fallbackDirector={show.omdbDirector}
             fallbackActors={show.omdbActors}

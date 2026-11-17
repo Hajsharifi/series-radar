@@ -23,6 +23,7 @@ from .catalog import (
 from .config import PORT, TMDB, TMDB_HEADERS, TMDB_TOKEN
 from .http import localized_collection, tmdb_get
 from .metrics import inc_error, inc_request, snapshot
+from .people import person_detail
 from .text import normalize_fa
 from .tmdb import (
     enrich_tv_meta,
@@ -78,6 +79,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json(online_releases(force))
             if path == "/api/movies/quality":
                 return self.send_json(quality_waiting(force))
+            if path.startswith("/api/person/") and path.rsplit("/", 1)[-1].isdigit():
+                person_id = int(path.rsplit("/", 1)[-1])
+                return self.send_json(person_detail(person_id, force))
             if path.startswith("/api/movie/") and path.endswith("/similar"):
                 movie_id = int(path.split("/")[-2])
                 return self.send_json({"items": similar_items("movie", movie_id)})

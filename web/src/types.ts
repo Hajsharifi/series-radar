@@ -5,6 +5,8 @@ export type ShowCategory = "new" | "returning" | "announced";
 export type ShowEventKind = "series-premiere" | "season-premiere" | "new-episode" | "airing";
 
 export interface CastMember {
+  /** TMDB person id, used for the filmography page. */
+  id?: number;
   name: string;
   character?: string | null;
   profilePath?: string | null;
@@ -109,6 +111,7 @@ export interface Movie {
   omdbActors?: string | null;
   /** TMDB credits - preferred over the OMDB fallback strings. */
   directors?: string[];
+  directorIds?: number[];
   cast?: CastMember[];
   omdbPlot?: string | null;
   productionCountries?: string[];
@@ -170,6 +173,31 @@ export interface Episode {
   image: { medium: string; original: string } | null;
 }
 
+export interface PersonCredit {
+  mediaType: "movie" | "tv";
+  id: number;
+  title: string;
+  originalTitle?: string | null;
+  character?: string | null;
+  date?: string | null;
+  posterPath?: string | null;
+  rating?: number;
+  popularity?: number;
+}
+
+export interface PersonDetail {
+  id: number;
+  name: string;
+  biography?: string;
+  profilePath?: string | null;
+  birthday?: string | null;
+  deathday?: string | null;
+  placeOfBirth?: string | null;
+  knownForDepartment?: string | null;
+  imdbId?: string | null;
+  credits: PersonCredit[];
+}
+
 /** Series detail with episodes (TVMaze + local tracking) */
 export interface SeriesDetail {
   id: number;
@@ -196,6 +224,7 @@ export interface SeriesDetail {
   /** TVMaze cast & creators (?embed[]=cast&embed[]=crew) */
   cast?: CastMember[];
   creators?: string[];
+  creatorIds?: number[];
   /** Local tracking state */
   watchedEpisodes: Set<number>;   // episode ids
   /** Progress: watched / total */

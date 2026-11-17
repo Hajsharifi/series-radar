@@ -7,6 +7,7 @@ const TVMAZE_API = "https://api.tvmaze.com";
 export interface TvmazeCredits {
   cast: CastMember[];
   creators: string[];
+  creatorIds: number[];
 }
 
 /** Cast and creators for a TVMaze show. TVMaze exposes them through embeds,
@@ -22,19 +23,21 @@ export function useTvmazeCredits(showId: number | null) {
       const cast: CastMember[] = ((data?._embedded?.cast ?? []) as any[])
         .slice(0, 8)
         .map((item) => ({
+          id: item?.person?.id,
           name: item?.person?.name ?? "",
           character: item?.character?.name ?? null,
         }))
         .filter((item) => Boolean(item.name));
-      const creators = Array.from(
-        new Set(
-          ((data?._embedded?.crew ?? []) as any[])
-            .filter((item) => item?.type === "Creator")
-            .map((item) => item?.person?.name)
-            .filter((name): name is string => Boolean(name)),
-        ),
-      );
-      return { cast, creators };
+      const creatorPeople = ((data?._embedded?.crew ?? []) as any[])
+        .filter((item) => item?.type === "Creator" && item?.person?.name)
+        .map((item) => ({ id: item.person.id as number, name: item.person.name as string }));
+      const seen = new Set<string>();
+      const unique = creatorPeople.filter((person) => {
+        if (seen.has(person.name)) return false;
+        seen.add(person.name);
+        return true;
+      });
+      return { cast, creators: unique.map((person) => person.name), creatorIds: unique.map((person) => person.id) };
     },
     enabled: Number.isFinite(showId ?? NaN) && (showId ?? 0) > 0,
     staleTime: 24 * 60 * 60 * 1000,

@@ -22,6 +22,7 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const CalendarPage = lazy(() => import("./pages/CalendarPage"));
 const MovieHistoryPage = lazy(() => import("./pages/MovieHistoryPage"));
+const PersonPage = lazy(() => import("./pages/PersonPage"));
 
 export default function App() {
   return (
@@ -40,6 +41,7 @@ export default function App() {
                 <Route path="/series/:id" element={<SeriesDetailPage />} />
                 <Route path="/tv/:id" element={<TmdbSeriesPage />} />
                 <Route path="/movie/:id" element={<MovieDetailsPage />} />
+                <Route path="/person/:id" element={<PersonPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
 <Route path="/search" element={<SearchPage />} />
                 <Route path="/calendar" element={<CalendarPage />} />

@@ -382,6 +382,7 @@ export function MovieDetailsPage() {
           <CreditsSection
             kind="movie"
             directors={movie.directors}
+            directorIds={movie.directorIds}
             cast={movie.cast}
             fallbackDirector={movie.omdbDirector}
             fallbackActors={movie.omdbActors}

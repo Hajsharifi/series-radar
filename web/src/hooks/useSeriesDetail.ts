@@ -25,17 +25,24 @@ async function fetchSeriesDetail(showId: number) {
     }));
     const cast = ((show._embedded?.cast ?? []) as any[])
       .slice(0, 8)
-      .map((item) => ({ name: item?.person?.name ?? "", character: item?.character?.name ?? null }))
+      .map((item) => ({ id: item?.person?.id, name: item?.person?.name ?? "", character: item?.character?.name ?? null }))
       .filter((item: { name: string }) => Boolean(item.name));
-    const creators = Array.from(
-      new Set(
-        ((show._embedded?.crew ?? []) as any[])
-          .filter((item) => item?.type === "Creator")
-          .map((item) => item?.person?.name)
-          .filter((name): name is string => Boolean(name)),
-      ),
-    );
-    return { ...show, episodes, cast, creators };
+    const creatorPeople = ((show._embedded?.crew ?? []) as any[])
+      .filter((item) => item?.type === "Creator" && item?.person?.name)
+      .map((item) => ({ id: item.person.id, name: item.person.name as string }));
+    const seenCreators = new Set<string>();
+    const uniqueCreators = creatorPeople.filter((person) => {
+      if (seenCreators.has(person.name)) return false;
+      seenCreators.add(person.name);
+      return true;
+    });
+    return {
+      ...show,
+      episodes,
+      cast,
+      creators: uniqueCreators.map((person) => person.name),
+      creatorIds: uniqueCreators.map((person) => person.id),
+    };
   } catch {
     return null;
   }

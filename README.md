@@ -61,6 +61,7 @@ python3 -m pytest tests -q
 - `GET /api/tv/popular`، `/api/tv/on_the_air`، `/api/tv/<id>`
 - `GET /api/movies/quality`، `/api/movies/upcoming`
 - `GET /api/movie/<id>`، `/api/movie/<id>/similar`
+- `GET /api/tv/<id>`، `/api/person/<id>` (فیلموگرافی عوامل)
 - `GET /api/boxoffice`
 - `GET /api/search/multi?q=...`
 
