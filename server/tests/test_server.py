@@ -8,11 +8,15 @@ import datetime as dt
 import importlib.util
 import os
 import pathlib
+import sys
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 os.environ.setdefault("SERIES_RADAR_HOME", tempfile.mkdtemp(prefix="series-radar-test-"))
 os.environ.setdefault("TMDB_BEARER_TOKEN", "test-token")
+sys.path.insert(0, str(ROOT))
+
+from series_radar import cache as cache_module  # noqa: E402
 
 
 def load_server():
@@ -134,9 +138,9 @@ def test_prune_cache_removes_only_stale_json(tmp_path, monkeypatch):
     fresh.write_text("{}", encoding="utf-8")
     stale_time = 1_000_000
     os.utime(old, (stale_time, stale_time))
-    monkeypatch.setattr(server, "CACHE_DIR", str(tmp_path))
-    monkeypatch.setattr(server, "CACHE_MAX_AGE", 3600)
-    monkeypatch.setattr(server, "LAST_PRUNE", 0.0)
+    monkeypatch.setattr(cache_module, "CACHE_DIR", str(tmp_path))
+    monkeypatch.setattr(cache_module, "CACHE_MAX_AGE", 3600)
+    monkeypatch.setattr(cache_module, "LAST_PRUNE", 0.0)
     server.prune_cache(force=True)
     assert not old.exists()
     assert fresh.exists()

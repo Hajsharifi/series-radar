@@ -13,6 +13,9 @@ PORT="${SERIES_RADAR_PORT:-8090}"
 
 install -d -m 0755 "$DEST"
 install -m 0644 "$ROOT/server/server.py" "$DEST/server.py"
+rm -rf "$DEST/series_radar"
+cp -a "$ROOT/server/series_radar" "$DEST/series_radar"
+find "$DEST/series_radar" -name '__pycache__' -type d -prune -exec rm -rf {} +
 
 if [[ "${INSTALL_UNIT:-0}" == "1" ]]; then
   install -m 0644 "$ROOT/server/series-radar-api.service" /etc/systemd/system/series-radar-api.service

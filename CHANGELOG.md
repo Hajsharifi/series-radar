@@ -2,6 +2,13 @@
 
 All notable changes to Series Radar are documented here.
 
+## [v1.10.3] - 2026-11-17
+
+- تقسیم `server.py` به پکیج `series_radar/`: config، cache، metrics، http، text، omdb، tmdb، catalog، boxoffice، handler
+- نگه‌داشتن `server.py` به‌عنوان entry point سازگار با systemd و تست‌های قبلی
+- به‌روزرسانی `deploy.sh` برای انتقال پکیج و پاک‌سازی `__pycache__`
+- تست دود همهٔ endpointهای اصلی پس از استقرار
+
 ## [v1.10.2] - 2026-11-17
 
 - Error Boundary سراسری و مسیر‌محور با بازیابی خودکار پس از جابه‌جایی
