@@ -23,7 +23,8 @@ public class ReminderReceiver extends BroadcastReceiver {
         String route = intent.getStringExtra("route");
         String title = intent.getStringExtra("title");
         String body = intent.getStringExtra("body");
-        boolean movie = "movie".equals(kind) || "movie_track".equals(kind);
+        boolean movie = "movie".equals(kind) || "movie_track".equals(kind)
+                || "movie_theatrical".equals(kind);
         if (title == null || title.isEmpty()) title = movie ? "یادآوری انتشار فیلم" : "یادآوری پخش";
         if (body == null || body.isEmpty()) {
             body = movie

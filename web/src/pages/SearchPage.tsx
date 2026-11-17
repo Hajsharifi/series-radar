@@ -13,6 +13,9 @@ import {
 import { Poster } from "../components/Poster";
 import { toPersianDigits, jalaliDate } from "../lib/date";
 import { useSearchHistory } from "../lib/searchHistory";
+import { useMovieCatalog } from "../hooks/useMovies";
+import { movieStage, movieStageLabel, tehranTodayISO } from "../lib/movies";
+import type { Movie } from "../types";
 
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -40,6 +43,7 @@ export default function SearchPage() {
     setFilters((prev) => ({ ...prev, type: t }));
   };
 
+  const catalog = useMovieCatalog();
   const live = useLiveSearch(query, type);
   const suggestion = live.suggestion;
   const advanced = useAdvancedSearch(filters);
@@ -277,7 +281,7 @@ export default function SearchPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {results.map((item, i) => (
-              <SearchResultCard key={`${item.mediaType}-${item.id}-${i}`} item={item} />
+              <SearchResultCard key={`${item.mediaType}-${item.id}-${i}`} item={item} byId={catalog.byId} />
             ))}
           </div>
         )}
@@ -286,7 +290,7 @@ export default function SearchPage() {
   );
 }
 
-function SearchResultCard({ item }: { item: SearchResult }) {
+function SearchResultCard({ item, byId }: { item: SearchResult; byId: Map<number, Movie> }) {
   // Explicit mediaType from API; fall back to field presence only as last resort.
   const isTV = item.mediaType
     ? item.mediaType === "tv"
@@ -295,8 +299,29 @@ function SearchResultCard({ item }: { item: SearchResult }) {
   const genreNames = item.genres?.length
     ? item.genres.slice(0, 2).join(" · ")
     : (item.genreIds ?? []).slice(0, 2).map(getGenreName).join(" · ");
-  const badgeClass = "rounded-full px-2 py-0.5 text-[10px] font-bold " +
-    (isTV ? "bg-sky-400/90 text-sky-950" : "bg-violet-400/90 text-violet-950");
+
+  // Use verified stage data when the film is in a movie list. For other search
+  // results only claim what the release date can prove - never a false "waiting".
+  const known = !isTV ? byId.get(item.id) : undefined;
+  const stage = known ? movieStage(known) : null;
+  const upcomingByDate = !isTV && Boolean(item.releaseDate && item.releaseDate > tehranTodayISO());
+  const movieLabel = isTV
+    ? null
+    : stage
+      ? movieStageLabel(stage)
+      : upcomingByDate
+        ? "بهزودی"
+        : "اکرانشده";
+  const movieTone = stage === "quality"
+    ? "bg-amber-400/90 text-amber-950"
+    : stage === "upcoming" || upcomingByDate
+      ? "bg-sky-400/90 text-sky-950"
+      : stage === "available"
+        ? "bg-emerald-400/90 text-emerald-950"
+        : "bg-violet-400/90 text-violet-950";
+  const badgeClass =
+    "rounded-full px-2 py-0.5 text-[10px] font-bold " +
+    (isTV ? "bg-sky-400/90 text-sky-950" : movieTone);
 
   return (
     <Link to={isTV ? `/tv/${item.id}` : `/movie/${item.id}`} className="sr-no-tap block">
@@ -314,6 +339,9 @@ function SearchResultCard({ item }: { item: SearchResult }) {
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-ink-950 via-ink-950/50 to-transparent" />
           <span className={`absolute right-2 top-2 ${badgeClass}`}>{isTV ? "سریال" : "فیلم"}</span>
+          {movieLabel && (
+            <span className={`absolute right-2 top-8 ${movieTone}`}>{movieLabel}</span>
+          )}
           {typeof item.rating === "number" && item.rating > 0 && (
             <span className="absolute left-2 top-2 rounded-lg bg-black/65 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 backdrop-blur">
               ★ {toPersianDigits(item.rating.toFixed(1))}

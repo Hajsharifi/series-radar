@@ -206,9 +206,3 @@ export function MovieRow({
     </article>
   );
 }
-
-export function movieOnlineLabel(movie: Movie): string {
-  const date = movie.digitalDate ?? movie.onlineDate ?? movie.physicalDate;
-  if (!date) return "تاریخ نامشخص";
-  return dayCountdownLabel(date);
-}

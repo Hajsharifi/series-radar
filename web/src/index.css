@@ -8,8 +8,8 @@
   --color-ink-800: #161e3a;
   --color-ink-700: #212b4d;
   --color-ink-600: #2e3a62;
-  --color-ink-400: #6d7aa3;
-  --color-ink-300: #9aa6c9;
+  --color-ink-400: #8f9bba;
+  --color-ink-300: #b2bcd7;
   --color-amber-glow: #f5b642;
 }
 
@@ -28,7 +28,7 @@
   --surface-2: #161e3a;
   --border: rgba(148, 163, 196, 0.14);
   --text: #eef2ff;
-  --muted: #9aa6c9;
+  --muted: #b2bcd7;
   --amber: #f5b642;
 }
 

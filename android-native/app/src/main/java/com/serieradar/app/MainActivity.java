@@ -278,6 +278,11 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void syncMovieWatchlist(String payload) {
+            WatchlistScheduler.sync(getApplicationContext(), payload);
+        }
+
+        @JavascriptInterface
         public void requestNotificationPermission() {
             requestNotificationPermissionInternal();
         }

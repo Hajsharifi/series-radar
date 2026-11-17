@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Movie, MovieTab } from "../types";
 import {
   cachedMovies,
@@ -53,6 +53,7 @@ export function useMovieList(tab: MovieTab): MovieListState {
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
   const tabRef = useRef(tab);
+  const lastLoad = useRef(0);
 
   const load = useCallback(
     async (force: boolean) => {
@@ -70,6 +71,7 @@ export function useMovieList(tab: MovieTab): MovieListState {
         );
         setError(err instanceof Error ? err.message : "خطا در دریافت فیلم‌ها");
       } finally {
+        lastLoad.current = Date.now();
         inFlight.current = false;
         setLoading(false);
         setRefreshing(false);
@@ -91,6 +93,18 @@ export function useMovieList(tab: MovieTab): MovieListState {
   useEffect(() => {
     const timer = window.setInterval(() => void load(false), REFRESH_MS);
     return () => window.clearInterval(timer);
+  }, [load]);
+
+  // A WebView may be suspended for hours. Refresh once when it becomes visible
+  // again so a movie that crossed a stage boundary is re-bucketed immediately.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastLoad.current < 5 * 60 * 1000) return;
+      void load(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, [load]);
 
   const refresh = useCallback(() => {
@@ -151,5 +165,55 @@ export function useMovieFavorites() {
     remove,
     setReminder,
     isFavorite: (id: number) => ids.has(id),
+  };
+}
+
+export interface MovieCatalog {
+  quality: MovieListState;
+  upcoming: MovieListState;
+  byId: Map<number, Movie>;
+  all: Movie[];
+  /** Re-bucketed from both cached lists, so a film crossing a stage boundary
+   * appears in its new tab immediately - no 20-30 minute gap. */
+  qualityItems: Movie[];
+  upcomingItems: Movie[];
+  loading: boolean;
+  refreshing: boolean;
+  error: string | null;
+  refresh: () => void;
+}
+
+/** One place that owns both movie lists. Every screen uses this so the two
+ * tabs always agree on a movie's current stage. */
+export function useMovieCatalog(): MovieCatalog {
+  const quality = useMovieList("quality");
+  const upcoming = useMovieList("upcoming");
+
+  const byId = useMemo(() => {
+    const map = new Map<number, Movie>();
+    for (const movie of [...quality.items, ...upcoming.items]) map.set(movie.id, movie);
+    return map;
+  }, [quality.items, upcoming.items]);
+
+  const all = useMemo(() => [...byId.values()], [byId]);
+  const qualityItems = useMemo(() => all.filter((movie) => movieStage(movie) === "quality"), [all]);
+  const upcomingItems = useMemo(() => all.filter((movie) => movieStage(movie) === "upcoming"), [all]);
+
+  const refresh = useCallback(() => {
+    quality.refresh();
+    upcoming.refresh();
+  }, [quality.refresh, upcoming.refresh]);
+
+  return {
+    quality,
+    upcoming,
+    byId,
+    all,
+    qualityItems,
+    upcomingItems,
+    loading: quality.loading && upcoming.loading,
+    refreshing: quality.refreshing || upcoming.refreshing,
+    error: quality.error ?? upcoming.error,
+    refresh,
   };
 }

@@ -37,6 +37,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".WatchlistReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".BootReceiver"
             android:enabled="true"
             android:exported="true">

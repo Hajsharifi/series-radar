@@ -1,70 +1,76 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFavorites } from "../hooks/useFavorites";
 import { useScheduleContext } from "../hooks/ScheduleContext";
-import { useMovieFavorites, useMovieList } from "../hooks/useMovies";
+import { useMovieCatalog, useMovieFavorites } from "../hooks/useMovies";
 import { useMovieTrack } from "../hooks/useMovieTrack";
 import {
   leadHoursLabel,
-  reminderTimeMsWithLead,
   reminderTimeForDayWithLead,
+  reminderTimeMsWithLead,
   tehranClock,
 } from "../lib/date";
 import { getSettings } from "../lib/settings";
-import { fetchMovieDetail, isMovieFinished } from "../lib/movies";
-import { isNativeApp, syncNativeReminders, type NativeReminder, updateWidgetData } from "../lib/native";
-import type { Movie } from "../types";
+import {
+  fetchMovieDetail,
+  isMovieFinished,
+  movieStage,
+  tehranTodayISO,
+} from "../lib/movies";
+import { recordMovieRemoval } from "../lib/movie-removals";
+import {
+  isNativeApp,
+  syncNativeReminders,
+  syncMovieWatchlist,
+  type NativeReminder,
+  updateWidgetData,
+} from "../lib/native";
 
 /**
- * Keeps Android alarms in sync with starred shows, starred movies, and tracked cinema movies.
- * Only items with reminders enabled and a future release are scheduled.
+ * Keeps Android alarms in sync with starred shows, starred movies (both
+ * theatrical release and digital quality) and tracked quality films.
  */
 export function NativeReminders() {
   const { shows } = useScheduleContext();
   const favorites = useFavorites();
   const movieFavorites = useMovieFavorites();
   const movieTrack = useMovieTrack();
-  const quality = useMovieList("quality");
-  const upcoming = useMovieList("upcoming");
-
-  const moviesById = useMemo(() => {
-    const map = new Map<number, Movie>();
-    for (const movie of [...quality.items, ...upcoming.items]) map.set(movie.id, movie);
-    return map;
-  }, [quality.items, upcoming.items]);
+  const catalog = useMovieCatalog();
+  const byId = catalog.byId;
 
   const pruned = useRef(new Set<number>());
   const detailChecked = useRef(new Map<number, number>());
 
-  // Global lifecycle cleanup: a movie whose good quality is out must leave
-  // both favorites and quality tracking on every device, not just the favorites page.
+  // Global lifecycle cleanup. A released film leaves favorites AND tracking on
+  // every screen, and the reason is kept for the "recently released" history.
   useEffect(() => {
     for (const item of movieFavorites.items) {
-      const movie = moviesById.get(item.movieId);
+      const movie = byId.get(item.movieId);
       if (movie && isMovieFinished(movie) && !pruned.current.has(item.movieId)) {
         pruned.current.add(item.movieId);
+        recordMovieRemoval(movie.id, movie.title, movieStage(movie));
         movieFavorites.remove(item.movieId);
       }
     }
     for (const item of movieTrack.items) {
-      const movie = moviesById.get(item.movieId);
+      const movie = byId.get(item.movieId);
       if (movie && isMovieFinished(movie) && !pruned.current.has(item.movieId)) {
         pruned.current.add(item.movieId);
         movieTrack.remove(item.movieId);
       }
     }
-  }, [movieFavorites, movieTrack, moviesById]);
+  }, [movieFavorites, movieTrack, byId]);
 
-  // Movies that dropped out of both lists need a fresh detail lookup before
-  // we can decide that their quality has been released.
+  // Favorites that vanished from both lists need a fresh detail lookup before
+  // we can conclude their good quality has been released. Offline: never prune.
   useEffect(() => {
     const ids = new Set([
       ...movieFavorites.items.map((item) => item.movieId),
       ...movieTrack.items.map((item) => item.movieId),
     ]);
     const now = Date.now();
-    for (const id of moviesById.keys()) detailChecked.current.delete(id);
+    for (const id of byId.keys()) detailChecked.current.delete(id);
     const missing = [...ids].filter(
-      (id) => !moviesById.has(id) && now - (detailChecked.current.get(id) ?? 0) > 30 * 60 * 1000,
+      (id) => !byId.has(id) && now - (detailChecked.current.get(id) ?? 0) > 30 * 60 * 1000,
     );
     if (missing.length === 0) return;
     missing.forEach((id) => detailChecked.current.set(id, now));
@@ -81,48 +87,48 @@ export function NativeReminders() {
       if (cancelled) return;
       for (const movie of details) {
         if (!movie || !isMovieFinished(movie)) continue;
-        if (movieFavorites.items.some((item) => item.movieId === movie.id)) movieFavorites.remove(movie.id);
-        if (movieTrack.items.some((item) => item.movieId === movie.id)) movieTrack.remove(movie.id);
+        if (movieFavorites.items.some((item) => item.movieId === movie.id)) {
+          recordMovieRemoval(movie.id, movie.title, movieStage(movie));
+          movieFavorites.remove(movie.id);
+        }
+        if (movieTrack.items.some((item) => item.movieId === movie.id)) {
+          movieTrack.remove(movie.id);
+        }
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [movieFavorites, movieTrack, moviesById]);
+  }, [movieFavorites, movieTrack, byId]);
 
-  // Check tracked movies for digital/physical dates periodically
+  // Hands the watchlist to the native background checker. It fills the gap for
+  // films with no digital date yet, which have no exact alarm to schedule.
   useEffect(() => {
-    if (!isNativeApp()) return;
-    const timer = window.setInterval(async () => {
-      for (const tracked of movieTrack.items) {
-        if (tracked.reminderEnabled === false) continue;
-        try {
-          const detail = await fetchMovieDetail(tracked.movieId);
-          const movie = detail.movie;
-          const day = movie.digitalDate ?? null;
-          if (!day) continue;
-          const triggerAt = reminderTimeForDayWithLead(day, getSettings().defaultLeadHours);
-          if (triggerAt === null || triggerAt <= Date.now()) continue;
-          // Sync will pick it up on next render
-        } catch {
-          /* ignore */
-        }
-      }
-    }, 6 * 60 * 60 * 1000); // every 6 hours
-    return () => window.clearInterval(timer);
-  }, [movieTrack.items]);
+    const items = movieFavorites.items
+      .filter((item) => item.reminderEnabled !== false)
+      .map((item) => {
+        const movie = byId.get(item.movieId);
+        return {
+          id: item.movieId,
+          title: movie?.title ?? `فیلم ${item.movieId}`,
+          digitalDate: movie?.digitalDate ?? "",
+          stage: movie ? movieStage(movie) : "unknown",
+        };
+      });
+    syncMovieWatchlist(items);
+  }, [movieFavorites.items, byId]);
 
   useEffect(() => {
     if (!isNativeApp()) return;
-    const byId = new Map(shows.map((show) => [show.id, show]));
+    const byShowId = new Map(shows.map((show) => [show.id, show]));
     const now = Date.now();
-
+    const defaultLead = getSettings().defaultLeadHours;
     const items: NativeReminder[] = [];
 
-    const defaultLead = getSettings().defaultLeadHours;
+    // Series premieres.
     for (const favorite of favorites.items) {
       if (favorite.reminderEnabled === false) continue;
-      const show = byId.get(favorite.showId);
+      const show = byShowId.get(favorite.showId);
       if (!show?.airstamp) continue;
       const lead = favorite.reminderLeadHours || defaultLead;
       const triggerAt = reminderTimeMsWithLead(show.airstamp, lead);
@@ -137,14 +143,31 @@ export function NativeReminders() {
       });
     }
 
-    // Digital releases only - one reminder per movie, no duplicate for favorites + tracked.
+    // Theatrical release of an upcoming favorite: 09:00 on release day.
+    for (const favorite of movieFavorites.items) {
+      if (favorite.reminderEnabled === false) continue;
+      const movie = byId.get(favorite.movieId);
+      if (!movie || movieStage(movie) !== "upcoming") continue;
+      const day = movie.theatricalDate ?? movie.releaseDate;
+      const triggerAt = reminderTimeForDayWithLead(day, 0);
+      if (triggerAt === null || triggerAt <= now) continue;
+      items.push({
+        id: movie.id,
+        kind: "movie_theatrical",
+        route: `/movie/${movie.id}`,
+        title: `اکران سینمایی «${movie.title}»`,
+        body: "امروز روی پرده میرود؛ از حالا منتظر کیفیت خوبش هستیم.",
+        triggerAt,
+      });
+    }
+
+    // Digital quality release - one reminder per movie, favorites first.
     const remindedMovieIds = new Set<number>();
     for (const favorite of movieFavorites.items) {
       if (favorite.reminderEnabled === false) continue;
-      const movie = moviesById.get(favorite.movieId);
+      const movie = byId.get(favorite.movieId);
       if (!movie) continue;
-      const day = movie.onlineDate ?? movie.digitalDate ?? null;
-      const triggerAt = reminderTimeForDayWithLead(day, defaultLead);
+      const triggerAt = reminderTimeForDayWithLead(movie.digitalDate ?? null, defaultLead);
       if (triggerAt === null || triggerAt <= now) continue;
       remindedMovieIds.add(movie.id);
       items.push({
@@ -157,16 +180,16 @@ export function NativeReminders() {
       });
     }
 
-    // Tracked cinema movies (waiting for quality) - skip if already reminded as favorite.
     for (const tracked of movieTrack.items) {
       if (tracked.reminderEnabled === false || remindedMovieIds.has(tracked.movieId)) continue;
-      const movie = moviesById.get(tracked.movieId);
+      const movie = byId.get(tracked.movieId);
       if (!movie) continue;
-      const day = movie.onlineDate ?? movie.digitalDate ?? null;
-      const triggerAt = reminderTimeForDayWithLead(day, defaultLead);
+      const triggerAt = reminderTimeForDayWithLead(movie.digitalDate ?? null, defaultLead);
       if (triggerAt === null || triggerAt <= now) continue;
       items.push({
-        id: tracked.movieId + 3_000_000, // separate range
+        // Plain id: ReminderScheduler assigns the separate request-code range
+        // from `kind`. (Older builds added the offset here as well.)
+        id: tracked.movieId,
         kind: "movie_track",
         route: `/movie/${tracked.movieId}`,
         title: `نسخهٔ دیجیتال «${movie.title}»`,
@@ -177,66 +200,72 @@ export function NativeReminders() {
 
     syncNativeReminders(items);
 
-    // Prepare widget data: next 3 upcoming items (series + movies)
-    const widgetItems: Array<{
+    // Widget: the three closest future items, sorted by actual time/day.
+    type WidgetItem = {
       id: number;
       title: string;
       subtitle: string;
       type: "series" | "movie";
       posterUrl?: string;
-    }> = [];
+      at: number;
+    };
+    const widgetItems: WidgetItem[] = [];
 
-    // Add upcoming series (by airstamp)
-    const upcomingShows = shows
-      .filter((s) => s.airstamp && new Date(s.airstamp).getTime() > now)
-      .sort((a, b) => (a.airstamp ?? "").localeCompare(b.airstamp ?? ""))
-      .slice(0, 3);
-
-    for (const show of upcomingShows) {
-      const dayLabel = show.airstamp ? new Date(show.airstamp).toLocaleDateString("fa-IR", {
-        weekday: "short", day: "numeric", month: "short"
-      }) : "—";
+    for (const show of shows) {
+      if (!show.airstamp) continue;
+      const at = new Date(show.airstamp).getTime();
+      if (!Number.isFinite(at) || at <= now) continue;
+      const dayLabel = new Date(at).toLocaleDateString("fa-IR", {
+        weekday: "short", day: "numeric", month: "short",
+      });
       widgetItems.push({
         id: show.id,
         title: show.title,
         subtitle: `${dayLabel} • ${show.network ?? "—"}`,
         type: "series",
         posterUrl: show.posterPath ?? undefined,
+        at,
       });
     }
 
-    // Add upcoming movies (by theatrical/digital date)
-    const allMovies = [...quality.items, ...upcoming.items];
-    const upcomingMovies = allMovies
-      .filter((m) => {
-        const date = m.theatricalDate ?? m.releaseDate ?? m.digitalDate ?? m.physicalDate;
-        return date && date >= new Date().toISOString().slice(0, 10);
-      })
-      .sort((a, b) => {
-        const ad = a.theatricalDate ?? a.releaseDate ?? a.digitalDate ?? a.physicalDate ?? "9999";
-        const bd = b.theatricalDate ?? b.releaseDate ?? b.digitalDate ?? b.physicalDate ?? "9999";
-        return ad.localeCompare(bd);
-      })
-      .slice(0, 3);
-
-    for (const movie of upcomingMovies) {
-      const date = movie.theatricalDate ?? movie.releaseDate ?? movie.digitalDate ?? movie.physicalDate;
-      const dayLabel = date ? new Date(date + "T12:00:00Z").toLocaleDateString("fa-IR", {
-        weekday: "short", day: "numeric", month: "short"
-      }) : "—";
+    const today = tehranTodayISO();
+    for (const movie of catalog.all) {
+      const stage = movieStage(movie);
+      let day: string | null = null;
+      let label = "";
+      if (stage === "upcoming") {
+        day = movie.theatricalDate ?? movie.releaseDate ?? null;
+        label = "اکران سینمایی";
+      } else if (stage === "quality" && movie.digitalDate && movie.digitalDate > today) {
+        day = movie.digitalDate;
+        label = "انتشار دیجیتال";
+      }
+      if (!day || day <= today) continue;
+      const at = Date.parse(`${day}T00:00:00Z`);
+      if (!Number.isFinite(at)) continue;
+      const dayLabel = new Date(at).toLocaleDateString("fa-IR", {
+        weekday: "short", day: "numeric", month: "short",
+      });
       widgetItems.push({
         id: movie.id,
         title: movie.title,
-        subtitle: `${dayLabel} • سینما/خانه`,
+        subtitle: `${dayLabel} • ${label}`,
         type: "movie",
         posterUrl: movie.posterPath ?? undefined,
+        at,
       });
     }
 
-    // Sort combined by date and take top 3
-    widgetItems.sort((a, b) => a.subtitle.localeCompare(b.subtitle));
-    updateWidgetData(widgetItems.slice(0, 3));
-  }, [shows, favorites.items, movieFavorites.items, movieTrack.items, moviesById]);
+    widgetItems.sort((a, b) => a.at - b.at);
+    updateWidgetData(widgetItems.slice(0, 3).map(({ at, ...item }) => item));
+  }, [
+    shows,
+    favorites.items,
+    movieFavorites.items,
+    movieTrack.items,
+    byId,
+    catalog.all,
+  ]);
 
   return null;
 }

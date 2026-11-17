@@ -277,12 +277,24 @@ export function reminderTimeMsWithLead(stamp?: string | null, leadHours = 24): n
   return trigger;
 }
 
-/** Same as above for a plain YYYY-MM-DD release day (movies have no airtime). */
+/** 09:00 Tehran on a plain YYYY-MM-DD day. Movies have no airtime, so the
+ * release "moment" is defined as the morning of the release day; this keeps
+ * "24h before" at 09:00 the previous day (the same as the original behavior)
+ * instead of the accidental 15:30 that came from a 12:00Z pseudo-instant. */
+export function releaseMorningMs(day?: string | null): number | null {
+  if (!day) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+  if (!match) return null;
+  return tehranWallToEpoch(Number(match[1]), Number(match[2]), Number(match[3]), 9, 0);
+}
+
+/** Reminder epoch for a plain YYYY-MM-DD release day with a custom lead. */
 export function reminderTimeForDayWithLead(day?: string | null, leadHours = 24): number | null {
   if (!day) return null;
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(day);
-  if (!match) return reminderTimeMsWithLead(day, leadHours);
-  return reminderTimeMsWithLead(`${match[1]}-${match[2]}-${match[3]}T12:00:00Z`, leadHours);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return reminderTimeMsWithLead(day, leadHours);
+  const morning = releaseMorningMs(day);
+  if (morning === null) return null;
+  return reminderTimeMsWithLead(new Date(morning).toISOString(), leadHours);
 }
 
 /** 09:00 Tehran on the day a `leadHours`-before reminder will fire. */

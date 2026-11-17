@@ -5,7 +5,7 @@ export interface NativeReminder {
   triggerAt: number;
   body: string;
   /** Series and movies may share numeric ids, so the kind keeps alarms apart. */
-  kind?: "show" | "movie" | "movie_track";
+  kind?: "show" | "movie" | "movie_track" | "movie_theatrical";
   /** In-app hash route opened when the notification is tapped. */
   route?: string;
 }
@@ -15,6 +15,7 @@ interface AndroidReminderBridge {
   requestNotificationPermission?(): void;
   openExactAlarmSettings?(): void;
   updateWidgetData?(json: string): void;
+  syncMovieWatchlist?(json: string): void;
   openExternal?(url: string): void;
   downloadAndInstall?(url: string, version: string): void;
   setSystemBarsColor?(color: string): void;
@@ -94,6 +95,25 @@ export function setSystemBarsColor(color: string): void {
     window.AndroidReminders?.setSystemBarsColor?.(color);
   } catch {
     /* ignore */
+  }
+}
+
+/** Gives the native background checker the starred movies. It only needs to
+ * act on films whose digital date was unknown when the app was last open -
+ * known dates already have an exact alarm. */
+export interface WatchedMovie {
+  id: number;
+  title: string;
+  digitalDate: string;
+  stage: string;
+}
+
+export function syncMovieWatchlist(items: WatchedMovie[]): void {
+  if (!isNativeApp()) return;
+  try {
+    window.AndroidReminders?.syncMovieWatchlist?.(JSON.stringify(items));
+  } catch {
+    /* bridge must never break the UI */
   }
 }
 

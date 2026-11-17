@@ -81,20 +81,6 @@ export function tehranTodayISO(): string {
   return `${get("year")}-${get("month")}-${get("day")}`;
 }
 
-/** Whether a movie's theatrical date is in the future (Tehran). */
-export function isUpcoming(movie: Movie): boolean {
-  const date = movie.theatricalDate ?? movie.releaseDate;
-  if (!date) return false;
-  return date >= tehranTodayISO();
-}
-
-/** Whether a movie has a future online release (digital/physical). */
-export function hasUpcomingOnline(movie: Movie): boolean {
-  const date = movie.onlineDate ?? movie.digitalDate ?? movie.physicalDate;
-  if (!date) return false;
-  return date >= tehranTodayISO();
-}
-
 export type MovieStage = "upcoming" | "quality" | "available" | "expired" | "unknown";
 
 function plainDay(value?: string | null): string | null {
@@ -291,16 +277,6 @@ export async function searchMovies(query: string): Promise<Movie[]> {
   if (text.length < 2) return [];
   const data = await getJson<{ items: Movie[] }>("/api/movies/search?q=" + encodeURIComponent(text), 15000);
   return Array.isArray(data.items) ? data.items : [];
-}
-
-export function candidateOnlineDates(movie: Movie): string[] {
-  const dates = [movie.releaseKind === "physical" ? movie.physicalDate : movie.digitalDate, movie.digitalDate, movie.physicalDate];
-  return dates.filter((value): value is string => Boolean(value));
-}
-
-/** Date to show on an online-release card, preferring the chosen online date. */
-export function movieOnlineDate(movie: Movie): string | null {
-  return movie.onlineDate ?? movie.digitalDate ?? movie.physicalDate ?? null;
 }
 
 export function moviePrimaryDate(movie: Movie, tab: MovieTab): string | null {

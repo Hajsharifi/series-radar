@@ -21,7 +21,8 @@ import {
   gregorianDate,
   jalaliDate,
   leadHoursLabel,
-  reminderDateWithLead,
+  releaseMorningMs,
+  reminderTimeForDayWithLead,
   tehranClock,
   tehranDateFromStamp,
   toPersianDigits,
@@ -108,11 +109,22 @@ export function MovieDetailsPage() {
 
   const stage = movie ? movieStage(movie) : "unknown";
   const finished = stage === "available" || stage === "expired";
+  const today = tehranTodayISO();
   const digitalDay = movie?.digitalDate ?? null;
-  const digitalFuture = Boolean(digitalDay && digitalDay > tehranTodayISO());
+  const digitalFuture = Boolean(digitalDay && digitalDay > today);
+  const theatricalDay = movie?.theatricalDate ?? movie?.releaseDate ?? null;
+  const theatricalFuture = Boolean(theatricalDay && theatricalDay > today);
   const lead = getSettings().defaultLeadHours;
-  const reminderDay = digitalFuture ? reminderDateWithLead(`${digitalDay}T12:00:00Z`, lead) : null;
-  const reminderClock = reminderDay ? tehranClock(reminderDay.toISOString()) : "—";
+
+  // One helper drives both the alarm and what the page promises to the user.
+  const digitalTriggerAt = digitalFuture ? reminderTimeForDayWithLead(digitalDay, lead) : null;
+  const digitalStamp = digitalTriggerAt ? new Date(digitalTriggerAt).toISOString() : null;
+  const reminderDay = digitalStamp ? tehranDateFromStamp(digitalStamp) : null;
+  const reminderClock = digitalStamp ? tehranClock(digitalStamp) : "—";
+
+  const theatricalTriggerAt = theatricalFuture ? releaseMorningMs(theatricalDay) : null;
+  const theatricalStamp = theatricalTriggerAt ? new Date(theatricalTriggerAt).toISOString() : null;
+  const theatricalClock = theatricalStamp ? tehranClock(theatricalStamp) : "—";
 
   if (!movie) {
     return (
@@ -284,11 +296,30 @@ export function MovieDetailsPage() {
                 </button>
               </div>
             </div>
+          ) : theatricalFuture ? (
+            <div className="rounded-2xl border border-sky-400/20 bg-sky-500/8 p-4">
+              <p className="text-[11px] text-ink-300">یادآوری اکران سینمایی</p>
+              <p className="mt-1 text-sm font-semibold text-white">
+                <JalaliSpans stamp={theatricalDay ? `${theatricalDay}T12:00:00Z` : null} className="text-sm font-semibold text-white" />
+                {" "}ساعت {theatricalClock}
+              </p>
+              <p className="mt-2 text-[11px] leading-relaxed text-ink-300">
+                {!favorite
+                  ? "با انتخاب ستاره، روز اکرانش یادآوری میشود؛ سپس منتظر کیفیت خوبش میمانیم."
+                  : favorite.reminderEnabled === false
+                    ? "یادآوری این فیلم خاموش است."
+                    : `فعال است · ${theatricalClock} به وقت تهران، روز اکران.`}
+              </p>
+            </div>
           ) : finished ? (
             <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/8 p-4 text-xs leading-relaxed text-emerald-200">
               کیفیت خوب این فیلم منتشر شده و از فهرست انتظار و ستاره‌ها حذف شده است.
             </div>
-          ) : null}
+          ) : (
+            <div className="rounded-2xl border border-white/8 bg-black/25 p-4 text-[11px] leading-relaxed text-ink-300">
+              تاریخ دقیق اکران یا انتشار دیجیتال اعلام نشده است. فیلم را ستاره بزن تا بهمحض اعلام یا انتشار، یک اطلاعیه دریافت کنی.
+            </div>
+          )}
 
           { (movie.budget || movie.revenue || movie.imdbRating || movie.rottenTomatoesRating || movie.metacriticRating) ? (
             <div className="rounded-2xl border border-white/8 bg-black/25 p-4">

@@ -59,6 +59,7 @@ public final class ReminderScheduler {
     private static int requestCode(int id, String kind) {
         if (id <= 0) return 0;
         if ("movie_track".equals(kind)) return id + 3_000_000;
+        if ("movie_theatrical".equals(kind)) return id + 4_000_000;
         return "movie".equals(kind) ? id + 2_000_000 : id;
     }
 

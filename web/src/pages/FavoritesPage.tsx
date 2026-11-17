@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useFavorites } from "../hooks/useFavorites";
-import { useMovieFavorites, useMovieList } from "../hooks/useMovies";
+import { useMovieCatalog, useMovieFavorites } from "../hooks/useMovies";
 import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useFavoriteIds, useNowTicker } from "../hooks/useSchedule";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
@@ -12,9 +12,17 @@ import {
   moviePrimaryDate,
   movieStage,
 } from "../lib/movies";
+import {
+  clearMovieRemovals,
+  getMovieRemovals,
+  recordMovieRemoval,
+  subscribeMovieRemovals,
+  type MovieRemoval,
+} from "../lib/movie-removals";
 import type { Movie } from "../types";
 import { ShowRow } from "../components/ShowCard";
 import { MovieRow } from "../components/MovieCard";
+import { MovieHistoryPageLink } from "../components/MovieHistoryLink";
 
 type Tab = "series" | "movies";
 
@@ -23,18 +31,23 @@ export function FavoritesPage() {
   const favorites = useFavorites();
   const favoriteIds = useFavoriteIds();
   const movieFavorites = useMovieFavorites();
-  const quality = useMovieList("quality");
-  const upcoming = useMovieList("upcoming");
+  const catalog = useMovieCatalog();
   useNowTicker(30_000);
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<Tab>("series");
   const [detailMap, setDetailMap] = useState<Record<number, Movie>>({});
-  const [removedCount, setRemovedCount] = useState(0);
+  const [removals, setRemovals] = useState<MovieRemoval[]>(() => getMovieRemovals());
   // Last time we asked the server about a favorite that was absent from both
   // lists. Recheck after 30 minutes so a later digital release is still seen.
   const checked = useRef(new Map<number, number>());
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
+
+  useEffect(() => {
+    const sync = () => setRemovals(getMovieRemovals());
+    sync();
+    return subscribeMovieRemovals(sync);
+  }, []);
 
   const shows = useMemo(() => {
     const map = new Map(schedule.shows.map((show) => [show.id, show]));
@@ -49,11 +62,7 @@ export function FavoritesPage() {
       });
   }, [schedule.shows, favorites.items, query]);
 
-  const moviesById = useMemo(() => {
-    const map = new Map<number, Movie>();
-    for (const movie of [...quality.items, ...upcoming.items]) map.set(movie.id, movie);
-    return map;
-  }, [quality.items, upcoming.items]);
+  const moviesById = catalog.byId;
 
   // A favorite whose movie data is loaded and already finished must go.
   useEffect(() => {
@@ -61,7 +70,7 @@ export function FavoritesPage() {
       const movie = moviesById.get(item.movieId);
       if (movie && isMovieFinished(movie)) {
         movieFavorites.remove(item.movieId);
-        setRemovedCount((count) => count + 1);
+        recordMovieRemoval(movie.id, movie.title, movieStage(movie));
       }
     }
   }, [movieFavorites, moviesById]);
@@ -99,7 +108,7 @@ export function FavoritesPage() {
         if (!movie || !isMovieFinished(movie)) continue;
         if (movieFavorites.items.some((item) => item.movieId === movie.id)) {
           movieFavorites.remove(movie.id);
-          setRemovedCount((count) => count + 1);
+          recordMovieRemoval(movie.id, movie.title, movieStage(movie));
         }
       }
     });
@@ -157,7 +166,8 @@ export function FavoritesPage() {
             {toPersianDigits(movieFavorites.items.length)} فیلم · ذخیره‌شده روی همین گوشی
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <MovieHistoryPageLink />
           <Link to="/movies" className="rounded-lg bg-sky-400 px-3.5 py-2 text-xs font-semibold text-sky-950">
             افزودن فیلم
           </Link>
@@ -196,10 +206,32 @@ export function FavoritesPage() {
         dir="auto"
       />
 
-      {removedCount > 0 && (
-        <p className="rounded-xl border border-emerald-400/20 bg-emerald-500/8 px-3 py-2 text-[11px] text-emerald-200">
-          {toPersianDigits(removedCount)} فیلم از ستاره‌ها حذف شدند چون کیفیت خوبشان منتشر شده بود.
-        </p>
+      {removals.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/8 px-3 py-2 text-[11px] text-emerald-200">
+          <div className="space-y-0.5">
+            {removals.some((item) => item.reason === "available") && (
+              <p>
+                {toPersianDigits(removals.filter((item) => item.reason === "available").length)} فیلم حذف شدند چون کیفیت خوبشان منتشر شده بود.
+              </p>
+            )}
+            {removals.some((item) => item.reason === "expired") && (
+              <p>
+                {toPersianDigits(removals.filter((item) => item.reason === "expired").length)} فیلم حذف شدند چون بیش از ۹۰ روز از اکرانشان گذشت و تاریخ دیجیتالی اعلام نشد.
+              </p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <MovieHistoryPageLink />
+            <button
+              type="button"
+              onClick={clearMovieRemovals}
+              aria-label="بستن پیام"
+              className="rounded-md px-1.5 text-emerald-200/80 hover:text-white"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
       )}
 
       {tab === "series" ? (
