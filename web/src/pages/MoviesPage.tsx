@@ -10,8 +10,12 @@ import { RelativeUpdated } from "../components/DateChip";
 import { MovieCard } from "../components/MovieCard";
 
 const TABS: Array<{ key: MovieTab; label: string; hint: string }> = [
-  { key: "cinema", label: "روی پرده", hint: "فیلم‌های اکران‌شده — فقط منتظر نسخه دیجیتال باکیفیتشان هستیم" },
-  { key: "upcoming", label: "به‌زودی", hint: "اکران‌های سینمایی پیش‌رو" },
+  {
+    key: "quality",
+    label: "در انتظار کیفیت خوب",
+    hint: "اکران شده‌اند و هنوز نسخهٔ دیجیتال باکیفیتشان نیامده است",
+  },
+  { key: "upcoming", label: "به‌زودی", hint: "فقط فیلم‌هایی که هنوز اکران سینمایی نشده‌اند" },
 ];
 
 const GENRES = ["Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Fantasy", "History", "Horror", "Music", "Mystery", "Romance", "Science Fiction", "TV Movie", "Thriller", "War", "Western"];
@@ -29,7 +33,7 @@ function SkeletonCard() {
 }
 
 export function MoviesPage() {
-  const [tab, setTab] = useState<MovieTab>("cinema");
+  const [tab, setTab] = useState<MovieTab>("quality");
   const [query, setQuery] = useState("");
   const [genre, setGenre] = useState<string | null>(null);
   const [remote, setRemote] = useState<Movie[]>([]);
@@ -104,7 +108,7 @@ export function MoviesPage() {
           <MovieCard
             key={movie.id}
             movie={movie}
-            tab={searchingActive ? "upcoming" : tab}
+            tab={tab}
             favorite={favorites.ids.has(movie.id)}
             onToggleFavorite={toggleFavorite}
           />
@@ -125,7 +129,7 @@ export function MoviesPage() {
               فیلم‌ها، از <span className="text-amber-300">پردهٔ سینما</span> تا خانه
             </h1>
             <p className="mt-1.5 text-xs leading-relaxed text-ink-300">
-              اکران‌های سینمایی، فیلم‌های در انتظار نسخه دیجیتال، و اکران‌های پیش‌رو.
+              دو مرحلهٔ انتظار: فیلم‌های اکران‌شده در انتظار کیفیت خوب، و فیلم‌هایی که هنوز به پرده نرفته‌اند.
             </p>
           </div>
 
@@ -248,28 +252,18 @@ export function MoviesPage() {
           <p className="text-sm font-semibold text-white">فعلاً فیلمی در این بخش نیست</p>
           <p className="mt-1 text-xs text-ink-400">کمی بعد دوباره به‌روزرسانی کنید.</p>
         </div>
-      ) : tab === "online" ? (
-        <div className="space-y-6">
-          <section>
-            <div className="mb-2.5 flex items-baseline gap-2">
-              <h3 className="text-sm font-bold text-white">در انتظار نسخه دیجیتال</h3>
-              <span className="text-[11px] text-ink-400">{toPersianDigits(shown.length)} فیلم</span>
-            </div>
-            {renderGrid(shown)}
-          </section>
-        </div>
-      ) : tab === "upcoming" ? (
-        <div className="space-y-6">
-          <section>
-            <div className="mb-2.5 flex items-baseline gap-2">
-              <h3 className="text-sm font-bold text-white">اکران‌های پیش‌رو</h3>
-              <span className="text-[11px] text-ink-400">{toPersianDigits(shown.length)} فیلم</span>
-            </div>
-            {renderGrid(shown)}
-          </section>
-        </div>
       ) : (
-        renderGrid(shown)
+        <div className="space-y-6">
+          <section>
+            <div className="mb-2.5 flex items-baseline gap-2">
+              <h3 className="text-sm font-bold text-white">
+                {tab === "quality" ? "در انتظار کیفیت خوب" : "اکران‌های پیش‌رو"}
+              </h3>
+              <span className="text-[11px] text-ink-400">{toPersianDigits(shown.length)} فیلم</span>
+            </div>
+            {renderGrid(shown)}
+          </section>
+        </div>
       )}
 
       <section className="rounded-2xl border border-white/8 bg-ink-850/50 p-4">
@@ -278,7 +272,7 @@ export function MoviesPage() {
             <h3 className="text-sm font-semibold text-white">دربارهٔ این بخش</h3>
             <p className="mt-1 text-[11px] leading-relaxed text-ink-400">
               فهرست فیلم‌ها و تاریخ‌های اکران/انتشار از TMDB می‌آید و تاریخ‌ها به شمسی و میلادی نمایش داده
-              می‌شوند. هر فیلم اکران‌شده‌ای را ستاره‌دار می‌کنید، یعنی منتظر نسخه دیجیتال باکیفیت آن هستید — وقتی منتشر شد به شما اطلاع داده می‌شود.
+              می‌شوند. هر فیلم اکران‌شده‌ای را ستاره‌دار می‌کنید، یعنی منتظر نسخهٔ دیجیتال باکیفیت آن هستید — وقتی منتشر شد به شما اطلاع داده می‌شود و از فهرست ستاره‌ها هم حذف می‌شود.
             </p>
           </div>
           <Link to="/boxoffice" className="shrink-0 rounded-lg bg-white/6 px-3 py-1.5 text-xs text-ink-200">

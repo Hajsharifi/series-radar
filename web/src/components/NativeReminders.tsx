@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFavorites } from "../hooks/useFavorites";
 import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useMovieFavorites, useMovieList } from "../hooks/useMovies";
@@ -10,7 +10,7 @@ import {
   tehranClock,
 } from "../lib/date";
 import { getSettings } from "../lib/settings";
-import { fetchMovieDetail } from "../lib/movies";
+import { fetchMovieDetail, isMovieFinished } from "../lib/movies";
 import { isNativeApp, syncNativeReminders, type NativeReminder, updateWidgetData } from "../lib/native";
 import type { Movie } from "../types";
 
@@ -23,14 +23,72 @@ export function NativeReminders() {
   const favorites = useFavorites();
   const movieFavorites = useMovieFavorites();
   const movieTrack = useMovieTrack();
-  const online = useMovieList("online");
+  const quality = useMovieList("quality");
   const upcoming = useMovieList("upcoming");
 
   const moviesById = useMemo(() => {
     const map = new Map<number, Movie>();
-    for (const movie of [...online.items, ...upcoming.items]) map.set(movie.id, movie);
+    for (const movie of [...quality.items, ...upcoming.items]) map.set(movie.id, movie);
     return map;
-  }, [online.items, upcoming.items]);
+  }, [quality.items, upcoming.items]);
+
+  const pruned = useRef(new Set<number>());
+  const detailChecked = useRef(new Map<number, number>());
+
+  // Global lifecycle cleanup: a movie whose good quality is out must leave
+  // both favorites and quality tracking on every device, not just the favorites page.
+  useEffect(() => {
+    for (const item of movieFavorites.items) {
+      const movie = moviesById.get(item.movieId);
+      if (movie && isMovieFinished(movie) && !pruned.current.has(item.movieId)) {
+        pruned.current.add(item.movieId);
+        movieFavorites.remove(item.movieId);
+      }
+    }
+    for (const item of movieTrack.items) {
+      const movie = moviesById.get(item.movieId);
+      if (movie && isMovieFinished(movie) && !pruned.current.has(item.movieId)) {
+        pruned.current.add(item.movieId);
+        movieTrack.remove(item.movieId);
+      }
+    }
+  }, [movieFavorites, movieTrack, moviesById]);
+
+  // Movies that dropped out of both lists need a fresh detail lookup before
+  // we can decide that their quality has been released.
+  useEffect(() => {
+    const ids = new Set([
+      ...movieFavorites.items.map((item) => item.movieId),
+      ...movieTrack.items.map((item) => item.movieId),
+    ]);
+    const now = Date.now();
+    for (const id of moviesById.keys()) detailChecked.current.delete(id);
+    const missing = [...ids].filter(
+      (id) => !moviesById.has(id) && now - (detailChecked.current.get(id) ?? 0) > 30 * 60 * 1000,
+    );
+    if (missing.length === 0) return;
+    missing.forEach((id) => detailChecked.current.set(id, now));
+    let cancelled = false;
+    Promise.all(
+      missing.map(async (id) => {
+        try {
+          return (await fetchMovieDetail(id, true)).movie;
+        } catch {
+          return null;
+        }
+      }),
+    ).then((details) => {
+      if (cancelled) return;
+      for (const movie of details) {
+        if (!movie || !isMovieFinished(movie)) continue;
+        if (movieFavorites.items.some((item) => item.movieId === movie.id)) movieFavorites.remove(movie.id);
+        if (movieTrack.items.some((item) => item.movieId === movie.id)) movieTrack.remove(movie.id);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [movieFavorites, movieTrack, moviesById]);
 
   // Check tracked movies for digital/physical dates periodically
   useEffect(() => {
@@ -41,7 +99,7 @@ export function NativeReminders() {
         try {
           const detail = await fetchMovieDetail(tracked.movieId);
           const movie = detail.movie;
-          const day = movie.onlineDate ?? movie.digitalDate ?? movie.physicalDate ?? null;
+          const day = movie.digitalDate ?? null;
           if (!day) continue;
           const triggerAt = reminderTimeForDayWithLead(day, getSettings().defaultLeadHours);
           if (triggerAt === null || triggerAt <= Date.now()) continue;
@@ -148,7 +206,7 @@ export function NativeReminders() {
     }
 
     // Add upcoming movies (by theatrical/digital date)
-    const allMovies = [...online.items, ...upcoming.items];
+    const allMovies = [...quality.items, ...upcoming.items];
     const upcomingMovies = allMovies
       .filter((m) => {
         const date = m.theatricalDate ?? m.releaseDate ?? m.digitalDate ?? m.physicalDate;

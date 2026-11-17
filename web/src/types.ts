@@ -108,7 +108,8 @@ export interface MovieFavorite {
   addedAt: string;
 }
 
-export type MovieTab = "cinema" | "online" | "upcoming";
+/** "quality" replaces the old cinema/online split: released, awaiting digital. */
+export type MovieTab = "quality" | "upcoming";
 
 export interface BoxOfficeEntry {
   rank?: number;

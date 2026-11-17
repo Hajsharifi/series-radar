@@ -6,15 +6,27 @@ import { openExternalUrl } from "../lib/native";
 import type { Movie } from "../types";
 import { useMovieFavorites } from "../hooks/useMovies";
 import { useMovieTrack } from "../hooks/useMovieTrack";
-import { fetchMovieDetail, findCachedMovie, movieBackdropUrl, movieGenres, moviePosterUrl } from "../lib/movies";
+import {
+  fetchMovieDetail,
+  findCachedMovie,
+  movieBackdropUrl,
+  movieGenres,
+  moviePosterUrl,
+  movieStage,
+  movieStageLabel,
+  tehranTodayISO,
+} from "../lib/movies";
 import {
   dayCountdownLabel,
   gregorianDate,
   jalaliDate,
-  reminderTimeMsForDay,
+  leadHoursLabel,
+  reminderDateWithLead,
+  tehranClock,
   tehranDateFromStamp,
   toPersianDigits,
 } from "../lib/date";
+import { getSettings } from "../lib/settings";
 import { usdFull, usdShort } from "../lib/format";
 import { MoviePoster } from "../components/MoviePoster";
 import { JalaliSpans } from "../components/DateChip";
@@ -94,9 +106,13 @@ export function MovieDetailsPage() {
   const genres = useMemo(() => (movie ? movieGenres(movie) : []), [movie]);
   const backdrop = movie ? movieBackdropUrl(movie) : null;
 
-  const onlineDay = movie?.onlineDate ?? movie?.digitalDate ?? movie?.physicalDate ?? null;
-  const reminderEpoch = reminderTimeMsForDay(onlineDay);
-  const reminderDay = reminderEpoch ? new Date(reminderEpoch).toISOString() : null;
+  const stage = movie ? movieStage(movie) : "unknown";
+  const finished = stage === "available" || stage === "expired";
+  const digitalDay = movie?.digitalDate ?? null;
+  const digitalFuture = Boolean(digitalDay && digitalDay > tehranTodayISO());
+  const lead = getSettings().defaultLeadHours;
+  const reminderDay = digitalFuture ? reminderDateWithLead(`${digitalDay}T12:00:00Z`, lead) : null;
+  const reminderClock = reminderDay ? tehranClock(reminderDay.toISOString()) : "—";
 
   if (!movie) {
     return (
@@ -119,9 +135,6 @@ export function MovieDetailsPage() {
     );
   }
 
-  // Determine if movie is in cinema (has theatrical date but no digital/physical yet)
-  const isInCinema = movie?.theatricalDate && !movie?.digitalDate && !movie?.physicalDate;
-
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-2">
@@ -129,7 +142,7 @@ export function MovieDetailsPage() {
           → بازگشت به فیلم‌ها
         </Link>
         <div className="flex items-center gap-2">
-          {isInCinema && (
+          {stage === "quality" && (
             <button
               type="button"
               onClick={() => tracked.toggle(movie.id)}
@@ -140,15 +153,21 @@ export function MovieDetailsPage() {
               {tracked.ids.has(movie.id) ? "🔔 در رادار" : "🔔 پیگیری کیفیت"}
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => favorites.toggle(movie.id)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-              favorites.ids.has(movie.id) ? "bg-amber-400 text-ink-950" : "bg-white/8 text-white"
-            }`}
-          >
-            {favorites.ids.has(movie.id) ? "★ ستاره‌دار" : "☆ ستاره"}
-          </button>
+          {finished ? (
+            <span className="rounded-lg bg-white/6 px-3 py-1.5 text-xs text-ink-300">
+              کیفیت منتشر شد
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => favorites.toggle(movie.id)}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
+                favorites.ids.has(movie.id) ? "bg-amber-400 text-ink-950" : "bg-white/8 text-white"
+              }`}
+            >
+              {favorites.ids.has(movie.id) ? "★ ستاره‌دار" : "☆ ستاره"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -171,6 +190,15 @@ export function MovieDetailsPage() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="rounded-full bg-sky-400/90 px-2 py-0.5 text-[10px] font-bold text-sky-950">فیلم</span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  stage === "upcoming"
+                    ? "bg-sky-400/90 text-sky-950"
+                    : stage === "quality"
+                      ? "bg-amber-400/90 text-amber-950"
+                      : "bg-emerald-400/90 text-emerald-950"
+                }`}>
+                  {movieStageLabel(stage)}
+                </span>
                 {movie.certification && (
                   <span className="rounded-full bg-black/55 px-2 py-0.5 text-[10px] text-ink-200">{movie.certification}</span>
                 )}
@@ -213,21 +241,21 @@ export function MovieDetailsPage() {
               <ReleaseRow label="اکران سینمایی" day={movie.theatricalDate ?? movie.releaseDate} tone="amber" />
               <ReleaseRow label="نسخهٔ دیجیتال" day={movie.digitalDate} tone="sky" />
             </div>
-            {onlineDay && (
+            {digitalDay && (
               <p className="mt-2 text-[11px] text-ink-400">
                 {movie.availableNow
-                  ? `نسخهٔ دیجیتال از ${dayCountdownLabel(onlineDay).replace("پخش شده", "چند روز پیش")} در دسترس است.`
-                  : `انتشار نسخهٔ دیجیتال ${dayCountdownLabel(onlineDay)} است.`}
+                  ? `نسخهٔ دیجیتال از ${dayCountdownLabel(digitalDay).replace("پخش شده", "چند روز پیش")} در دسترس است.`
+                  : `انتشار نسخهٔ دیجیتال ${dayCountdownLabel(digitalDay)} است.`}
               </p>
             )}
           </div>
 
-          {onlineDay && (
+          {digitalFuture ? (
             <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
-              <p className="text-[11px] text-ink-400">یادآوری انتشار خانگی</p>
+              <p className="text-[11px] text-ink-400">یادآوری انتشار کیفیت خوب</p>
               <p className="mt-1 text-sm font-semibold text-white">
-                <JalaliSpans date={reminderDay ? tehranDateFromStamp(reminderDay) : null} className="text-sm font-semibold text-white" />
-                {" "}ساعت ۰۹:۰۰
+                <JalaliSpans date={reminderDay} className="text-sm font-semibold text-white" />
+                {" "}ساعت {reminderClock}
               </p>
               <div className="mt-2 flex items-center justify-between gap-3">
                 <p className="text-[11px] text-ink-400">
@@ -235,7 +263,7 @@ export function MovieDetailsPage() {
                     ? "با ستاره‌کردن فیلم فعال می‌شود"
                     : favorite.reminderEnabled === false
                       ? "برای این فیلم خاموش است"
-                      : "۲۴ ساعت قبل از انتشار، ۰۹:۰۰ تهران"}
+                      : `${leadHoursLabel(lead)}، ${reminderClock} به وقت تهران`}
                 </p>
                 <button
                   type="button"
@@ -256,7 +284,11 @@ export function MovieDetailsPage() {
                 </button>
               </div>
             </div>
-          )}
+          ) : finished ? (
+            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/8 p-4 text-xs leading-relaxed text-emerald-200">
+              کیفیت خوب این فیلم منتشر شده و از فهرست انتظار و ستاره‌ها حذف شده است.
+            </div>
+          ) : null}
 
           { (movie.budget || movie.revenue || movie.imdbRating || movie.rottenTomatoesRating || movie.metacriticRating) ? (
             <div className="rounded-2xl border border-white/8 bg-black/25 p-4">

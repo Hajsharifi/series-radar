@@ -3,7 +3,9 @@ import type { Movie, MovieTab } from "../types";
 import {
   cachedMovies,
   fetchMovies,
+  movieStage,
   seedMovies,
+  tehranTodayISO,
   type MovieListResult,
 } from "../lib/movies";
 import {
@@ -19,6 +21,17 @@ import { requestNotificationPermission } from "../lib/native";
 
 const REFRESH_MS = 20 * 60 * 1000;
 
+/** Second line of defence against stale cache: a released film must never
+ * linger in the upcoming tab, and a finished film must never show in quality. */
+function filterByStage(items: Movie[], tab: MovieTab): Movie[] {
+  const today = tehranTodayISO();
+  return items.filter((movie) =>
+    tab === "upcoming"
+      ? movieStage(movie, today) === "upcoming"
+      : movieStage(movie, today) === "quality",
+  );
+}
+
 export interface MovieListState {
   items: Movie[];
   source: MovieListResult["source"];
@@ -32,8 +45,8 @@ export interface MovieListState {
 /** Loads one movies tab: cached snapshot first, then the API. */
 export function useMovieList(tab: MovieTab): MovieListState {
   const [state, setState] = useState<MovieListResult>(() => {
-    const cached = cachedMovies(tab);
-    return cached ?? seedMovies(tab);
+    const base = cachedMovies(tab) ?? seedMovies(tab);
+    return { ...base, items: filterByStage(base.items, tab) };
   });
   const [loading, setLoading] = useState(state.source !== "network");
   const [refreshing, setRefreshing] = useState(false);
@@ -48,11 +61,13 @@ export function useMovieList(tab: MovieTab): MovieListState {
       if (force) setRefreshing(true);
       try {
         const result = await fetchMovies(tabRef.current, force);
-        setState(result);
+        setState({ ...result, items: filterByStage(result.items, tabRef.current) });
         setError(null);
       } catch (err) {
         const fallback = cachedMovies(tabRef.current) ?? seedMovies(tabRef.current);
-        setState((prev) => (prev.items.length > 0 ? prev : fallback));
+        setState((prev) =>
+          prev.items.length > 0 ? prev : { ...fallback, items: filterByStage(fallback.items, tabRef.current) },
+        );
         setError(err instanceof Error ? err.message : "خطا در دریافت فیلم‌ها");
       } finally {
         inFlight.current = false;
@@ -66,7 +81,8 @@ export function useMovieList(tab: MovieTab): MovieListState {
   useEffect(() => {
     tabRef.current = tab;
     const cached = cachedMovies(tab);
-    setState(cached ?? seedMovies(tab));
+    const base = cached ?? seedMovies(tab);
+    setState({ ...base, items: filterByStage(base.items, tab) });
     setLoading(cached === null);
     setError(null);
     void load(false);

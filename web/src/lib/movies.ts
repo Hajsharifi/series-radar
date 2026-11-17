@@ -20,7 +20,7 @@ function pickApiBase(): string {
 
 export const MOVIE_API = pickApiBase();
 
-const CACHE_PREFIX = "sr:movies:v1:";
+const CACHE_PREFIX = "sr:movies:v2:";
 const LIST_TTL_MS = 30 * 60 * 1000;
 const DETAIL_TTL_MS = 12 * 60 * 60 * 1000;
 
@@ -95,6 +95,53 @@ export function hasUpcomingOnline(movie: Movie): boolean {
   return date >= tehranTodayISO();
 }
 
+export type MovieStage = "upcoming" | "quality" | "available" | "expired" | "unknown";
+
+function plainDay(value?: string | null): string | null {
+  if (!value) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : null;
+}
+
+function shiftDay(iso: string, days: number): string {
+  const date = new Date(iso + "T00:00:00Z");
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * The single source of truth for a movie's lifecycle stage.
+ * - upcoming: theatrical release is still in the future (Tehran).
+ * - quality: released, but no good digital release yet.
+ * - available: good (digital) quality is already out.
+ * - expired: no digital date and more than 90 days since release - archived.
+ */
+export function movieStage(movie: Movie, today = tehranTodayISO()): MovieStage {
+  const digital = plainDay(movie.digitalDate);
+  const theatrical = plainDay(movie.theatricalDate) ?? plainDay(movie.releaseDate);
+  if ((digital && digital <= today) || movie.availableNow === true) return "available";
+  if (!theatrical) return "unknown";
+  if (theatrical > today) return "upcoming";
+  if (!digital && theatrical <= shiftDay(today, -90)) return "expired";
+  return "quality";
+}
+
+/** A finished movie must leave the waiting list and the favorites. */
+export function isMovieFinished(movie: Movie, today?: string): boolean {
+  const stage = movieStage(movie, today);
+  return stage === "available" || stage === "expired";
+}
+
+export function movieStageLabel(stage: MovieStage): string {
+  switch (stage) {
+    case "upcoming": return "بهزودی";
+    case "quality": return "منتظر کیفیت خوب";
+    case "available": return "کیفیت منتشر شد";
+    case "expired": return "پایان پیگیری";
+    default: return "نامشخص";
+  }
+}
+
 export function movieGenres(movie: Movie): string[] {
   if (movie.genres?.length) return movie.genres;
   return (movie.genreIds ?? []).map((id) => GENRE_FA[id]).filter(Boolean);
@@ -140,15 +187,19 @@ async function getJson<T>(path: string, timeoutMs = 25000): Promise<T> {
 }
 
 function seedFor(tab: MovieTab): Movie[] {
-  if (tab === "cinema") return SEED.nowPlaying ?? [];
-  if (tab === "online") return SEED.online ?? [];
+  if (tab === "quality") {
+    const seen = new Set<number>();
+    return [...(SEED.nowPlaying ?? []), ...(SEED.online ?? [])].filter((movie) => {
+      if (seen.has(movie.id)) return false;
+      seen.add(movie.id);
+      return movieStage(movie) === "quality";
+    });
+  }
   return SEED.upcoming ?? [];
 }
 
 function pathFor(tab: MovieTab): string {
-  if (tab === "cinema") return "/api/movies/now-playing";
-  if (tab === "online") return "/api/movies/online";
-  return "/api/movies/upcoming";
+  return tab === "quality" ? "/api/movies/quality" : "/api/movies/upcoming";
 }
 
 export interface MovieListResult {
@@ -204,17 +255,25 @@ export function findSeedMovie(id: number): Movie | null {
 
 /** Looks for a title already present in any cached tab so details paint instantly. */
 export function findCachedMovie(id: number): Movie | null {
-  for (const tab of ["cinema", "online", "upcoming"] as MovieTab[]) {
+  for (const tab of ["quality", "upcoming"] as MovieTab[]) {
     const cached = cachedMovies(tab);
+    const match = cached?.items.find((movie) => movie.id === id);
+    if (match) return match;
+  }
+  // Old caches from versions before the quality tab was introduced.
+  for (const legacy of ["cinema", "online"] as const) {
+    const cached = readCache(legacy, LIST_TTL_MS);
     const match = cached?.items.find((movie) => movie.id === id);
     if (match) return match;
   }
   return findSeedMovie(id);
 }
 
-export async function fetchMovieDetail(id: number): Promise<MovieDetailResult> {
-  const cached = readCache("detail:" + id, DETAIL_TTL_MS);
-  if (cached && cached.items[0]) return { movie: cached.items[0], source: "cache" };
+export async function fetchMovieDetail(id: number, force = false): Promise<MovieDetailResult> {
+  if (!force) {
+    const cached = readCache("detail:" + id, DETAIL_TTL_MS);
+    if (cached && cached.items[0]) return { movie: cached.items[0], source: "cache" };
+  }
   try {
     const detail = await getJson<Movie>("/api/movie/" + id);
     if (!detail?.id) throw new Error("فیلم پیدا نشد");
@@ -245,6 +304,7 @@ export function movieOnlineDate(movie: Movie): string | null {
 }
 
 export function moviePrimaryDate(movie: Movie, tab: MovieTab): string | null {
-  if (tab === "online") return movieOnlineDate(movie);
+  const today = tehranTodayISO();
+  if (tab === "quality" && movie.digitalDate && movie.digitalDate > today) return movie.digitalDate;
   return movie.theatricalDate ?? movie.releaseDate ?? null;
 }

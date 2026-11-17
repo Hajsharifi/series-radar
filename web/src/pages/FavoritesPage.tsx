@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useFavorites } from "../hooks/useFavorites";
 import { useMovieFavorites, useMovieList } from "../hooks/useMovies";
@@ -6,30 +6,33 @@ import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useFavoriteIds, useNowTicker } from "../hooks/useSchedule";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { toPersianDigits } from "../lib/date";
-import { moviePrimaryDate } from "../lib/movies";
+import {
+  fetchMovieDetail,
+  isMovieFinished,
+  moviePrimaryDate,
+  movieStage,
+} from "../lib/movies";
 import type { Movie } from "../types";
 import { ShowRow } from "../components/ShowCard";
 import { MovieRow } from "../components/MovieCard";
 
 type Tab = "series" | "movies";
 
-/** Best-effort tab for a favorited movie, used for date/countdown labels. */
-function movieTab(movie: Movie): "cinema" | "upcoming" {
-  const today = new Date().toISOString().slice(0, 10);
-  if ((movie.theatricalDate ?? movie.releaseDate ?? "") <= today) return "cinema";
-  return "upcoming";
-}
-
 export function FavoritesPage() {
   const schedule = useScheduleContext();
   const favorites = useFavorites();
   const favoriteIds = useFavoriteIds();
   const movieFavorites = useMovieFavorites();
-  const cinema = useMovieList("cinema");
+  const quality = useMovieList("quality");
   const upcoming = useMovieList("upcoming");
   useNowTicker(30_000);
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<Tab>("series");
+  const [detailMap, setDetailMap] = useState<Record<number, Movie>>({});
+  const [removedCount, setRemovedCount] = useState(0);
+  // Last time we asked the server about a favorite that was absent from both
+  // lists. Recheck after 30 minutes so a later digital release is still seen.
+  const checked = useRef(new Map<number, number>());
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
 
@@ -48,27 +51,101 @@ export function FavoritesPage() {
 
   const moviesById = useMemo(() => {
     const map = new Map<number, Movie>();
-    for (const movie of [...cinema.items, ...upcoming.items]) map.set(movie.id, movie);
+    for (const movie of [...quality.items, ...upcoming.items]) map.set(movie.id, movie);
     return map;
-  }, [cinema.items, upcoming.items]);
+  }, [quality.items, upcoming.items]);
 
-  const movies = useMemo(
-    () =>
-      movieFavorites.items
-        .map((item) => moviesById.get(item.movieId))
-        .filter((movie): movie is Movie => Boolean(movie))
-        .filter((movie) => movie.title.toLowerCase().includes(query.trim().toLowerCase()))
-        .sort((a, b) => {
-          const aDate = moviePrimaryDate(a, movieTab(a)) ?? "9999";
-          const bDate = moviePrimaryDate(b, movieTab(b)) ?? "9999";
-          return aDate.localeCompare(bDate);
-        }),
-    [movieFavorites.items, moviesById, query],
-  );
+  // A favorite whose movie data is loaded and already finished must go.
+  useEffect(() => {
+    for (const item of movieFavorites.items) {
+      const movie = moviesById.get(item.movieId);
+      if (movie && isMovieFinished(movie)) {
+        movieFavorites.remove(item.movieId);
+        setRemovedCount((count) => count + 1);
+      }
+    }
+  }, [movieFavorites, moviesById]);
+
+  // Favorites that dropped out of the lists (quality released, then archived)
+  // need a fresh detail lookup before we can safely remove them.
+  useEffect(() => {
+    const now = Date.now();
+    for (const id of moviesById.keys()) checked.current.delete(id);
+    const missing = movieFavorites.items
+      .map((item) => item.movieId)
+      .filter(
+        (id) =>
+          !moviesById.has(id) && now - (checked.current.get(id) ?? 0) > 30 * 60 * 1000,
+      );
+    if (missing.length === 0) return;
+    missing.forEach((id) => checked.current.set(id, now));
+    let cancelled = false;
+    Promise.all(
+      missing.map(async (id) => {
+        try {
+          return (await fetchMovieDetail(id, true)).movie;
+        } catch {
+          return null;
+        }
+      }),
+    ).then((details) => {
+      if (cancelled) return;
+      setDetailMap((prev) => {
+        const next = { ...prev };
+        for (const movie of details) if (movie) next[movie.id] = movie;
+        return next;
+      });
+      for (const movie of details) {
+        if (!movie || !isMovieFinished(movie)) continue;
+        if (movieFavorites.items.some((item) => item.movieId === movie.id)) {
+          movieFavorites.remove(movie.id);
+          setRemovedCount((count) => count + 1);
+        }
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [movieFavorites, moviesById]);
+
+  const movies = useMemo(() => {
+    const map = new Map(moviesById);
+    for (const [key, movie] of Object.entries(detailMap)) map.set(Number(key), movie);
+    return movieFavorites.items
+      .map((item) => map.get(item.movieId))
+      .filter((movie): movie is Movie => Boolean(movie))
+      .filter((movie) => !isMovieFinished(movie))
+      .filter((movie) => movie.title.toLowerCase().includes(query.trim().toLowerCase()))
+      .sort((a, b) => {
+        const aStage = movieStage(a);
+        const bStage = movieStage(b);
+        if (aStage !== bStage) return aStage === "upcoming" ? -1 : 1;
+        const aDate = moviePrimaryDate(a, aStage === "upcoming" ? "upcoming" : "quality") ?? "9999";
+        const bDate = moviePrimaryDate(b, bStage === "upcoming" ? "upcoming" : "quality") ?? "9999";
+        return aDate.localeCompare(bDate);
+      });
+  }, [movieFavorites.items, moviesById, detailMap, query]);
+
+  const upcomingMovies = movies.filter((movie) => movieStage(movie) === "upcoming");
+  const qualityMovies = movies.filter((movie) => movieStage(movie) !== "upcoming");
 
   const missingShows = favorites.items.length - shows.length;
   const missingMovies = movieFavorites.items.length - movies.length;
   const total = favorites.items.length + movieFavorites.items.length;
+
+  function renderMovieRow(movie: Movie) {
+    const stage = movieStage(movie);
+    return (
+      <MovieRow
+        key={movie.id}
+        movie={movie}
+        tab={stage === "upcoming" ? "upcoming" : "quality"}
+        stage={stage}
+        favorite={movieFavorites.ids.has(movie.id)}
+        onToggleFavorite={() => movieFavorites.toggle(movie.id)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -119,6 +196,12 @@ export function FavoritesPage() {
         dir="auto"
       />
 
+      {removedCount > 0 && (
+        <p className="rounded-xl border border-emerald-400/20 bg-emerald-500/8 px-3 py-2 text-[11px] text-emerald-200">
+          {toPersianDigits(removedCount)} فیلم از ستاره‌ها حذف شدند چون کیفیت خوبشان منتشر شده بود.
+        </p>
+      )}
+
       {tab === "series" ? (
         favorites.items.length === 0 ? (
           <EmptySeries />
@@ -154,21 +237,30 @@ export function FavoritesPage() {
           </p>
           <p className="mt-1 text-xs text-ink-400">
             {missingMovies > 0
-              ? "ممکن است از فهرست فیلم‌ها خارج شده باشند؛ اتصال اینترنت را بررسی کنید."
+              ? "وضعیتشان هنوز مشخص نشده یا اتصال اینترنت برقرار نیست."
               : "عبارت دیگری را امتحان کنید."}
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {movies.map((movie) => (
-            <MovieRow
-              key={movie.id}
-              movie={movie}
-              tab={movieTab(movie)}
-              favorite={movieFavorites.ids.has(movie.id)}
-              onToggleFavorite={() => movieFavorites.toggle(movie.id)}
-            />
-          ))}
+        <div className="space-y-5">
+          {upcomingMovies.length > 0 && (
+            <section className="space-y-2">
+              <div className="flex items-baseline gap-2">
+                <h2 className="text-sm font-bold text-white">منتظر اکران سینمایی</h2>
+                <span className="text-[11px] text-ink-400">{toPersianDigits(upcomingMovies.length)} فیلم</span>
+              </div>
+              {upcomingMovies.map(renderMovieRow)}
+            </section>
+          )}
+          {qualityMovies.length > 0 && (
+            <section className="space-y-2">
+              <div className="flex items-baseline gap-2">
+                <h2 className="text-sm font-bold text-white">در انتظار کیفیت خوب</h2>
+                <span className="text-[11px] text-ink-400">{toPersianDigits(qualityMovies.length)} فیلم</span>
+              </div>
+              {qualityMovies.map(renderMovieRow)}
+            </section>
+          )}
         </div>
       )}
 
@@ -179,7 +271,7 @@ export function FavoritesPage() {
       )}
       {tab === "movies" && missingMovies > 0 && movies.length > 0 && (
         <p className="text-[11px] text-ink-400">
-          {toPersianDigits(missingMovies)} فیلم ستاره‌شده در فهرست فعلی نیست.
+          {toPersianDigits(missingMovies)} فیلم ستاره‌شده هنوز در فهرست فعلی نیست.
         </p>
       )}
     </div>
@@ -207,7 +299,7 @@ function EmptyMovies() {
       <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white/5 text-xl text-ink-400">☆</div>
       <p className="mt-3 text-sm font-semibold text-white">هنوز فیلمی را ستاره نکرده‌اید</p>
       <p className="mt-1 text-xs text-ink-400">
-        در بخش فیلم‌ها روی ستارهٔ هر فیلم بزنید تا وقتی نسخه دیجیتالش منتشر شد به شما یادآوری داده شود.
+        در بخش فیلم‌ها روی ستارهٔ هر فیلم بزنید تا مشخص شود منتظر اکرانش هستید یا کیفیت خوبش.
       </p>
       <Link to="/movies" className="mt-4 inline-block rounded-lg bg-white/8 px-4 py-2 text-xs text-white">
         رفتن به فیلم‌ها
