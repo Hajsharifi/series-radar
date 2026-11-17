@@ -1,5 +1,5 @@
-import { useCallback } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useEpisodeTracking } from "./useEpisodeTracking";
 import { cachedFetchJson } from "../lib/offline";
 
@@ -21,22 +21,16 @@ async function fetchSeriesDetail(showId: number) {
       summary: ep.summary,
       image: ep.image,
     }));
-    return {
-      ...show,
-      episodes,
-      watchedEpisodes: new Set<number>(),
-      progress: { watched: 0, total: episodes.length },
-    } as any;
+    return { ...show, episodes };
   } catch {
     return null;
   }
 }
 
 export function useSeriesDetail(showId: number | null) {
-  const queryClient = useQueryClient();
   const tracking = useEpisodeTracking();
 
-  const { data: series, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["seriesDetail", showId],
     queryFn: () => fetchSeriesDetail(showId!),
     enabled: !!showId,
@@ -44,14 +38,26 @@ export function useSeriesDetail(showId: number | null) {
     gcTime: 30 * 60 * 1000,
   });
 
+  const series = useMemo(() => {
+    if (!data) return null;
+    const watched = new Set(tracking.getWatched("tvmaze", showId ?? 0));
+    return {
+      ...data,
+      watchedEpisodes: watched,
+      progress: {
+        watched: (data.episodes || []).filter((episode: any) => watched.has(episode.id)).length,
+        total: (data.episodes || []).length,
+      },
+    };
+  }, [data, tracking.state, showId]);
+
   const toggleEpisode = useCallback(
-    async (episodeId: number) => {
-      if (!showId) return;
-      await tracking.toggleWatched(showId, episodeId);
-      queryClient.invalidateQueries({ queryKey: ["seriesDetail", showId] });
+    (episodeId: number) => {
+      if (showId) tracking.toggleWatched("tvmaze", showId, episodeId);
     },
-    [showId, tracking, queryClient]
+    [showId, tracking.toggleWatched],
   );
 
-  return { series, isLoading, toggleEpisode };
+  return { series, isLoading, toggleEpisode, isWatched: (episodeId: number) =>
+    showId ? tracking.isWatched("tvmaze", showId, episodeId) : false };
 }

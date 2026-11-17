@@ -5,6 +5,7 @@ import { cachedFetchJson } from "../lib/offline";
 import { openExternalUrl } from "../lib/native";
 import { gregorianDate, jalaliDate, toPersianDigits } from "../lib/date";
 import { GENRE_MAP } from "../hooks/useSearch";
+import { useEpisodeTracking } from "../hooks/useEpisodeTracking";
 import { Poster } from "../components/Poster";
 
 const API = import.meta.env.VITE_API_BASE || "http://31.56.229.237:8090";
@@ -78,6 +79,7 @@ export default function TmdbSeriesPage() {
   const { id } = useParams<{ id: string }>();
   const showId = Number(id);
   const [openSeason, setOpenSeason] = useState<number | null>(null);
+  const tracking = useEpisodeTracking();
 
   const showQuery = useQuery({
     queryKey: ["tmdbSeries", showId],
@@ -102,6 +104,18 @@ export default function TmdbSeriesPage() {
 
   const show = showQuery.data;
   const episodes = episodesQuery.data?.episodes || [];
+  const watched = useMemo(
+    () => new Set(tracking.getWatched("tmdb", showId)),
+    [tracking.state, showId],
+  );
+  const watchedCount = episodes.filter((episode) => watched.has(episode.id)).length;
+  const nextUnwatched = useMemo(
+    () =>
+      episodes
+        .filter((episode) => !watched.has(episode.id))
+        .sort((a, b) => (a.season || 0) - (b.season || 0) || (a.number || 0) - (b.number || 0))[0] || null,
+    [episodes, watched],
+  );
   const seasons = useMemo(() => {
     const map = new Map<number, TmdbEpisode[]>();
     for (const episode of episodes) {
@@ -186,6 +200,12 @@ export default function TmdbSeriesPage() {
                 value={`فصل ${toPersianDigits(show.nextEpisode.season ?? 0)} · قسمت ${toPersianDigits(show.nextEpisode.number ?? 0)} — ${formatDay(show.nextEpisode.airdate)}`}
               />
             )}
+            {nextUnwatched && (
+              <Info
+                label="اولین قسمت ندیده"
+                value={`فصل ${toPersianDigits(nextUnwatched.season ?? 0)} · قسمت ${toPersianDigits(nextUnwatched.number ?? 0)}`}
+              />
+            )}
           </div>
 
           {show.trailerKey && (
@@ -204,8 +224,18 @@ export default function TmdbSeriesPage() {
       <section className="space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold text-white">قسمتها</h2>
-          <span className="text-[11px] text-ink-400">{toPersianDigits(episodes.length)} قسمت</span>
+          <span className="text-[11px] text-ink-400">
+            {toPersianDigits(watchedCount)} / {toPersianDigits(episodes.length)} دیده شده
+          </span>
         </div>
+        {episodes.length > 0 && (
+          <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-emerald-400 transition-all"
+              style={{ width: `${Math.min(100, (watchedCount / episodes.length) * 100)}%` }}
+            />
+          </div>
+        )}
         {seasons.length === 0 ? (
           <p className="rounded-xl border border-white/8 bg-ink-850/60 px-3 py-5 text-center text-xs text-ink-400">
             اطلاعات قسمتها در دسترس نیست.
@@ -225,18 +255,34 @@ export default function TmdbSeriesPage() {
                 </button>
                 {open && (
                   <div className="divide-y divide-white/6">
-                    {items.map((episode) => (
-                      <div key={episode.id} className="flex gap-3 px-3 py-2.5">
-                        <span className="w-7 shrink-0 text-xs font-bold tabular-nums text-amber-300/90">
-                          {toPersianDigits(episode.number)}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-white" dir="auto">{episode.name || `قسمت ${episode.number}`}</p>
-                          {episode.summary && <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-ink-400" dir="auto">{episode.summary}</p>}
+                    {items.map((episode) => {
+                      const isWatched = watched.has(episode.id);
+                      return (
+                        <div key={episode.id} className="flex gap-3 px-3 py-2.5">
+                          <span className={`w-7 shrink-0 text-xs font-bold tabular-nums ${isWatched ? "text-emerald-300" : "text-amber-300/90"}`}>
+                            {toPersianDigits(episode.number)}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-xs font-semibold ${isWatched ? "text-ink-400 line-through" : "text-white"}`} dir="auto">
+                              {episode.name || `قسمت ${episode.number}`}
+                            </p>
+                            {episode.summary && <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-ink-400" dir="auto">{episode.summary}</p>}
+                          </div>
+                          {episode.airdate && <span className="shrink-0 text-[10px] text-ink-400">{formatDay(episode.airdate)}</span>}
+                          <button
+                            type="button"
+                            onClick={() => tracking.toggleWatched("tmdb", showId, episode.id)}
+                            aria-label={isWatched ? "علامت دیدن را بردار" : "این قسمت را دیدم"}
+                            aria-pressed={isWatched}
+                            className={`sr-no-tap grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-bold transition ${
+                              isWatched ? "bg-emerald-400 text-ink-950" : "bg-white/6 text-white/50 active:bg-white/12"
+                            }`}
+                          >
+                            {isWatched ? "✓" : "○"}
+                          </button>
                         </div>
-                        {episode.airdate && <span className="shrink-0 text-[10px] text-ink-400">{formatDay(episode.airdate)}</span>}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -17,7 +17,7 @@ function formatDate(date?: string | null) {
 export default function SeriesDetailPage() {
   const { id } = useParams<{ id: string }>();
   const showId = Number(id);
-  const { series, isLoading } = useSeriesDetail(showId);
+  const { series, isLoading, toggleEpisode } = useSeriesDetail(showId);
 
   if (isLoading) {
     return (
@@ -145,7 +145,7 @@ export default function SeriesDetailPage() {
             </div>
             {series.episodes.length > 0 && (
               <p className="mt-2 text-[11px] text-ink-400">
-                {progress.watched} از {progress.total} قسمت دیده شده
+                {toPersianDigits(progress.watched)} از {toPersianDigits(progress.total)} قسمت دیده شده
               </p>
             )}
           </div>
@@ -254,7 +254,11 @@ export default function SeriesDetailPage() {
       </article>
 
       <section className="mt-6">
-        <EpisodeList episodes={series.episodes} onToggle={() => {}} />
+        <EpisodeList
+          episodes={series.episodes}
+          watchedIds={series.watchedEpisodes}
+          onToggle={toggleEpisode}
+        />
       </section>
     </div>
   );

@@ -8,7 +8,11 @@ export interface BackupData {
   favorites: ReturnType<typeof getFavorites>;
   movieFavorites: ReturnType<typeof getMovieFavorites>;
   trackedMovies: ReturnType<typeof getTrackedMovies>;
+  /** Watched episode ids, namespaced by `tmdb:` / `tvmaze:`. */
+  episodeTracking?: Record<string, number[]>;
 }
+
+const EPISODE_KEY = "sr:episode-tracking:v2";
 
 export function exportBackup(): BackupData {
   return {
@@ -17,7 +21,17 @@ export function exportBackup(): BackupData {
     favorites: getFavorites(),
     movieFavorites: getMovieFavorites(),
     trackedMovies: getTrackedMovies(),
+    episodeTracking: readEpisodeTracking(),
   };
+}
+
+function readEpisodeTracking(): Record<string, number[]> {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(EPISODE_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
 }
 
 export function downloadBackup(): void {
@@ -42,6 +56,10 @@ export function importBackup(jsonText: string): { ok: boolean; error?: string } 
     localStorage.setItem("sr:favorites:v1", JSON.stringify(data.favorites));
     localStorage.setItem("sr:movie-favorites:v1", JSON.stringify(data.movieFavorites));
     localStorage.setItem("sr:movie-track:v1", JSON.stringify(data.trackedMovies));
+    if (data.episodeTracking) {
+      localStorage.setItem(EPISODE_KEY, JSON.stringify(data.episodeTracking));
+      window.dispatchEvent(new Event("sr-episode-tracking-changed"));
+    }
     window.dispatchEvent(new Event("sr-favorites-changed"));
     window.dispatchEvent(new Event("sr-movie-favorites-changed"));
     window.dispatchEvent(new Event("sr-movie-track-changed"));

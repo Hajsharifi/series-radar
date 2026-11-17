@@ -1,3 +1,5 @@
+import { getSettings } from "./settings";
+
 const STORAGE_KEY = "sr:favorites:v1";
 
 export interface StoredFavorite {
@@ -41,7 +43,7 @@ export function addFavorite(showId: number): void {
   items.push({
     showId,
     reminderEnabled: true,
-    reminderLeadHours: 24,
+    reminderLeadHours: getSettings().defaultLeadHours,
     addedAt: new Date().toISOString(),
   });
   write(items);
@@ -58,6 +60,10 @@ export function toggleFavorite(showId: number, enabled: boolean): void {
 
 export function setReminderEnabled(showId: number, enabled: boolean): void {
   write(read().map((item) => (item.showId === showId ? { ...item, reminderEnabled: enabled } : item)));
+}
+
+export function setReminderLead(showId: number, hours: number): void {
+  write(read().map((item) => (item.showId === showId ? { ...item, reminderLeadHours: hours } : item)));
 }
 
 export function favoriteIds(): Set<number> {

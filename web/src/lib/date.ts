@@ -253,6 +253,47 @@ function tehranWallToEpoch(y: number, m: number, d: number, hh: number, mm: numb
   return Date.UTC(y, m - 1, d, hh, mm, 0, 0) - TEHRAN_OFFSET_MS;
 }
 
+/** Human label for a reminder lead time. */
+export function leadHoursLabel(hours: number): string {
+  if (hours >= 168) return "۱ هفته قبل";
+  if (hours >= 48) return `${toPersianDigits(hours / 24)} روز قبل`;
+  return `${toPersianDigits(hours)} ساعت قبل`;
+}
+
+/** Reminder moment for an airtime with a custom lead. Night-time triggers are
+ * moved to 08:00 (morning) or 22:00 (evening) so no alarm fires while asleep. */
+export function reminderTimeMsWithLead(stamp?: string | null, leadHours = 24): number | null {
+  if (!stamp) return null;
+  const instant = new Date(stamp).getTime();
+  if (Number.isNaN(instant)) return null;
+  let trigger = instant - Math.max(0, leadHours) * 3_600_000;
+  const parts = tehranParts(new Date(trigger).toISOString());
+  if (!parts) return null;
+  if (parts.hh < 8) {
+    trigger = tehranWallToEpoch(parts.y, parts.m, parts.d, 8, 0);
+  } else if (parts.hh >= 22) {
+    trigger = tehranWallToEpoch(parts.y, parts.m, parts.d, 22, 0);
+  }
+  return trigger;
+}
+
+/** Same as above for a plain YYYY-MM-DD release day (movies have no airtime). */
+export function reminderTimeForDayWithLead(day?: string | null, leadHours = 24): number | null {
+  if (!day) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(day);
+  if (!match) return reminderTimeMsWithLead(day, leadHours);
+  return reminderTimeMsWithLead(`${match[1]}-${match[2]}-${match[3]}T12:00:00Z`, leadHours);
+}
+
+/** 09:00 Tehran on the day a `leadHours`-before reminder will fire. */
+export function reminderDateWithLead(stamp?: string | null, leadHours = 24): Date | null {
+  const epoch = reminderTimeMsWithLead(stamp, leadHours);
+  if (epoch === null) return null;
+  const parts = tehranParts(new Date(epoch).toISOString());
+  if (!parts) return null;
+  return new Date(parts.y, parts.m - 1, parts.d, 12, 0, 0, 0);
+}
+
 /** Epoch of the reminder: 09:00 Tehran on the day before the premiere. */
 export function reminderTimeMs(stamp?: string | null): number | null {
   const parts = tehranParts(stamp);

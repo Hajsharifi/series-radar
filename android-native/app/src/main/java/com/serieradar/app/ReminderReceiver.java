@@ -12,7 +12,9 @@ import android.os.Build;
 public class ReminderReceiver extends BroadcastReceiver {
 
     static final String CHANNEL_ID = "series_premieres";
-    static final String CHANNEL_NAME = "یادآوری‌های زیر رادار";
+    static final String CHANNEL_NAME = "یادآوری سریال\u200Cها";
+    static final String MOVIE_CHANNEL_ID = "movie_releases";
+    static final String MOVIE_CHANNEL_NAME = "یادآوری انتشار فیلم";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -36,10 +38,14 @@ public class ReminderReceiver extends BroadcastReceiver {
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager == null) return;
 
+        String channelId = movie ? MOVIE_CHANNEL_ID : CHANNEL_ID;
+        String channelName = movie ? MOVIE_CHANNEL_NAME : CHANNEL_NAME;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("یادآوری ۲۴ ساعت قبل از پخش یا انتشار، ساعت ۹ صبح به وقت تهران");
+                    channelId, channelName, NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription(movie
+                    ? "یادآوری انتشار نسخه دیجیتال فیلم"
+                    : "یادآوری پخش قسمت جدید سریال");
             channel.enableVibration(true);
             manager.createNotificationChannel(channel);
         }
@@ -56,7 +62,7 @@ public class ReminderReceiver extends BroadcastReceiver {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                ? new Notification.Builder(context, CHANNEL_ID)
+                ? new Notification.Builder(context, channelId)
                 : new Notification.Builder(context);
         builder.setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(title)

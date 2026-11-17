@@ -7,11 +7,14 @@ import { CATEGORY_CHIP, CATEGORY_LABEL, genreLabel, statusLabel } from "../lib/l
 import {
   countdownLabel,
   gregorianFromStamp,
-  reminderDate,
+  leadHoursLabel,
+  reminderDateWithLead,
+  reminderTimeMsWithLead,
   tehranClock,
   toPersianDigits,
   weekdayName,
 } from "../lib/date";
+import { LEAD_OPTIONS, getSettings } from "../lib/settings";
 import { Poster } from "../components/Poster";
 import { JalaliSpans } from "../components/DateChip";
 import { ShowCard } from "../components/ShowCard";
@@ -62,6 +65,9 @@ export function ShowDetailsPage() {
 
   const isFavorite = favoriteIds.has(show.id);
   const countdown = countdownLabel(show.airstamp);
+  const lead = favorite?.reminderLeadHours || getSettings().defaultLeadHours;
+  const reminderAt = reminderTimeMsWithLead(show.airstamp, lead);
+  const reminderClock = reminderAt ? tehranClock(new Date(reminderAt).toISOString()) : "—";
 
   return (
     <div className="space-y-5">
@@ -147,14 +153,14 @@ export function ShowDetailsPage() {
           </div>
 
           <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
-            <p className="text-[11px] text-ink-400">یادآوری</p>
+            <p className="text-[11px] text-ink-400">یادآوری · {leadHoursLabel(lead)}</p>
             <p className="mt-1 text-sm font-semibold text-white">
               <JalaliSpans
-                date={reminderDate(show.airstamp)}
+                date={reminderDateWithLead(show.airstamp, lead)}
                 className="text-sm font-semibold text-white"
                 yearClassName="text-ink-400"
               />{" "}
-              ساعت ۰۹:۰۰
+              ساعت {reminderClock}
             </p>
             <div className="mt-2 flex items-center justify-between gap-3">
               <p className="text-[11px] text-ink-400">
@@ -162,7 +168,7 @@ export function ShowDetailsPage() {
                   ? "با ستاره‌کردن سریال فعال می‌شود"
                   : favorite.reminderEnabled === false
                     ? "برای این سریال خاموش است"
-                    : "۲۴ ساعت قبل، ساعت ۰۹:۰۰ تهران"}
+                    : `${leadHoursLabel(lead)} · ${reminderClock} تهران`}
               </p>
               <button
                 type="button"
@@ -186,6 +192,25 @@ export function ShowDetailsPage() {
                 />
               </button>
             </div>
+            {favorite && (
+              <div className="mt-3 border-t border-white/8 pt-3">
+                <p className="mb-1.5 text-[11px] text-ink-400">چقدر قبل یادآوری شود؟</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {LEAD_OPTIONS.map((option) => (
+                    <button
+                      key={option.hours}
+                      type="button"
+                      onClick={() => favorites.setLead(show.id, option.hours)}
+                      className={`sr-no-tap rounded-lg px-2.5 py-1 text-[11px] ${
+                        lead === option.hours ? "bg-amber-400 font-semibold text-ink-950" : "bg-white/6 text-ink-300"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {show.overview && (

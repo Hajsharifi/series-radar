@@ -4,7 +4,8 @@ import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useFavorites } from "../hooks/useFavorites";
 import { useMovieFavorites } from "../hooks/useMovies";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
-import { relativeSyncLabel, toPersianDigits } from "../lib/date";
+import { leadHoursLabel, relativeSyncLabel, toPersianDigits } from "../lib/date";
+import { LEAD_OPTIONS, getSettings, setDefaultLeadHours } from "../lib/settings";
 import {
   downloadAndInstallApk,
   isNativeApp,
@@ -33,6 +34,7 @@ export function SettingsPage() {
   const [message, setMessage] = useState("");
   const [updateInfo, setUpdateInfo] = useState<{ version: string; apkUrl: string; pageUrl: string } | null>(null);
   const amoled = useAmoled();
+  const [defaultLead, setLead] = useState(() => getSettings().defaultLeadHours);
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
 
@@ -181,13 +183,31 @@ export function SettingsPage() {
             {isNativeApp() ? "فعال" : "در اپ اندروید"}
           </span>
         </div>
-        <Row label="زمان پیش‌فرض" value="۲۴ ساعت قبل" />
-        <Row label="ساعت ارسال" value="۰۹:۰۰ به وقت تهران" />
+        <Row label="زمان پیش‌فرض" value={leadHoursLabel(defaultLead)} />
         <Row label="سریال‌های ستاره‌دار" value={`${toPersianDigits(favorites.items.length)} سریال`} />
         <Row label="فیلم‌های ستاره‌دار" value={`${toPersianDigits(movieFavorites.items.length)} فیلم`} />
+        <div className="mt-2">
+          <p className="mb-1.5 text-[11px] text-ink-400">زمان پیش‌فرض یادآوری</p>
+          <div className="flex flex-wrap gap-1.5">
+            {LEAD_OPTIONS.map((option) => (
+              <button
+                key={option.hours}
+                type="button"
+                onClick={() => {
+                  setDefaultLeadHours(option.hours);
+                  setLead(option.hours);
+                }}
+                className={`sr-no-tap rounded-lg px-2.5 py-1 text-[11px] ${
+                  defaultLead === option.hours ? "bg-amber-400 font-semibold text-ink-950" : "bg-white/6 text-ink-300"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
-          یادآوری برای هر مورد به‌صورت جداگانه قابل فعال/غیرفعال کردن است (در صفحه جزئیات یا ستاره‌ها).
-          همه یادآوری‌ها ۲۴ ساعت قبل، ساعت ۰۹:۰۰ به وقت تهران ارسال می‌شوند.
+          یادآوری هر سریال در صفحهٔ جزئیات آن قابل تنظیم است. یادآوریها در ساعت مناسب ۰۸:۰۰ تا ۲۲:۰۰ به وقت تهران ارسال میشوند تا مزاحم خواب نشوند.
         </p>
         {isNativeApp() && (
           <div className="mt-3 flex flex-wrap gap-2">

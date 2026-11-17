@@ -3,7 +3,13 @@ import { useFavorites } from "../hooks/useFavorites";
 import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useMovieFavorites, useMovieList } from "../hooks/useMovies";
 import { useMovieTrack } from "../hooks/useMovieTrack";
-import { reminderTimeMs, reminderTimeMsForDay } from "../lib/date";
+import {
+  leadHoursLabel,
+  reminderTimeMsWithLead,
+  reminderTimeForDayWithLead,
+  tehranClock,
+} from "../lib/date";
+import { getSettings } from "../lib/settings";
 import { fetchMovieDetail } from "../lib/movies";
 import { isNativeApp, syncNativeReminders, type NativeReminder, updateWidgetData } from "../lib/native";
 import type { Movie } from "../types";
@@ -37,7 +43,7 @@ export function NativeReminders() {
           const movie = detail.movie;
           const day = movie.onlineDate ?? movie.digitalDate ?? movie.physicalDate ?? null;
           if (!day) continue;
-          const triggerAt = reminderTimeMsForDay(day);
+          const triggerAt = reminderTimeForDayWithLead(day, getSettings().defaultLeadHours);
           if (triggerAt === null || triggerAt <= Date.now()) continue;
           // Sync will pick it up on next render
         } catch {
@@ -55,18 +61,20 @@ export function NativeReminders() {
 
     const items: NativeReminder[] = [];
 
+    const defaultLead = getSettings().defaultLeadHours;
     for (const favorite of favorites.items) {
       if (favorite.reminderEnabled === false) continue;
       const show = byId.get(favorite.showId);
       if (!show?.airstamp) continue;
-      const triggerAt = reminderTimeMs(show.airstamp);
+      const lead = favorite.reminderLeadHours || defaultLead;
+      const triggerAt = reminderTimeMsWithLead(show.airstamp, lead);
       if (triggerAt === null || triggerAt <= now) continue;
       items.push({
         id: show.id,
         kind: "show",
         route: `/show/${show.id}`,
         title: `پخش «${show.title}»`,
-        body: "فردا پخش می‌شود؛ یادآوری ۰۹:۰۰ به وقت تهران.",
+        body: `${leadHoursLabel(lead)}، ساعت ${tehranClock(new Date(triggerAt).toISOString())} به وقت تهران.`,
         triggerAt,
       });
     }
@@ -78,7 +86,7 @@ export function NativeReminders() {
       const movie = moviesById.get(favorite.movieId);
       if (!movie) continue;
       const day = movie.onlineDate ?? movie.digitalDate ?? null;
-      const triggerAt = reminderTimeMsForDay(day);
+      const triggerAt = reminderTimeForDayWithLead(day, defaultLead);
       if (triggerAt === null || triggerAt <= now) continue;
       remindedMovieIds.add(movie.id);
       items.push({
@@ -86,7 +94,7 @@ export function NativeReminders() {
         kind: "movie",
         route: `/movie/${movie.id}`,
         title: `نسخهٔ دیجیتال «${movie.title}»`,
-        body: "فردا نسخهٔ دیجیتال منتشر می‌شود؛ یادآوری ۰۹:۰۰ به وقت تهران.",
+        body: `${leadHoursLabel(defaultLead)}، ساعت ${tehranClock(new Date(triggerAt).toISOString())} به وقت تهران.`,
         triggerAt,
       });
     }
@@ -97,14 +105,14 @@ export function NativeReminders() {
       const movie = moviesById.get(tracked.movieId);
       if (!movie) continue;
       const day = movie.onlineDate ?? movie.digitalDate ?? null;
-      const triggerAt = reminderTimeMsForDay(day);
+      const triggerAt = reminderTimeForDayWithLead(day, defaultLead);
       if (triggerAt === null || triggerAt <= now) continue;
       items.push({
         id: tracked.movieId + 3_000_000, // separate range
         kind: "movie_track",
         route: `/movie/${tracked.movieId}`,
         title: `نسخهٔ دیجیتال «${movie.title}»`,
-        body: "نسخهٔ دیجیتال منتشر شد؛ یادآوری ۰۹:۰۰ به وقت تهران.",
+        body: `${leadHoursLabel(defaultLead)}، ساعت ${tehranClock(new Date(triggerAt).toISOString())} به وقت تهران.`,
         triggerAt,
       });
     }

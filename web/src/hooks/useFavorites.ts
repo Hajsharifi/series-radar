@@ -5,6 +5,7 @@ import {
   isFavorite,
   removeFavorite,
   setReminderEnabled as persistReminder,
+  setReminderLead as persistLead,
   subscribeFavorites,
   toggleFavorite as persistToggle,
   type StoredFavorite,
@@ -51,5 +52,10 @@ export function useFavorites() {
     setItems(getFavorites());
   }, []);
 
-  return { items, ids, ready, toggle, add, remove, setReminder, isFavorite: (id: number) => ids.has(id) };
+  const setLead = useCallback((showId: number, hours: number) => {
+    persistLead(showId, hours);
+    setItems(getFavorites());
+  }, []);
+
+  return { items, ids, ready, toggle, add, remove, setReminder, setLead, isFavorite: (id: number) => ids.has(id) };
 }
