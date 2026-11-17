@@ -38,6 +38,12 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
         </div>
       </Link>
 
+      {typeof show.rating === "number" && show.rating > 0 && (
+        <span className="pointer-events-none absolute right-2 top-2 z-10 rounded-lg bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 backdrop-blur">
+          ★ {toPersianDigits(show.rating.toFixed(1))}
+        </span>
+      )}
+
       <button
         type="button"
         aria-label={favorite ? "حذف از ستاره‌ها" : "افزودن به ستاره‌ها"}
@@ -127,6 +133,9 @@ export function ShowRow({ show, favorite, onToggleFavorite }: ShowCardProps) {
           {[show.network ?? show.networkNames?.[0] ?? "—", show.airstamp && show.source !== "tmdb" ? tehranClock(show.airstamp) : null, episodeText, countdown]
             .filter(Boolean)
             .join(" · ")}
+          {typeof show.rating === "number" && show.rating > 0 ? (
+            <span className="mr-1 text-amber-300">★ {toPersianDigits(show.rating.toFixed(1))}</span>
+          ) : null}
         </p>
         <div className="mt-0.5 text-[11px] text-ink-300">
           {show.airstamp ? <JalaliSpans stamp={show.airstamp} /> : <span>در حال پخش</span>}

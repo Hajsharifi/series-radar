@@ -251,6 +251,7 @@ export function NativeReminders() {
       at: number;
     };
     const widgetItems: WidgetItem[] = [];
+    const widgetKeys = new Set<string>();
 
     for (const show of shows) {
       if (!show.airstamp) continue;
@@ -259,10 +260,30 @@ export function NativeReminders() {
       const dayLabel = new Date(at).toLocaleDateString("fa-IR", {
         weekday: "short", day: "numeric", month: "short",
       });
+      widgetKeys.add(favoriteKey(show.id, show.source ?? "tvmaze"));
       widgetItems.push({
         id: show.id,
         title: show.title,
         subtitle: `${dayLabel} • ${show.network ?? "—"}`,
+        type: "series",
+        posterUrl: show.posterPath ?? undefined,
+        at,
+      });
+    }
+
+    for (const show of favoriteEpisodes.items) {
+      const key = favoriteKey(show.id, show.source ?? "tvmaze");
+      if (widgetKeys.has(key) || !show.airstamp) continue;
+      const at = new Date(show.airstamp).getTime();
+      if (!Number.isFinite(at) || at <= now) continue;
+      const dayLabel = new Date(at).toLocaleDateString("fa-IR", {
+        weekday: "short", day: "numeric", month: "short",
+      });
+      widgetKeys.add(key);
+      widgetItems.push({
+        id: nativeShowId(show.id, show.source ?? "tvmaze"),
+        title: show.title,
+        subtitle: `${dayLabel} • ${EVENT_LABEL[showEventKind(show)]}`,
         type: "series",
         posterUrl: show.posterPath ?? undefined,
         at,

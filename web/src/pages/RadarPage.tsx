@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useFavorites } from "../hooks/useFavorites";
 import { useScheduleContext } from "../hooks/ScheduleContext";
@@ -17,6 +17,7 @@ import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { CATEGORY_LABEL, genreLabel } from "../lib/labels";
 import { rankFeaturedShows } from "../lib/featured";
 import { favoriteKey } from "../lib/favorites";
+import { readUiState, writeUiState } from "../lib/ui-state";
 import {
   toPersianDigits,
   jalaliDate,
@@ -38,6 +39,14 @@ const FILTERS: Array<{ key: ShowFilters["category"]; label: string }> = [
 
 const GENRES = ["Drama", "Comedy", "Crime", "Thriller", "Sci-Fi", "Fantasy", "Animation", "Documentary"];
 
+const UNSCRIPTED_GENRES = new Set([
+  "Reality", "Talk Show", "Game Show", "رئالیتی", "تاک‌شو", "مسابقه",
+]);
+
+function isUnscripted(show: Show): boolean {
+  return (show.genres ?? []).some((genre) => UNSCRIPTED_GENRES.has(genre));
+}
+
 function SkeletonCard() {
   return (
     <div className="overflow-hidden rounded-2xl border border-white/8 bg-ink-850/60">
@@ -57,9 +66,20 @@ export function RadarPage() {
   const favoriteKeys = useFavoriteKeys();
 
   const [search, setSearch] = useState("");
-  const [filters, setFilters] = useState<ShowFilters>({ search: "", category: "all", onlyPopular: true });
-  const [genre, setGenre] = useState<string | null>(null);
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [filters, setFilters] = useState<ShowFilters>(() => ({
+    search: "",
+    category: readUiState("radar.category", "all"),
+    onlyPopular: readUiState("radar.onlyPopular", true),
+  }));
+  const [genre, setGenre] = useState<string | null>(() => readUiState("radar.genre", null));
+  const [view, setView] = useState<"grid" | "list">(() => readUiState("radar.view", "grid"));
+  const [hideUnscripted, setHideUnscripted] = useState<boolean>(() => readUiState("radar.hideUnscripted", false));
+
+  useEffect(() => writeUiState("radar.category", filters.category), [filters.category]);
+  useEffect(() => writeUiState("radar.onlyPopular", filters.onlyPopular), [filters.onlyPopular]);
+  useEffect(() => writeUiState("radar.genre", genre), [genre]);
+  useEffect(() => writeUiState("radar.view", view), [view]);
+  useEffect(() => writeUiState("radar.hideUnscripted", hideUnscripted), [hideUnscripted]);
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
 
@@ -70,9 +90,11 @@ export function RadarPage() {
     // A text search should always reach the whole catalogue, even when the
     // "popular only" toggle is on.
     const scoped = { ...effectiveFilters, onlyPopular: effectiveFilters.onlyPopular && !effectiveFilters.search };
-    const base = filterShows(schedule.shows, scoped, now);
-    return genre ? base.filter((show) => (show.genres ?? []).includes(genre)) : base;
-  }, [schedule.shows, effectiveFilters, genre, now]);
+    let base = filterShows(schedule.shows, scoped, now);
+    if (genre) base = base.filter((show) => (show.genres ?? []).includes(genre));
+    if (hideUnscripted) base = base.filter((show) => !isUnscripted(show));
+    return base;
+  }, [schedule.shows, effectiveFilters, genre, hideUnscripted, now]);
 
   const groups = useMemo(() => groupShows(filtered, now), [filtered, now]);
 
@@ -85,7 +107,7 @@ export function RadarPage() {
     [favoriteKeys],
   );
 
-  const hasFilters = filters.category !== "all" || !!genre || !!debouncedSearch;
+  const hasFilters = filters.category !== "all" || !!genre || !!debouncedSearch || hideUnscripted;
 
   // Live TV hooks
   const liveTV = useLiveTVSections();
@@ -240,6 +262,17 @@ export function RadarPage() {
               }`}
             >
               فقط محبوب‌ها
+            </button>
+            <button
+              type="button"
+              onClick={() => setHideUnscripted((value) => !value)}
+              className={`sr-no-tap rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                hideUnscripted
+                  ? "bg-emerald-400/20 text-emerald-200 ring-1 ring-emerald-400/40"
+                  : "border border-white/10 bg-white/5 text-ink-300"
+              }`}
+            >
+              بدون رئالیتی/تاک‌شو
             </button>
           </div>
 
@@ -479,6 +512,7 @@ export function RadarPage() {
                 onClick={() => {
                   setSearch("");
                   setGenre(null);
+                  setHideUnscripted(false);
                   setFilters({ search: "", category: "all", onlyPopular: true });
                 }}
                 className="mt-3 rounded-lg bg-amber-400 px-3.5 py-1.5 text-xs font-semibold text-ink-950"
