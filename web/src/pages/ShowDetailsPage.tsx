@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
+import { BackButton } from "../components/BackButton";
 import { useFavorites } from "../hooks/useFavorites";
 import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useFavoriteIds } from "../hooks/useSchedule";
@@ -72,9 +73,7 @@ export function ShowDetailsPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <Link to="/" className="text-xs text-ink-400">
-          → بازگشت به رادار
-        </Link>
+        <BackButton className="text-ink-400" />
         <button
           type="button"
           onClick={() => favorites.toggle(show.id)}

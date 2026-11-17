@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { BackButton } from "../components/BackButton";
 import { useQuery } from "@tanstack/react-query";
 import { cachedFetchJson } from "../lib/offline";
 import { openExternalUrl } from "../lib/native";
@@ -150,9 +151,7 @@ export function MovieDetailsPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-2">
-        <Link to="/movies" className="text-xs text-ink-400">
-          → بازگشت به فیلم‌ها
-        </Link>
+        <BackButton className="text-ink-400" />
         <div className="flex items-center gap-2">
           {stage === "quality" && (
             <button

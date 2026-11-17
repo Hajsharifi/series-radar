@@ -6,6 +6,7 @@ import { useDebounced } from "../hooks/useSchedule";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { movieStage, searchMovies, tehranTodayISO } from "../lib/movies";
 import { toPersianDigits } from "../lib/date";
+import { readUiState, writeUiState } from "../lib/ui-state";
 import { RelativeUpdated } from "../components/DateChip";
 import { MovieCard } from "../components/MovieCard";
 import { MovieHistoryPageLink } from "../components/MovieHistoryLink";
@@ -36,16 +37,22 @@ function SkeletonCard() {
 }
 
 export function MoviesPage() {
-  const [tab, setTab] = useState<MovieTab>("quality");
-  const [qualityFilter, setQualityFilter] = useState<QualityFilter>("all");
+  // Tabs and filters survive navigation, so pressing back after opening a film
+  // returns to the exact same list instead of resetting to the default tab.
+  const [tab, setTab] = useState<MovieTab>(() => readUiState("movies.tab", "quality"));
+  const [qualityFilter, setQualityFilter] = useState<QualityFilter>(() => readUiState("movies.qualityFilter", "all"));
   const [query, setQuery] = useState("");
-  const [genre, setGenre] = useState<string | null>(null);
+  const [genre, setGenre] = useState<string | null>(() => readUiState("movies.genre", null));
   const [remote, setRemote] = useState<Movie[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState(false);
   const catalog = useMovieCatalog();
   const favorites = useMovieFavorites();
   const debounced = useDebounced(query, 350);
+
+  useEffect(() => writeUiState("movies.tab", tab), [tab]);
+  useEffect(() => writeUiState("movies.qualityFilter", qualityFilter), [qualityFilter]);
+  useEffect(() => writeUiState("movies.genre", genre), [genre]);
 
   usePullToRefresh(() => catalog.refresh(), { threshold: 80 });
 

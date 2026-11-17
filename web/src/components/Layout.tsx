@@ -3,6 +3,7 @@ import { useFavorites } from "../hooks/useFavorites";
 import { useMovieFavorites } from "../hooks/useMovies";
 import { useScheduleContext } from "../hooks/ScheduleContext";
 import { RelativeUpdated } from "./DateChip";
+import { BackButton, hasInAppHistory } from "./BackButton";
 import { toPersianDigits } from "../lib/date";
 import { useNetworkState, retryNetwork } from "../lib/offline";
 import { queryClient } from "../lib/queryClient";
@@ -48,6 +49,9 @@ export function Layout() {
       <header className="sr-sticky">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex min-w-0 items-center gap-2.5">
+            {(location.pathname !== "/" || hasInAppHistory(location)) && (
+              <BackButton compact />
+            )}
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-400 text-base font-black text-ink-950">
               ◉
             </div>

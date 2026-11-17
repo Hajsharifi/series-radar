@@ -7,6 +7,7 @@ import {
   type MovieRemoval,
 } from "../lib/movie-removals";
 import { JalaliSpans } from "../components/DateChip";
+import { BackButton } from "../components/BackButton";
 import { toPersianDigits } from "../lib/date";
 
 export default function MovieHistoryPage() {
@@ -23,6 +24,7 @@ export default function MovieHistoryPage() {
 
   return (
     <div className="space-y-5">
+      <BackButton />
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-[11px] font-medium tracking-wide text-emerald-300/90">پایان یک انتظار</p>

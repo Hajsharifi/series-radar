@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useParams } from "react-router-dom";
+import { BackButton } from "../components/BackButton";
 import { useSeriesDetail } from "../hooks/useSeriesDetail";
 import { toPersianDigits, jalaliDate, tehranClock } from "../lib/date";
 import { EpisodeList } from "../components/EpisodeList";
@@ -54,9 +55,7 @@ export default function SeriesDetailPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <Link to="/" className="text-xs text-ink-400">
-          → بازگشت به رادار
-        </Link>
+        <BackButton className="text-ink-400" />
       </div>
 
       <article className="overflow-hidden rounded-3xl border border-white/8 bg-ink-850/70">

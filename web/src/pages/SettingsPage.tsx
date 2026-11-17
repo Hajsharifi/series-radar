@@ -16,6 +16,7 @@ import {
   requestNotificationPermission,
 } from "../lib/native";
 import { setAmoled, useAmoled } from "../lib/theme";
+import { BackButton } from "../components/BackButton";
 import { downloadBackup, importBackup, readBackupFile } from "../lib/backup";
 
 declare const __APP_VERSION__: string;
@@ -123,6 +124,7 @@ export function SettingsPage() {
 
   return (
     <div className="space-y-5">
+      <BackButton />
       <header>
         <h1 className="text-xl font-extrabold text-white">تنظیمات</h1>
         <p className="mt-1 text-xs text-ink-400">داده‌ها، یادآوری و وضعیت اپ</p>

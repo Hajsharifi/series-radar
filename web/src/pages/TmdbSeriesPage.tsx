@@ -1,5 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
+import { BackButton } from "../components/BackButton";
 import { useQuery } from "@tanstack/react-query";
 import { cachedFetchJson } from "../lib/offline";
 import { openExternalUrl } from "../lib/native";
@@ -149,7 +150,7 @@ export default function TmdbSeriesPage() {
 
   return (
     <div className="space-y-5">
-      <Link to="/" className="inline-block text-xs text-ink-400">→ بازگشت به رادار</Link>
+      <BackButton className="text-ink-400" />
 
       <article className="overflow-hidden rounded-3xl border border-white/8 bg-ink-850/70">
         <div className="relative h-52 sm:h-64">

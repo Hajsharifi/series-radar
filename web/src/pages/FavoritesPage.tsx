@@ -6,6 +6,7 @@ import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useFavoriteIds, useNowTicker } from "../hooks/useSchedule";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { toPersianDigits } from "../lib/date";
+import { readUiState, writeUiState } from "../lib/ui-state";
 import {
   fetchMovieDetail,
   isMovieFinished,
@@ -34,7 +35,7 @@ export function FavoritesPage() {
   const catalog = useMovieCatalog();
   useNowTicker(30_000);
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<Tab>("series");
+  const [tab, setTab] = useState<Tab>(() => readUiState("favorites.tab", "series"));
   const [detailMap, setDetailMap] = useState<Record<number, Movie>>({});
   const [removals, setRemovals] = useState<MovieRemoval[]>(() => getPendingMovieRemovals());
   // Last time we asked the server about a favorite that was absent from both
@@ -42,6 +43,8 @@ export function FavoritesPage() {
   const checked = useRef(new Map<number, number>());
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
+
+  useEffect(() => writeUiState("favorites.tab", tab), [tab]);
 
   useEffect(() => {
     const sync = () => setRemovals(getPendingMovieRemovals());
