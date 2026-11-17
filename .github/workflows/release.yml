@@ -134,11 +134,18 @@ jobs:
         id: changelog
         run: |
           TAG=${{ steps.version.outputs.tag }}
-          PREV_TAG=$(git describe --tags --abbrev=0 ${TAG}^ 2>/dev/null || echo "")
-          if [ -n "$PREV_TAG" ]; then
-            CHANGELOG=$(git log ${PREV_TAG}..${TAG} --pretty=format:"- %s (%h)" --no-merges)
+          VER=${TAG#v}
+          # Prefer the curated CHANGELOG section; fall back to commit subjects.
+          SECTION=$(awk -v ver="## [v$VER]" '$0==ver{flag=1;next} /^## \[/{if(flag)exit} flag{print}' CHANGELOG.md)
+          if [ -n "$SECTION" ]; then
+            CHANGELOG="$SECTION"
           else
-            CHANGELOG=$(git log ${TAG} --pretty=format:"- %s (%h)" --no-merges)
+            PREV_TAG=$(git describe --tags --abbrev=0 ${TAG}^ 2>/dev/null || echo "")
+            if [ -n "$PREV_TAG" ]; then
+              CHANGELOG=$(git log ${PREV_TAG}..${TAG} --pretty=format:"- %s (%h)" --no-merges)
+            else
+              CHANGELOG=$(git log ${TAG} --pretty=format:"- %s (%h)" --no-merges)
+            fi
           fi
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
