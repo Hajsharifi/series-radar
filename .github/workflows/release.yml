@@ -26,6 +26,7 @@ jobs:
       DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -196,12 +197,12 @@ jobs:
         run: |
           echo "$DEPLOY_SSH_KEY" > deploy_key
           chmod 600 deploy_key
-          scp -o StrictHostKeyChecking=no -i deploy_key \
+          scp -o StrictHostKeyChecking=no -P "$DEPLOY_PORT" -i deploy_key \
             android-native/app/build/outputs/apk/release/app-release.apk \
             "$DEPLOY_USER@$DEPLOY_HOST:/var/www/apk/series-radar.apk"
-          scp -o StrictHostKeyChecking=no -i deploy_key \
+          scp -o StrictHostKeyChecking=no -P "$DEPLOY_PORT" -i deploy_key \
             android-native/app/build/outputs/apk/release/series-radar-${{ steps.version.outputs.version }}.apk \
             "$DEPLOY_USER@$DEPLOY_HOST:/var/www/apk/series-radar-${{ steps.version.outputs.version }}.apk"
-          ssh -o StrictHostKeyChecking=no -i deploy_key \
+          ssh -o StrictHostKeyChecking=no -p "$DEPLOY_PORT" -i deploy_key \
             "$DEPLOY_USER@$DEPLOY_HOST" \
             "systemctl restart series-radar-share.service"
