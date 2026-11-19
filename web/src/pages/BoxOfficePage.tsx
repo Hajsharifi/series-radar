@@ -24,7 +24,7 @@ function EntryTitle({ entry }: { entry: BoxOfficeEntry }) {
           rounded="rounded-lg"
         />
       ) : (
-        <div className="grid h-[52px] w-[36px] shrink-0 place-items-center rounded-lg bg-white/6 text-[10px] text-ink-400">
+        <div className="grid h-[52px] w-[36px] shrink-0 place-items-center rounded-lg bg-white/6 text-micro text-muted">
           {entry.rank ? `#${toPersianDigits(entry.rank)}` : "•"}
         </div>
       )}
@@ -32,7 +32,7 @@ function EntryTitle({ entry }: { entry: BoxOfficeEntry }) {
         <p className="truncate text-sm font-semibold text-white" dir="auto">
           {entry.title}
         </p>
-        <p className="mt-0.5 truncate text-[11px] text-ink-400" dir="auto">
+        <p className="mt-0.5 truncate text-caption text-muted" dir="auto">
           {[entry.distributor, entry.weeks ? `${toPersianDigits(entry.weeks)} هفته` : null]
             .filter(Boolean)
             .join(" · ") || "—"}
@@ -58,7 +58,7 @@ function Metric({ label, value, tone = "muted" }: { label: string; value: string
   } as const;
   return (
     <div className="rounded-xl bg-white/4 px-2.5 py-2">
-      <p className="text-[10px] text-ink-400">{label}</p>
+      <p className="text-micro text-muted">{label}</p>
       <p className={`mt-0.5 text-[12px] font-semibold ${tones[tone]}`}>{value}</p>
     </div>
   );
@@ -66,7 +66,7 @@ function Metric({ label, value, tone = "muted" }: { label: string; value: string
 
 function WeekendCard({ entry }: { entry: BoxOfficeEntry }) {
   return (
-    <article className="sr-card-hover rounded-2xl border border-white/8 bg-ink-850/70 p-3">
+    <article className="sr-card-hover rounded-card border border-edge/10 bg-panel/80 p-3">
       <div className="flex items-center gap-2.5">
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-sky-400 text-[12px] font-black text-sky-950">
           {toPersianDigits(entry.rank ?? 0)}
@@ -79,8 +79,8 @@ function WeekendCard({ entry }: { entry: BoxOfficeEntry }) {
         <Metric label="جهانی" value={usdShort(entry.worldwide)} tone="amber" />
       </div>
       <div className="mt-1.5 flex items-center justify-between gap-2 rounded-xl bg-black/25 px-2.5 py-1.5">
-        <span className="text-[10px] text-ink-400">بودجه</span>
-        <span className="text-[11px] font-medium text-ink-200">{usdShort(entry.budget)}</span>
+        <span className="text-micro text-muted">بودجه</span>
+        <span className="text-caption font-medium text-ink-200">{usdShort(entry.budget)}</span>
       </div>
     </article>
   );
@@ -88,14 +88,14 @@ function WeekendCard({ entry }: { entry: BoxOfficeEntry }) {
 
 function YearRow({ entry }: { entry: BoxOfficeEntry }) {
   return (
-    <article className="flex items-center gap-2.5 rounded-2xl border border-white/8 bg-ink-850/60 p-2.5">
-      <span className="w-5 shrink-0 text-center text-[12px] font-black text-ink-400">
+    <article className="flex items-center gap-2.5 rounded-card border border-edge/10 bg-panel/70 p-2.5">
+      <span className="w-5 shrink-0 text-center text-[12px] font-black text-muted">
         {toPersianDigits(entry.rank ?? 0)}
       </span>
       <EntryTitle entry={entry} />
       <div className="shrink-0 text-left">
         <p className="text-[12px] font-bold text-amber-300">{usdShort(entry.worldwide)}</p>
-        <p className="text-[10px] text-ink-400">داخلی {usdShort(entry.domestic)}</p>
+        <p className="text-micro text-muted">داخلی {usdShort(entry.domestic)}</p>
       </div>
     </article>
   );
@@ -140,10 +140,10 @@ export function BoxOfficePage() {
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-3xl border border-white/8 bg-gradient-to-br from-ink-850 via-ink-900 to-ink-950 p-5">
+      <section className="relative overflow-hidden rounded-3xl border border-edge/10 bg-gradient-to-br from-ink-850 via-ink-900 to-ink-950 p-5">
         <div className="pointer-events-none absolute -top-16 left-8 h-40 w-40 rounded-full bg-emerald-400/10 blur-3xl" />
         <div className="relative space-y-3">
-          <p className="text-[11px] font-medium tracking-wide text-emerald-300/90">باکس آفیس آمریکا و جهان</p>
+          <p className="text-caption font-medium tracking-wide text-emerald-300/90">باکس آفیس آمریکا و جهان</p>
           <h1 className="text-2xl font-extrabold leading-snug text-white">
             گیشه، به زبان <span className="text-amber-300">عدد</span>
           </h1>
@@ -151,23 +151,23 @@ export function BoxOfficePage() {
             فروش آخر هفته، فروش داخلی و جهانی، و بودجهٔ تولید — به‌روزرسانی از Box Office Mojo و TMDB.
           </p>
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="rounded-full bg-white/8 px-2.5 py-1 text-[11px] text-ink-200">
+            <span className="rounded-full bg-white/8 px-2.5 py-1 text-caption text-ink-200">
               سال {toPersianDigits(payload.year ?? new Date().getFullYear())}
             </span>
             {payload.weekendLabel && (
-              <span className="rounded-full bg-white/8 px-2.5 py-1 text-[11px] text-ink-200">
+              <span className="rounded-full bg-white/8 px-2.5 py-1 text-caption text-ink-200">
                 آخر هفتهٔ {payload.weekendLabel}
               </span>
             )}
             <button
               type="button"
               onClick={() => void load(true)}
-              className="rounded-full bg-emerald-400 px-3 py-1 text-[11px] font-bold text-emerald-950"
+              className="rounded-full bg-emerald-400 px-3 py-1 text-caption font-bold text-emerald-950"
             >
               {refreshing ? "در حال به‌روزرسانی…" : "به‌روزرسانی"}
             </button>
           </div>
-          <p className="text-[11px] text-ink-400">
+          <p className="text-caption text-muted">
             {state.source === "seed" ? "نسخهٔ همراه اپ (آفلاین)" : <RelativeUpdated iso={payload.updatedAt} />}
           </p>
         </div>
@@ -180,16 +180,16 @@ export function BoxOfficePage() {
       )}
 
       <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-2xl border border-white/8 bg-ink-850/60 p-3">
-          <p className="text-[10px] text-ink-400">جمع ۱۰ فیلم برتر</p>
+        <div className="rounded-card border border-edge/10 bg-panel/70 p-3">
+          <p className="text-micro text-muted">جمع ۱۰ فیلم برتر</p>
           <p className="mt-1 text-sm font-bold text-sky-300">{usdShort(weekendTotal)}</p>
         </div>
-        <div className="rounded-2xl border border-white/8 bg-ink-850/60 p-3">
-          <p className="text-[10px] text-ink-400">صدر جدول سال</p>
+        <div className="rounded-card border border-edge/10 bg-panel/70 p-3">
+          <p className="text-micro text-muted">صدر جدول سال</p>
           <p className="mt-1 truncate text-sm font-bold text-white" dir="auto">{top?.title ?? "—"}</p>
         </div>
-        <div className="rounded-2xl border border-white/8 bg-ink-850/60 p-3">
-          <p className="text-[10px] text-ink-400">فروش جهانی صدر</p>
+        <div className="rounded-card border border-edge/10 bg-panel/70 p-3">
+          <p className="text-micro text-muted">فروش جهانی صدر</p>
           <p className="mt-1 text-sm font-bold text-amber-300">{usdShort(top?.worldwide)}</p>
         </div>
       </div>
@@ -197,7 +197,7 @@ export function BoxOfficePage() {
       <section>
         <div className="mb-2.5 flex items-baseline justify-between gap-2">
           <h2 className="text-sm font-bold text-white">فروش آخر هفته</h2>
-          <span className="text-[11px] text-ink-400">{toPersianDigits(weekend.length)} فیلم</span>
+          <span className="text-caption text-muted">{toPersianDigits(weekend.length)} فیلم</span>
         </div>
         {loading && weekend.length === 0 ? (
           <SkeletonRows count={4} />
@@ -215,10 +215,10 @@ export function BoxOfficePage() {
       <section>
         <div className="mb-2.5 flex items-baseline justify-between gap-2">
           <h2 className="text-sm font-bold text-white">پرفروش‌ترین‌های سال</h2>
-          <span className="text-[11px] text-ink-400">{toPersianDigits(yearly.length)} فیلم</span>
+          <span className="text-caption text-muted">{toPersianDigits(yearly.length)} فیلم</span>
         </div>
         {yearly.length === 0 ? (
-          <p className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-6 text-center text-xs text-ink-400">
+          <p className="rounded-card border border-edge/10 bg-panel/70 px-4 py-6 text-center text-xs text-muted">
             جدول سالانه در دسترس نیست.
           </p>
         ) : (
@@ -230,14 +230,14 @@ export function BoxOfficePage() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-white/8 bg-ink-850/50 p-4">
+      <section className="rounded-card border border-edge/10 bg-panel/60 p-4">
         <h3 className="text-sm font-semibold text-white">این اعداد چه معنایی دارند؟</h3>
-        <ul className="mt-2 space-y-1.5 text-[11px] leading-relaxed text-ink-400">
+        <ul className="mt-2 space-y-1.5 text-caption leading-relaxed text-muted">
           <li>«آخر هفته» فروش سه‌روزهٔ سینماهای آمریکاست.</li>
           <li>«داخلی» فروش آمریکا و کانادا و «جهانی» فروش کل دنیاست.</li>
           <li>«بودجه» تخمین بودجهٔ تولید است و هزینهٔ بازاریابی را شامل نمی‌شود.</li>
         </ul>
-        <p className="mt-2 text-[10px] text-ink-500">
+        <p className="mt-2 text-micro text-ink-500">
           منبع: Box Office Mojo و TMDB {payload.year ? `· ${usdFull(top?.worldwide)}` : ""}
         </p>
       </section>

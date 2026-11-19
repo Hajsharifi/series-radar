@@ -24,7 +24,7 @@ declare const __APP_VERSION__: string;
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-white/6 py-2.5 last:border-0">
-      <span className="text-xs text-ink-400">{label}</span>
+      <span className="text-xs text-muted">{label}</span>
       <span className="text-xs font-medium text-ink-100">{value}</span>
     </div>
   );
@@ -131,13 +131,13 @@ export function SettingsPage() {
       <BackButton />
       <header>
         <h1 className="text-xl font-extrabold text-white">تنظیمات</h1>
-        <p className="mt-1 text-xs text-ink-400">داده‌ها، یادآوری و وضعیت اپ</p>
+        <p className="mt-1 text-xs text-muted">داده‌ها، یادآوری و وضعیت اپ</p>
       </header>
 
-      <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
+      <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-bold text-white">داده‌ها</h2>
-          <span className="rounded-full bg-emerald-400/12 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
+          <span className="rounded-full bg-emerald-400/12 px-2 py-0.5 text-micro font-medium text-emerald-300">
             TVMaze + TMDB
           </span>
         </div>
@@ -147,7 +147,7 @@ export function SettingsPage() {
           value={schedule.source === "network" ? "آنلاین" : schedule.source === "cache" ? "کش‌شده" : "دادهٔ همراه اپ"}
         />
         <div className="flex items-center justify-between gap-3 py-2.5">
-          <span className="text-xs text-ink-400">آخرین به‌روزرسانی</span>
+          <span className="text-xs text-muted">آخرین به‌روزرسانی</span>
           <span className="text-xs font-medium text-ink-100">{relativeSyncLabel(schedule.updatedAt)}</span>
         </div>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -166,17 +166,17 @@ export function SettingsPage() {
             پاک کردن کش داده
           </button>
         </div>
-        <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
+        <p className="mt-2 text-caption leading-relaxed text-muted">
           برنامهٔ امروز و فردا هر دقیقه بررسی می‌شود و فهرست کامل هر ۶ ساعت به‌روزرسانی می‌شود. تاریخ‌ها و ساعت
           پخش به وقت تهران هستند.
         </p>
       </section>
 
-      <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
+      <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-bold text-white">حالت AMOLED</h2>
-            <p className="mt-0.5 text-[11px] leading-relaxed text-ink-400">
+            <p className="mt-0.5 text-caption leading-relaxed text-muted">
               پسزمینهٔ مشکی مطلق؛ مصرف باتری را در صفحههای OLED کاهش میدهد.
             </p>
           </div>
@@ -192,10 +192,10 @@ export function SettingsPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
+      <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-bold text-white">یادآوری</h2>
-          <span className="rounded-full bg-emerald-400/12 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
+          <span className="rounded-full bg-emerald-400/12 px-2 py-0.5 text-micro font-medium text-emerald-300">
             {isNativeApp() ? "فعال" : "در اپ اندروید"}
           </span>
         </div>
@@ -203,7 +203,7 @@ export function SettingsPage() {
         <Row label="سریال‌های ستاره‌دار" value={`${toPersianDigits(favorites.items.length)} سریال`} />
         <Row label="فیلم‌های ستاره‌دار" value={`${toPersianDigits(movieFavorites.items.length)} فیلم`} />
         <div className="mt-2">
-          <p className="mb-1.5 text-[11px] text-ink-400">زمان پیش‌فرض یادآوری</p>
+          <p className="mb-1.5 text-caption text-muted">زمان پیش‌فرض یادآوری</p>
           <div className="flex flex-wrap gap-1.5">
             {LEAD_OPTIONS.map((option) => (
               <button
@@ -213,7 +213,7 @@ export function SettingsPage() {
                   setDefaultLeadHours(option.hours);
                   setLead(option.hours);
                 }}
-                className={`sr-no-tap rounded-lg px-2.5 py-1 text-[11px] ${
+                className={`sr-no-tap rounded-lg px-2.5 py-1 text-caption ${
                   defaultLead === option.hours ? "bg-amber-400 font-semibold text-ink-950" : "bg-white/6 text-ink-300"
                 }`}
               >
@@ -222,14 +222,14 @@ export function SettingsPage() {
             ))}
           </div>
         </div>
-        <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
+        <p className="mt-2 text-caption leading-relaxed text-muted">
           یادآوری هر سریال در صفحهٔ جزئیات آن قابل تنظیم است. یادآوریها در ساعت مناسب ۰۸:۰۰ تا ۲۲:۰۰ به وقت تهران ارسال میشوند تا مزاحم خواب نشوند.
         </p>
-        <div className="mt-3 rounded-xl border border-white/8 bg-black/25 p-3">
+        <div className="mt-3 rounded-xl border border-edge/10 bg-black/25 p-3">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold text-white">ساعت سکوت</p>
-              <p className="mt-0.5 text-[10px] leading-relaxed text-ink-400">
+              <p className="mt-0.5 text-micro leading-relaxed text-muted">
                 اعلان‌های این بازه به پایان آن موکول می‌شوند؛ اگر بعد از پخش بیفتند، ارسال نمی‌شوند.
               </p>
             </div>
@@ -249,7 +249,7 @@ export function SettingsPage() {
           </div>
           {quietEnabled && (
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <label className="text-[10px] text-ink-400">
+              <label className="text-micro text-muted">
                 از
                 <input
                   type="time"
@@ -261,7 +261,7 @@ export function SettingsPage() {
                   className="mt-1 w-full rounded-lg border border-white/10 bg-black/40 px-2 py-1.5 text-xs text-white"
                 />
               </label>
-              <label className="text-[10px] text-ink-400">
+              <label className="text-micro text-muted">
                 تا
                 <input
                   type="time"
@@ -303,9 +303,9 @@ export function SettingsPage() {
       </section>
 
       {isNativeApp() && (
-        <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
+        <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
           <h2 className="mb-2 text-sm font-bold text-white">بررسی پسزمینهٔ فیلمها</h2>
-          <p className="mb-1 text-[11px] leading-relaxed text-ink-400">
+          <p className="mb-1 text-caption leading-relaxed text-muted">
             فیلمهای ستارهداری که تاریخ دیجیتالشان نامشخص است، هر ۶ ساعت یکبار از سرور بررسی میشوند.
             این بررسی تقریبی است و ممکن است در حالت کممصرف با تأخیر اجرا شود.
           </p>
@@ -329,7 +329,7 @@ export function SettingsPage() {
           />
           <Row label="فیلمهای تحت بررسی" value={`${toPersianDigits(bgCheck?.watched ?? 0)} فیلم`} />
           {!bgCheck?.armed && (
-            <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
+            <p className="mt-2 text-caption leading-relaxed text-muted">
               با ستارهزدن یک فیلم بررسی پسزمینه فعال میشود؛ اولین بار حدود ۱۵ دقیقه بعد انجام میشود.
             </p>
           )}
@@ -347,9 +347,9 @@ export function SettingsPage() {
         </section>
       )}
 
-      <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
+      <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
         <h2 className="mb-2 text-sm font-bold text-white">ستاره‌ها</h2>
-        <p className="text-[11px] leading-relaxed text-ink-400">
+        <p className="text-caption leading-relaxed text-muted">
           ستاره‌ها روی همین گوشی ذخیره می‌شوند و با بستن اپ پاک نمی‌شوند.
         </p>
         <button
@@ -361,9 +361,9 @@ export function SettingsPage() {
         </button>
       </section>
 
-      <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
+      <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
         <h2 className="mb-2 text-sm font-bold text-white">پشتیبان‌گیری و بازیابی</h2>
-        <p className="text-[11px] leading-relaxed text-ink-400">
+        <p className="text-caption leading-relaxed text-muted">
           تمام ستاره‌ها (سریال و فیلم) در یک فایل JSON ذخیره یا از فایل بازیابی می‌شوند.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -398,28 +398,28 @@ export function SettingsPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-white/8 bg-ink-850/60 p-4">
+      <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
         <h2 className="mb-2 text-sm font-bold text-white">درباره</h2>
         <Row label="نسخه" value={toPersianDigits(__APP_VERSION__)} />
         <Row label="منبع داده" value="TVMaze · TMDB · Box Office Mojo" />
         <Row label="تقویم" value="شمسی + میلادی" />
         <Row label="یادآوری" value="آلارم اندروید" />
         <Row label="وضعیت ورود" value="محلی، بدون حساب" />
-        <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
+        <p className="mt-2 text-caption leading-relaxed text-muted">
           سریال‌ها از TVMaze، فیلم‌ها و تاریخ‌های انتشار از TMDB و اعداد گیشه از Box Office Mojo گرفته
           می‌شوند. همهٔ داده‌های تو محلی است و نیازی به ورود یا حساب ابری نیست.
         </p>
-        <p className="mt-2 text-[11px] leading-relaxed text-ink-400">
+        <p className="mt-2 text-caption leading-relaxed text-muted">
           This product uses the TMDB API but is not endorsed or certified by TMDB.
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
-          <button type="button" onClick={() => openExternalUrl("https://www.themoviedb.org/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-[11px] text-ink-200">
+          <button type="button" onClick={() => openExternalUrl("https://www.themoviedb.org/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-caption text-ink-200">
             TMDB
           </button>
-          <button type="button" onClick={() => openExternalUrl("https://www.tvmaze.com/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-[11px] text-ink-200">
+          <button type="button" onClick={() => openExternalUrl("https://www.tvmaze.com/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-caption text-ink-200">
             TVMaze
           </button>
-          <button type="button" onClick={() => openExternalUrl("https://www.boxofficemojo.com/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-[11px] text-ink-200">
+          <button type="button" onClick={() => openExternalUrl("https://www.boxofficemojo.com/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-caption text-ink-200">
             Box Office Mojo
           </button>
         </div>

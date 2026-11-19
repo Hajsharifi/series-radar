@@ -27,7 +27,7 @@ export function CompactShowRow({ show, favorite, onToggleFavorite }: CompactShow
   return (
     <div className="flex items-center gap-2 rounded-control border border-edge/10 bg-panel/80 px-2.5 py-1.5">
       <Link to={detailPath} className="sr-no-tap min-w-0 flex-1">
-        <p className="truncate text-xs font-semibold text-white" dir="auto">
+        <p className="truncate text-body font-semibold text-white" dir="auto">
           {show.title}
         </p>
         <p className="mt-0.5 truncate text-caption text-muted" dir="rtl">

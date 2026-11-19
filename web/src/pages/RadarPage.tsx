@@ -31,8 +31,8 @@ import type { Show } from "../types";
 import { ShowCard, ShowRow } from "../components/ShowCard";
 import { CompactShowRow } from "../components/CompactShowRow";
 import { EmptyState, SkeletonCards } from "../components/StateViews";
-import { Radar, Search, X } from "lucide-react";
-import { Chip, Input, SectionHeader } from "../components/ui";
+import { LayoutGrid, List, Radar, RefreshCw, Rows3, Search, SlidersHorizontal, X } from "lucide-react";
+import { Button, Chip, Input, SectionHeader } from "../components/ui";
 import { Poster } from "../components/Poster";
 
 const FILTERS: Array<{ key: ShowFilters["category"]; label: string }> = [
@@ -107,6 +107,7 @@ export function RadarPage() {
   const [genre, setGenre] = useState<string | null>(() => readUiState("radar.genre", null));
   const [view, setView] = useState<"grid" | "list" | "compact">(() => readUiState("radar.view", "grid"));
   const [hideUnscripted, setHideUnscripted] = useState<boolean>(() => readUiState("radar.hideUnscripted", false));
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [language, setLanguage] = useState<string>(() => readUiState("radar.language", "all"));
   const [country, setCountry] = useState<string>(() => readUiState("radar.country", "all"));
 
@@ -136,6 +137,7 @@ export function RadarPage() {
   }, [schedule.shows, effectiveFilters, genre, hideUnscripted, language, country, now]);
 
   const groups = useMemo(() => groupShows(filtered, now), [filtered, now]);
+  const todayLabel = useMemo(() => jalaliFromStamp(new Date(now).toISOString()), [now]);
 
   const toggle = useCallback(
     (show: Show) => favorites.toggle(show.id, show.source ?? "tvmaze"),
@@ -147,6 +149,22 @@ export function RadarPage() {
   );
 
   const hasFilters = filters.category !== "all" || !!genre || !!debouncedSearch || hideUnscripted || language !== "all" || country !== "all";
+  const activeFilterCount =
+    (filters.category !== "all" ? 1 : 0) +
+    (genre ? 1 : 0) +
+    (!filters.onlyPopular ? 1 : 0) +
+    (hideUnscripted ? 1 : 0) +
+    (language !== "all" ? 1 : 0) +
+    (country !== "all" ? 1 : 0);
+
+  function clearFilters() {
+    setSearch("");
+    setGenre(null);
+    setHideUnscripted(false);
+    setLanguage("all");
+    setCountry("all");
+    setFilters({ search: "", category: "all", onlyPopular: true });
+  }
 
   // Live TV hooks
   const liveTV = useLiveTVSections();
@@ -242,21 +260,21 @@ export function RadarPage() {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-3xl border border-white/8 bg-gradient-to-br from-ink-850 via-ink-900 to-ink-950 p-5">
-        <div className="pointer-events-none absolute -top-16 left-6 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-20 right-0 h-44 w-44 rounded-full bg-sky-500/10 blur-3xl" />
+      <section className="space-y-4">
+        <div>
+          <p className="text-label text-brand/90">
+            امروز به وقت تهران · {todayLabel}
+          </p>
+          <h1 className="mt-1 text-display text-copy">
+            سریال‌هایی که زیر رادار شما هستند
+          </h1>
+          <p className="mt-1.5 max-w-xl text-body leading-relaxed text-muted">
+            فصل جدید سریال‌های قدیمی و قسمت‌های تازه، با تاریخ شمسی و یادآوری.
+          </p>
+        </div>
 
-        <div className="relative flex flex-col gap-4">
-          <div>
-            <p className="text-[11px] font-medium tracking-wide text-amber-300/90">امروز به وقت تهران</p>
-            <h2 className="mt-1 text-2xl font-extrabold leading-snug text-white">
-              سریال‌هایی که <span className="text-amber-300">زیر رادار</span> شما هستند
-            </h2>
-            <p className="mt-1.5 text-xs leading-relaxed text-ink-300">
-              فصل جدید سریال‌های قدیمی و سریال‌های تازه، با تاریخ شمسی و یادآوری.
-            </p>
-          </div>
-
+        <div className="flex items-center gap-2">
+          <div className="min-w-0 flex-1">
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -274,98 +292,132 @@ export function RadarPage() {
               </button>
             ) : undefined}
           />
-
-          <div className="flex flex-wrap gap-2">
-            {FILTERS.map((item) => (
-              <Chip
-                key={item.key}
-                selected={filters.category === item.key}
-                onClick={() => setFilters((prev) => ({ ...prev, category: item.key }))}
-              >
-                {item.label}
-              </Chip>
-            ))}
-            <Chip
-              tone="info"
-              selected={filters.onlyPopular}
-              onClick={() => setFilters((prev) => ({ ...prev, onlyPopular: !prev.onlyPopular }))}
-            >
-              فقط محبوب‌ها
-            </Chip>
-            <Chip
-              tone="success"
-              selected={hideUnscripted}
-              onClick={() => setHideUnscripted((value) => !value)}
-            >
-              بدون رئالیتی/تاک‌شو
-            </Chip>
           </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            <Chip
-              tone="neutral"
-              selected={genre === null}
-              onClick={() => setGenre(null)}
-            >
-              همه ژانرها
-            </Chip>
-            {GENRES.map((item) => (
-              <Chip
-                key={item}
-                tone="neutral"
-                selected={genre === item}
-                onClick={() => setGenre((prev) => (prev === item ? null : item))}
-              >
-                {genreLabel(item)}
-              </Chip>
-            ))}
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
-              <label htmlFor="radar-language" className="text-[11px] text-ink-400">زبان</label>
-              <select
-                id="radar-language"
-                value={language}
-                onChange={(event) => setLanguage(event.target.value)}
-                className="rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] text-ink-200"
-              >
-                {LANGUAGE_FILTERS.map((item) => (
-                  <option key={item.key} value={item.key}>{item.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <label htmlFor="radar-country" className="text-[11px] text-ink-400">کشور</label>
-              <select
-                id="radar-country"
-                value={country}
-                onChange={(event) => setCountry(event.target.value)}
-                className="rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] text-ink-200"
-              >
-                {COUNTRY_FILTERS.map((item) => (
-                  <option key={item.key} value={item.key}>{item.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+          <Button
+            variant="secondary"
+            size="icon"
+            aria-label="فیلترها"
+            aria-expanded={filtersOpen}
+            onClick={() => setFiltersOpen((value) => !value)}
+            className="relative shrink-0"
+          >
+            <SlidersHorizontal className="h-4 w-4" strokeWidth={1.8} />
+            {activeFilterCount > 0 && (
+              <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-brand px-1 text-micro font-bold text-ink-950">
+                {toPersianDigits(activeFilterCount)}
+              </span>
+            )}
+          </Button>
         </div>
+
+        {filtersOpen && (
+          <div className="sr-pop space-y-4 rounded-card border border-edge/10 bg-panel/80 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-title text-copy">فیلترها</p>
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  پاک کردن
+                </Button>
+              )}
+            </div>
+
+            <div>
+              <p className="text-label text-muted">دسته</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {FILTERS.map((item) => (
+                  <Chip
+                    key={item.key}
+                    selected={filters.category === item.key}
+                    onClick={() => setFilters((prev) => ({ ...prev, category: item.key }))}
+                  >
+                    {item.label}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Chip
+                tone="info"
+                selected={filters.onlyPopular}
+                onClick={() => setFilters((prev) => ({ ...prev, onlyPopular: !prev.onlyPopular }))}
+              >
+                فقط محبوب‌ها
+              </Chip>
+              <Chip
+                tone="success"
+                selected={hideUnscripted}
+                onClick={() => setHideUnscripted((value) => !value)}
+              >
+                بدون رئالیتی/تاک‌شو
+              </Chip>
+            </div>
+
+            <div>
+              <p className="text-label text-muted">ژانر</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <Chip tone="neutral" selected={genre === null} onClick={() => setGenre(null)}>
+                  همه ژانرها
+                </Chip>
+                {GENRES.map((item) => (
+                  <Chip
+                    key={item}
+                    tone="neutral"
+                    selected={genre === item}
+                    onClick={() => setGenre((prev) => (prev === item ? null : item))}
+                  >
+                    {genreLabel(item)}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-label text-muted">
+                زبان
+                <select
+                  value={language}
+                  onChange={(event) => setLanguage(event.target.value)}
+                  className="mt-1.5 h-10 w-full rounded-control border border-edge/12 bg-black/20 px-3 text-body text-copy focus:border-brand/60 focus:outline-none"
+                >
+                  {LANGUAGE_FILTERS.map((item) => (
+                    <option key={item.key} value={item.key}>{item.label}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-label text-muted">
+                کشور
+                <select
+                  value={country}
+                  onChange={(event) => setCountry(event.target.value)}
+                  className="mt-1.5 h-10 w-full rounded-control border border-edge/12 bg-black/20 px-3 text-body text-copy focus:border-brand/60 focus:outline-none"
+                >
+                  {COUNTRY_FILTERS.map((item) => (
+                    <option key={item.key} value={item.key}>{item.label}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Tonight - a compact highlight built from both data sources */}
       {tonight.length > 0 && !hasFilters && (
-        <section className="overflow-hidden rounded-3xl border border-amber-400/25 bg-gradient-to-br from-amber-500/10 via-ink-850 to-ink-900 p-4">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-bold text-white">امشب به وقت تهران</h2>
-              <p className="mt-0.5 text-[11px] text-ink-400">{jalaliFromStamp(new Date().toISOString())}</p>
-            </div>
-            <Link to="/calendar" className="sr-no-tap rounded-lg bg-white/8 px-3 py-1.5 text-[11px] text-ink-200">
-              تقویم هفت روزه ←
-            </Link>
-          </div>
+        <section className="rounded-card border border-edge/10 bg-panel/80 p-4">
+          <SectionHeader
+            className="mb-3"
+            eyebrow={todayLabel}
+            title="امشب به وقت تهران"
+            action={
+              <Link to="/calendar" className="sr-no-tap rounded-control border border-edge/12 bg-white/5 px-3 py-1.5 text-caption text-ink-200">
+                تقویم هفت روزه
+              </Link>
+            }
+          />
           <div className="grid gap-2 sm:grid-cols-2">
             {tonight.map((item) => (
-              <Link key={item.key} to={item.path} className="sr-no-tap flex items-center gap-3 rounded-2xl border border-white/8 bg-black/20 p-2.5">
+              <Link key={item.key} to={item.path} className="sr-no-tap flex items-center gap-3 rounded-control border border-edge/10 bg-black/15 p-2.5">
                 <Poster
                   show={{
                     id: Number(item.key.replace(/\D/g, "")) || 0,
@@ -379,10 +431,10 @@ export function RadarPage() {
                   rounded="rounded-lg"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-1 text-xs font-bold text-white" dir="auto">{item.title}</p>
-                  <p className="mt-0.5 line-clamp-1 text-[10px] text-ink-400">{item.subtitle}</p>
+                  <p className="line-clamp-1 text-title text-white" dir="auto">{item.title}</p>
+                  <p className="mt-0.5 line-clamp-1 text-caption text-muted">{item.subtitle}</p>
                 </div>
-                <span className="shrink-0 text-[11px] font-bold tabular-nums text-amber-300">{item.clock}</span>
+                <span className="shrink-0 text-caption font-bold tabular-nums text-brand">{item.clock}</span>
               </Link>
             ))}
           </div>
@@ -401,18 +453,18 @@ export function RadarPage() {
               const show = suggestion.show;
               const key = favoriteKey(show.id, show.source ?? "tvmaze");
               return (
-                <div key={key} className="relative w-[136px] shrink-0">
+                <div key={key} className="relative w-[148px] shrink-0">
                   <button
                     type="button"
                     aria-label="این پیشنهاد را نشان نده"
                     title="علاقه ندارم"
                     onClick={() => dismissedFeatured.dismiss(key)}
-                    className="sr-no-tap absolute right-2 top-2 z-20 grid h-6 w-6 place-items-center rounded-full bg-black/55 text-[11px] text-white/75 backdrop-blur active:bg-black/75"
+                    className="sr-no-tap absolute right-2 top-2 z-20 grid h-6 w-6 place-items-center rounded-full bg-black/55 text-caption text-white/75 backdrop-blur active:bg-black/75"
                   >
-                    ✕
+                    <X className="h-3.5 w-3.5" strokeWidth={2} />
                   </button>
                   <ShowCard show={show} favorite={isFavorite(show)} onToggleFavorite={toggle} />
-                  <p className="mt-1 truncate text-center text-[9px] text-ink-400" title={suggestion.reasons.join(" · ")}>
+                  <p className="mt-1 truncate text-center text-caption text-muted" title={suggestion.reasons.join(" · ")}>
                     {suggestion.reasons.join(" · ")}
                   </p>
                 </div>
@@ -467,25 +519,25 @@ export function RadarPage() {
                   to={show.source === "tmdb" ? `/tv/${show.id}` : `/series/${show.id}`}
                   className="block"
                 >
-                  <article className="relative overflow-hidden rounded-2xl border border-white/8 bg-ink-850/70">
+                  <article className="relative overflow-hidden rounded-card border border-edge/10 bg-panel/80">
                     <div className="flex items-center gap-3 p-3">
-                      <Poster show={show} className="h-16 w-12 shrink-0 rounded-xl" rounded="rounded-xl" />
+                      <Poster show={show} className="h-16 w-12 shrink-0 rounded-control" rounded="rounded-control" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="rounded-full bg-sky-400/90 px-2 py-0.5 text-[10px] font-bold text-sky-950">سریال</span>
-                          <span className="text-[11px] text-ink-300">{show.title}</span>
+                          <span className="rounded-full bg-sky-400/90 px-2 py-0.5 text-micro font-bold text-sky-950">سریال</span>
+                          <span className="text-caption text-ink-300">{show.title}</span>
                         </div>
                         <p className="text-sm font-medium text-white line-clamp-1" dir="auto">
                           {next?.name || `قسمت ${toPersianDigits(next?.number ?? 0)}`}
                         </p>
                         <div className="mt-1 flex items-center gap-2">
                           {next?.season && next?.number && (
-                            <span className="text-[11px] text-ink-400">
+                            <span className="text-caption text-muted">
                               فصل {toPersianDigits(next.season)} • قسمت {toPersianDigits(next.number)}
                             </span>
                           )}
                           {show.airstamp && (
-                            <span className="text-[11px] text-amber-300">
+                            <span className="text-caption text-brand">
                               {jalaliDate(new Date(show.airstamp))}
                             </span>
                           )}
@@ -501,52 +553,54 @@ export function RadarPage() {
       )}
 
       <section>
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-bold text-white">
-              {schedule.loading ? "در حال دریافت برنامه" : `${toPersianDigits(filtered.length)} سریال زیر رادار`}
-            </h2>
-            <p className="mt-0.5 text-[11px] text-ink-400">
-              {hasFilters ? "فیلترها اعمال شده‌اند" : "بر اساس زمان پخش به وقت تهران"}
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setView("grid")}
-              aria-label="نمایش کارت‌ها"
-              className={`rounded-lg px-2.5 py-1.5 text-xs ${view === "grid" ? "bg-white/15 text-white" : "bg-white/4 text-ink-400"}`}
-            >
-              ▦
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("list")}
-              aria-label="نمایش فهرستی"
-              className={`rounded-lg px-2.5 py-1.5 text-xs ${view === "list" ? "bg-white/15 text-white" : "bg-white/4 text-ink-400"}`}
-            >
-              ☰
-            </button>
-            <button
-              type="button"
-              onClick={() => setView("compact")}
-              aria-label="نمایش فشرده"
-              className={`rounded-lg px-2.5 py-1.5 text-xs ${view === "compact" ? "bg-white/15 text-white" : "bg-white/4 text-ink-400"}`}
-            >
-              ≣
-            </button>
-            <button
-              type="button"
-              onClick={schedule.refresh}
-              className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-ink-200 active:bg-white/10"
-            >
-              {schedule.refreshing ? "…" : "به‌روزرسانی"}
-            </button>
-          </div>
-        </div>
+        <SectionHeader
+          className="mb-4"
+          title={schedule.loading ? "در حال دریافت برنامه" : `${toPersianDigits(filtered.length)} سریال زیر رادار`}
+          description={hasFilters ? "فیلترها اعمال شده‌اند" : "بر اساس زمان پخش به وقت تهران"}
+          action={
+            <div className="flex items-center gap-1">
+              <Button
+                variant={view === "grid" ? "secondary" : "ghost"}
+                size="icon"
+                className="h-9 w-9"
+                aria-label="نمایش کارت‌ها"
+                onClick={() => setView("grid")}
+              >
+                <LayoutGrid className="h-4 w-4" strokeWidth={1.8} />
+              </Button>
+              <Button
+                variant={view === "list" ? "secondary" : "ghost"}
+                size="icon"
+                className="h-9 w-9"
+                aria-label="نمایش فهرستی"
+                onClick={() => setView("list")}
+              >
+                <List className="h-4 w-4" strokeWidth={1.8} />
+              </Button>
+              <Button
+                variant={view === "compact" ? "secondary" : "ghost"}
+                size="icon"
+                className="h-9 w-9"
+                aria-label="نمایش فشرده"
+                onClick={() => setView("compact")}
+              >
+                <Rows3 className="h-4 w-4" strokeWidth={1.8} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                aria-label="به‌روزرسانی داده‌ها"
+                onClick={schedule.refresh}
+              >
+                <RefreshCw className={`h-4 w-4 ${schedule.refreshing ? "animate-spin" : ""}`} strokeWidth={1.8} />
+              </Button>
+            </div>
+          }
+        />
 
         {schedule.error && (
-          <div className="mb-4 rounded-xl border border-red-400/25 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+          <div className="mb-4 rounded-control border border-danger/25 bg-danger/10 px-3 py-2 text-caption text-danger">
             {schedule.error} — دادهٔ ذخیره‌شده نمایش داده می‌شود.
           </div>
         )}
@@ -560,20 +614,9 @@ export function RadarPage() {
             description="فیلترها را پاک کنید، «فقط محبوب‌ها» را خاموش کنید یا عبارت دیگری جست‌وجو کنید."
             compact
             action={hasFilters ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearch("");
-                  setGenre(null);
-                  setHideUnscripted(false);
-                  setLanguage("all");
-                  setCountry("all");
-                  setFilters({ search: "", category: "all", onlyPopular: true });
-                }}
-                className="rounded-lg bg-amber-400 px-3.5 py-1.5 text-xs font-semibold text-ink-950"
-              >
+              <Button variant="primary" size="sm" onClick={clearFilters}>
                 پاک کردن فیلترها
-              </button>
+              </Button>
             ) : undefined}
           />
         ) : view === "grid" ? (
@@ -581,8 +624,8 @@ export function RadarPage() {
             {groups.map((group) => (
               <div key={group.key}>
                 <div className="mb-2.5 flex items-baseline gap-2">
-                  <h3 className="text-sm font-bold text-white">{group.title}</h3>
-                  <span className="text-[11px] text-ink-400">{toPersianDigits(group.shows.length)} سریال</span>
+                  <h3 className="text-title font-bold text-white">{group.title}</h3>
+                  <span className="text-caption text-muted">{toPersianDigits(group.shows.length)} سریال</span>
                 </div>
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                   {group.shows.map((show) => (
@@ -602,8 +645,8 @@ export function RadarPage() {
             {groups.map((group) => (
               <div key={group.key}>
                 <div className="mb-2 flex items-baseline gap-2">
-                  <h3 className="text-sm font-bold text-white">{group.title}</h3>
-                  <span className="text-[11px] text-ink-400">{toPersianDigits(group.shows.length)} سریال</span>
+                  <h3 className="text-title font-bold text-white">{group.title}</h3>
+                  <span className="text-caption text-muted">{toPersianDigits(group.shows.length)} سریال</span>
                 </div>
                 <div className="space-y-1">
                   {group.shows.map((show) => (
@@ -623,8 +666,8 @@ export function RadarPage() {
             {groups.map((group) => (
               <div key={group.key}>
                 <div className="mb-2.5 flex items-baseline gap-2">
-                  <h3 className="text-sm font-bold text-white">{group.title}</h3>
-                  <span className="text-[11px] text-ink-400">{toPersianDigits(group.shows.length)} سریال</span>
+                  <h3 className="text-title font-bold text-white">{group.title}</h3>
+                  <span className="text-caption text-muted">{toPersianDigits(group.shows.length)} سریال</span>
                 </div>
                 <div className="space-y-2">
                   {group.shows.map((show) => (
@@ -642,16 +685,16 @@ export function RadarPage() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-white/8 bg-ink-850/50 p-4">
+      <section className="rounded-card border border-edge/10 bg-panel/60 p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold text-white">دربارهٔ رادار</h3>
-            <p className="mt-1 text-[11px] leading-relaxed text-ink-400">
+            <h3 className="text-title text-white">دربارهٔ رادار</h3>
+            <p className="mt-1 text-caption leading-relaxed text-muted">
               داده‌ها از TVMaze گرفته می‌شوند؛ برنامهٔ امروز و فردا هر دقیقه و فهرست کامل هر ۶ ساعت به‌روزرسانی
               می‌شود. تاریخ‌ها به وقت تهران نمایش داده می‌شوند.
             </p>
           </div>
-          <Link to="/settings" className="shrink-0 rounded-lg bg-white/6 px-3 py-1.5 text-xs text-ink-200">
+          <Link to="/settings" className="shrink-0 rounded-control border border-edge/10 bg-white/5 px-3 py-1.5 text-caption text-ink-200">
             تنظیمات
           </Link>
         </div>

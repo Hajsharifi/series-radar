@@ -82,7 +82,7 @@ function formatDay(value?: string | null) {
 function Info({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="rounded-xl border border-white/6 bg-white/4 px-3 py-2">
-      <p className="text-[10px] text-ink-400">{label}</p>
+      <p className="text-micro text-muted">{label}</p>
       <p className="mt-0.5 text-xs font-semibold text-ink-100" dir="auto">{value || "—"}</p>
     </div>
   );
@@ -144,12 +144,12 @@ export default function TmdbSeriesPage() {
   }, [episodes]);
 
   if (showQuery.isLoading) {
-    return <div className="rounded-2xl bg-ink-850/60 px-4 py-16 text-center text-sm text-ink-300">در حال بارگذاری…</div>;
+    return <div className="rounded-card bg-panel/70 px-4 py-16 text-center text-sm text-ink-300">در حال بارگذاری…</div>;
   }
 
   if (!show || !show.id) {
     return (
-      <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-14 text-center">
+      <div className="rounded-card border border-edge/10 bg-panel/70 px-4 py-14 text-center">
         <p className="text-sm font-semibold text-white">این سریال پیدا نشد</p>
         <Link to="/" className="mt-4 inline-block rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-ink-950">
           بازگشت به رادار
@@ -167,7 +167,7 @@ export default function TmdbSeriesPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-2">
-        <BackButton className="text-ink-400" />
+        <BackButton className="text-muted" />
         <button
           type="button"
           onClick={() => favorites.toggle(showId, "tmdb")}
@@ -179,7 +179,7 @@ export default function TmdbSeriesPage() {
         </button>
       </div>
 
-      <article className="overflow-hidden rounded-3xl border border-white/8 bg-ink-850/70">
+      <article className="overflow-hidden rounded-3xl border border-edge/10 bg-panel/80">
         <div className="relative h-52 sm:h-64">
           {hero && <img src={hero} alt="" className="h-full w-full object-cover opacity-70" />}
           <div className="absolute inset-0 bg-gradient-to-t from-ink-900 via-ink-900/50 to-transparent" />
@@ -190,18 +190,18 @@ export default function TmdbSeriesPage() {
               rounded="rounded-xl"
             />
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold text-amber-300">سریال</p>
+              <p className="text-micro font-semibold text-amber-300">سریال</p>
               <h1 className="line-clamp-2 text-lg font-extrabold leading-snug text-white" dir="auto">{show.title}</h1>
               {show.originalTitle && show.originalTitle !== show.title && (
                 <p className="truncate text-xs text-ink-300" dir="auto">{show.originalTitle}</p>
               )}
-              {show.tagline && <p className="mt-1 line-clamp-1 text-[11px] italic text-ink-400" dir="auto">{show.tagline}</p>}
+              {show.tagline && <p className="mt-1 line-clamp-1 text-caption italic text-muted" dir="auto">{show.tagline}</p>}
             </div>
           </div>
         </div>
 
         <div className="space-y-4 p-4">
-          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+          <div className="flex flex-wrap items-center gap-2 text-caption">
             {typeof show.rating === "number" && show.rating > 0 && (
               <span className="rounded-lg bg-amber-400/15 px-2 py-1 font-bold text-amber-200">★ {toPersianDigits(show.rating.toFixed(1))}</span>
             )}
@@ -236,10 +236,10 @@ export default function TmdbSeriesPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
+          <div className="rounded-card border border-edge/10 bg-black/25 p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] text-ink-400">یادآوری قسمت بعدی · {leadHoursLabel(lead)}</p>
+                <p className="text-caption text-muted">یادآوری قسمت بعدی · {leadHoursLabel(lead)}</p>
                 <p className="mt-1 text-xs font-semibold text-ink-100">
                   {!favorite
                     ? "با ستاره‌کردن سریال فعال می‌شود"
@@ -267,15 +267,15 @@ export default function TmdbSeriesPage() {
               </button>
             </div>
             {favorite && (
-              <div className="mt-3 border-t border-white/8 pt-3">
-                <p className="mb-1.5 text-[11px] text-ink-400">چقدر قبل یادآوری شود؟</p>
+              <div className="mt-3 border-t border-edge/10 pt-3">
+                <p className="mb-1.5 text-caption text-muted">چقدر قبل یادآوری شود؟</p>
                 <div className="flex flex-wrap gap-1.5">
                   {LEAD_OPTIONS.map((option) => (
                     <button
                       key={option.hours}
                       type="button"
                       onClick={() => favorites.setLead(showId, "tmdb", option.hours)}
-                      className={`rounded-lg px-2.5 py-1 text-[11px] ${
+                      className={`rounded-lg px-2.5 py-1 text-caption ${
                         lead === option.hours ? "bg-amber-400 font-semibold text-ink-950" : "bg-white/6 text-ink-300"
                       }`}
                     >
@@ -314,7 +314,7 @@ export default function TmdbSeriesPage() {
       <section className="space-y-2">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold text-white">قسمتها</h2>
-          <span className="text-[11px] text-ink-400">
+          <span className="text-caption text-muted">
             {toPersianDigits(watchedCount)} / {toPersianDigits(episodes.length)} دیده شده
           </span>
         </div>
@@ -327,21 +327,21 @@ export default function TmdbSeriesPage() {
           </div>
         )}
         {seasons.length === 0 ? (
-          <p className="rounded-xl border border-white/8 bg-ink-850/60 px-3 py-5 text-center text-xs text-ink-400">
+          <p className="rounded-xl border border-edge/10 bg-panel/70 px-3 py-5 text-center text-xs text-muted">
             اطلاعات قسمتها در دسترس نیست.
           </p>
         ) : (
           seasons.map(([seasonNumber, items]) => {
             const open = openSeason === seasonNumber || (openSeason === null && seasonNumber === seasons[0][0]);
             return (
-              <div key={seasonNumber} className="overflow-hidden rounded-2xl border border-white/8 bg-ink-850/60">
+              <div key={seasonNumber} className="overflow-hidden rounded-card border border-edge/10 bg-panel/70">
                 <button
                   type="button"
                   onClick={() => setOpenSeason(open ? -1 : seasonNumber)}
                   className="flex w-full items-center justify-between px-3 py-2.5 text-right text-xs font-semibold text-white"
                 >
                   <span>فصل {toPersianDigits(seasonNumber)}</span>
-                  <span className="text-ink-400">{toPersianDigits(items.length)} قسمت · {open ? "▲" : "▼"}</span>
+                  <span className="text-muted">{toPersianDigits(items.length)} قسمت · {open ? "▲" : "▼"}</span>
                 </button>
                 {open && (
                   <div className="divide-y divide-white/6">
@@ -353,12 +353,12 @@ export default function TmdbSeriesPage() {
                             {toPersianDigits(episode.number)}
                           </span>
                           <div className="min-w-0 flex-1">
-                            <p className={`text-xs font-semibold ${isWatched ? "text-ink-400 line-through" : "text-white"}`} dir="auto">
+                            <p className={`text-xs font-semibold ${isWatched ? "text-muted line-through" : "text-white"}`} dir="auto">
                               {episode.name || `قسمت ${episode.number}`}
                             </p>
-                            {episode.summary && <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-ink-400" dir="auto">{episode.summary}</p>}
+                            {episode.summary && <p className="mt-0.5 line-clamp-2 text-caption leading-relaxed text-muted" dir="auto">{episode.summary}</p>}
                           </div>
-                          {episode.airdate && <span className="shrink-0 text-[10px] text-ink-400">{formatDay(episode.airdate)}</span>}
+                          {episode.airdate && <span className="shrink-0 text-micro text-muted">{formatDay(episode.airdate)}</span>}
                           <button
                             type="button"
                             onClick={() => tracking.toggleWatched("tmdb", showId, episode.id)}
@@ -391,9 +391,9 @@ export default function TmdbSeriesPage() {
                   show={{ id: item.id, title: item.title, posterPath: item.posterPath, posterOriginal: item.backdropPath, category: "returning", source: "tmdb" }}
                   className="aspect-[2/3] w-full"
                 />
-                <p className="mt-1 line-clamp-2 text-[11px] font-semibold text-white" dir="auto">{item.title}</p>
+                <p className="mt-1 line-clamp-2 text-caption font-semibold text-white" dir="auto">{item.title}</p>
                 {item.originalTitle && item.originalTitle !== item.title && (
-                  <p className="truncate text-[10px] text-ink-400" dir="auto">{item.originalTitle}</p>
+                  <p className="truncate text-micro text-muted" dir="auto">{item.originalTitle}</p>
                 )}
               </Link>
             ))}

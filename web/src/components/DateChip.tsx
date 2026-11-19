@@ -15,7 +15,7 @@ interface DateChipProps {
 export function DateChip({ stamp, size = "sm" }: DateChipProps) {
   const date = tehranDateFromStamp(stamp);
   if (!date) {
-    return <span className="text-xs text-ink-400">زمان پخش نامشخص</span>;
+    return <span className="text-xs text-muted">زمان پخش نامشخص</span>;
   }
   const parts = jalaliDateParts(date);
   const weekday = weekdayName(stamp);
@@ -28,9 +28,9 @@ export function DateChip({ stamp, size = "sm" }: DateChipProps) {
           {parts.day}
         </span>
         <span className={compact ? "text-sm text-ink-200" : "text-lg text-ink-200"}>{parts.month}</span>
-        <span className={compact ? "text-xs text-ink-400" : "text-sm text-ink-400"}>{parts.year}</span>
+        <span className={compact ? "text-xs text-muted" : "text-sm text-muted"}>{parts.year}</span>
       </div>
-      <span className="text-[11px] text-ink-400" dir="ltr" style={{ unicodeBidi: "isolate" }}>
+      <span className="text-caption text-muted" dir="ltr" style={{ unicodeBidi: "isolate" }}>
         {weekday ? `${weekday} · ` : ""}
         {gregorianShort(date)}
       </span>
@@ -43,7 +43,7 @@ export function JalaliSpans({
   stamp,
   date,
   className = "",
-  yearClassName = "text-ink-400",
+  yearClassName = "text-muted",
 }: {
   stamp?: string | null;
   date?: Date | null;
@@ -51,7 +51,7 @@ export function JalaliSpans({
   yearClassName?: string;
 }) {
   const value = date ?? tehranDateFromStamp(stamp);
-  if (!value) return <span className={`text-ink-400 ${className}`}>نامشخص</span>;
+  if (!value) return <span className={`text-muted ${className}`}>نامشخص</span>;
   const parts = jalaliDateParts(value);
   return (
     <span className={`sr-date-box inline-flex items-baseline gap-1 ${className}`} dir="rtl">
@@ -68,7 +68,7 @@ export function JalaliInline({ stamp }: { stamp?: string | null }) {
 
 export function RelativeUpdated({ iso }: { iso?: string | null }) {
   return (
-    <span className="text-[11px] text-ink-400">
+    <span className="text-caption text-muted">
       آخرین به‌روزرسانی: <span className="text-ink-300">{relativeSyncLabel(iso)}</span>
     </span>
   );

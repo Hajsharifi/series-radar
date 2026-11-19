@@ -202,7 +202,7 @@ export function FavoritesPage() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-extrabold text-white">ستاره‌های من</h1>
-          <p className="mt-1 text-xs text-ink-400">
+          <p className="mt-1 text-xs text-muted">
             {toPersianDigits(total)} مورد · {toPersianDigits(favorites.items.length)} سریال،{" "}
             {toPersianDigits(movieFavorites.items.length)} فیلم · ذخیره‌شده روی همین گوشی
           </p>
@@ -243,12 +243,12 @@ export function FavoritesPage() {
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         placeholder="جست‌وجو در ستاره‌ها" aria-label="جست‌وجو در ستاره‌ها"
-        className="w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-ink-400 focus:border-amber-400/60 focus:outline-none"
+        className="w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-muted focus:border-amber-400/60 focus:outline-none"
         dir="auto"
       />
 
       {removals.length > 0 && (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/8 px-3 py-2 text-[11px] text-emerald-200">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-400/20 bg-emerald-500/8 px-3 py-2 text-caption text-emerald-200">
           <div className="space-y-0.5">
             {removals.some((item) => item.reason === "available") && (
               <p>
@@ -260,7 +260,7 @@ export function FavoritesPage() {
                 {toPersianDigits(removals.filter((item) => item.reason === "expired").length)} فیلم حذف شدند چون بیش از ۹۰ روز از اکرانشان گذشت و تاریخ دیجیتالی اعلام نشد.
               </p>
             )}
-            <p className="text-[10px] text-emerald-200/70">با بستن این پیام، تاریخچه پاک نمیشود.</p>
+            <p className="text-micro text-emerald-200/70">با بستن این پیام، تاریخچه پاک نمیشود.</p>
           </div>
           <div className="flex gap-2">
             <MovieHistoryPageLink />
@@ -280,11 +280,11 @@ export function FavoritesPage() {
         favorites.items.length === 0 ? (
           <EmptySeries />
         ) : shows.length === 0 ? (
-          <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-10 text-center">
+          <div className="rounded-card border border-edge/10 bg-panel/70 px-4 py-10 text-center">
             <p className="text-sm text-white">
               {missingShows > 0 ? "قسمت بعدی این سریال‌ها هنوز اعلام نشده" : "نتیجهای پیدا نشد"}
             </p>
-            <p className="mt-1 text-xs text-ink-400">
+            <p className="mt-1 text-xs text-muted">
               {missingShows > 0
                 ? "منبع داده هنوز تاریخ قسمت بعدی را ندارد."
                 : "عبارت دیگری را امتحان کنید."}
@@ -305,11 +305,11 @@ export function FavoritesPage() {
       ) : movieFavorites.items.length === 0 ? (
         <EmptyMovies />
       ) : movies.length === 0 ? (
-        <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-10 text-center">
+        <div className="rounded-card border border-edge/10 bg-panel/70 px-4 py-10 text-center">
           <p className="text-sm text-white">
             {missingMovies > 0 ? "این فیلم‌ها در فهرست فعلی نیستند" : "نتیجهای پیدا نشد"}
           </p>
-          <p className="mt-1 text-xs text-ink-400">
+          <p className="mt-1 text-xs text-muted">
             {missingMovies > 0
               ? "وضعیتشان هنوز مشخص نشده یا اتصال اینترنت برقرار نیست."
               : "عبارت دیگری را امتحان کنید."}
@@ -321,7 +321,7 @@ export function FavoritesPage() {
             <section className="space-y-2">
               <div className="flex items-baseline gap-2">
                 <h2 className="text-sm font-bold text-white">منتظر اکران سینمایی</h2>
-                <span className="text-[11px] text-ink-400">{toPersianDigits(upcomingMovies.length)} فیلم</span>
+                <span className="text-caption text-muted">{toPersianDigits(upcomingMovies.length)} فیلم</span>
               </div>
               {upcomingMovies.map(renderMovieRow)}
             </section>
@@ -330,7 +330,7 @@ export function FavoritesPage() {
             <section className="space-y-2">
               <div className="flex items-baseline gap-2">
                 <h2 className="text-sm font-bold text-white">در انتظار کیفیت خوب</h2>
-                <span className="text-[11px] text-ink-400">{toPersianDigits(qualityMovies.length)} فیلم</span>
+                <span className="text-caption text-muted">{toPersianDigits(qualityMovies.length)} فیلم</span>
               </div>
               {qualityMovies.map(renderMovieRow)}
             </section>
@@ -339,12 +339,12 @@ export function FavoritesPage() {
       )}
 
       {tab === "series" && missingShows > 0 && shows.length > 0 && (
-        <p className="text-[11px] text-ink-400">
+        <p className="text-caption text-muted">
           {toPersianDigits(missingShows)} سریال ستاره‌شده قسمت بعدی اعلام‌شده ندارد و فعلاً نمایش داده نمی‌شود.
         </p>
       )}
       {tab === "movies" && missingMovies > 0 && movies.length > 0 && (
-        <p className="text-[11px] text-ink-400">
+        <p className="text-caption text-muted">
           {toPersianDigits(missingMovies)} فیلم ستاره‌شده هنوز در فهرست فعلی نیست.
         </p>
       )}

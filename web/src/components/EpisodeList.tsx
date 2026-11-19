@@ -15,7 +15,7 @@ export function EpisodeList({ episodes, watchedIds, onToggle }: EpisodeListProps
   const seasonKeys = Object.keys(bySeason).map(Number).sort((a, b) => a - b);
 
   if (seasonKeys.length === 0) {
-    return <div className="py-8 text-center text-ink-400">اطلاعات قسمتها موجود نیست</div>;
+    return <div className="py-8 text-center text-muted">اطلاعات قسمتها موجود نیست</div>;
   }
 
   return (
@@ -23,10 +23,10 @@ export function EpisodeList({ episodes, watchedIds, onToggle }: EpisodeListProps
       {seasonKeys.map((season) => (
         <section key={season} className="space-y-3">
           <h3 className="flex items-center gap-2 text-sm font-bold text-white">
-            <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[11px] text-amber-300">
+            <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-caption text-amber-300">
               فصل {season}
             </span>
-            <span className="text-[11px] text-ink-400">{bySeason[season].length} قسمت</span>
+            <span className="text-caption text-muted">{bySeason[season].length} قسمت</span>
           </h3>
           <div className="space-y-2">
             {bySeason[season]
@@ -59,17 +59,17 @@ function EpisodeItem({
   return (
     <article
       className={`sr-card-hover flex items-center gap-3 rounded-xl border p-3 ${
-        watched ? "border-emerald-400/20 bg-emerald-500/5" : "border-white/8 bg-ink-850/70"
+        watched ? "border-emerald-400/20 bg-emerald-500/5" : "border-edge/10 bg-panel/80"
       }`}
     >
-      <span className={`w-8 shrink-0 text-center text-[11px] font-bold ${watched ? "text-emerald-300" : "text-ink-400"}`}>
+      <span className={`w-8 shrink-0 text-center text-caption font-bold ${watched ? "text-emerald-300" : "text-muted"}`}>
         {episode.number}
       </span>
       <div className="min-w-0 flex-1">
-        <p className={`truncate text-sm font-medium ${watched ? "text-ink-400 line-through" : "text-white"}`} dir="auto">
+        <p className={`truncate text-sm font-medium ${watched ? "text-muted line-through" : "text-white"}`} dir="auto">
           {episode.name}
         </p>
-        <p className="mt-0.5 truncate text-[11px] text-ink-400" dir="auto">
+        <p className="mt-0.5 truncate text-caption text-muted" dir="auto">
           {episode.airdate || "تاریخ مشخص نیست"} {episode.airtime || ""}
         </p>
       </div>

@@ -27,7 +27,7 @@ export default function MovieHistoryPage() {
       <BackButton />
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[11px] font-medium tracking-wide text-emerald-300/90">پایان یک انتظار</p>
+          <p className="text-caption font-medium tracking-wide text-emerald-300/90">پایان یک انتظار</p>
           <h1 className="mt-1 text-2xl font-extrabold text-white">تاریخچهٔ فیلمها</h1>
           <p className="mt-1.5 text-xs leading-relaxed text-ink-300">
             فیلمهایی که از فهرست انتظار و ستارهها خارج شدند — کیفیت خوبشان منتشر شده یا پیگیری آنها پایان یافته است.
@@ -46,8 +46,8 @@ export default function MovieHistoryPage() {
       </header>
 
       {items.length === 0 ? (
-        <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-12 text-center">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-white/5 text-xl text-ink-300">◷</div>
+        <div className="rounded-card border border-edge/10 bg-panel/70 px-4 py-12 text-center">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-card bg-white/5 text-xl text-ink-300">◷</div>
           <p className="mt-3 text-sm font-semibold text-white">هنوز فیلمی پایان نگرفته است</p>
           <p className="mt-1 text-xs text-ink-300">
             وقتی نسخهٔ دیجیتال فیلم ستارهدار شما منتشر شود، در اینجا قابل دیدن است.
@@ -58,7 +58,7 @@ export default function MovieHistoryPage() {
         </div>
       ) : (
         <>
-          <div className="flex flex-wrap gap-2 text-[11px]">
+          <div className="flex flex-wrap gap-2 text-caption">
             <span className="rounded-full bg-emerald-400/12 px-2.5 py-1 text-emerald-200">
               {toPersianDigits(released)} کیفیت منتشر شد
             </span>
@@ -73,16 +73,16 @@ export default function MovieHistoryPage() {
                 to={`/movie/${item.movieId}`}
                 className="sr-no-tap block"
               >
-                <article className="flex items-center gap-3 rounded-2xl border border-white/8 bg-ink-850/70 p-3">
+                <article className="flex items-center gap-3 rounded-card border border-edge/10 bg-panel/80 p-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-white" dir="auto">{item.title}</p>
-                    <p className="mt-0.5 text-[11px] text-ink-300">
+                    <p className="mt-0.5 text-caption text-ink-300">
                       {item.reason === "available"
                         ? "نسخهٔ دیجیتال باکیفیت منتشر شد"
                         : "بیش از ۹۰ روز از اکران گذشت و تاریخ دیجیتالی اعلام نشد"}
                     </p>
                   </div>
-                  <JalaliSpans stamp={item.at} className="shrink-0 text-[11px] text-ink-300" />
+                  <JalaliSpans stamp={item.at} className="shrink-0 text-caption text-ink-300" />
                 </article>
               </Link>
             ))}

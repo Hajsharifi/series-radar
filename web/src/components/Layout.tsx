@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   CalendarDays,
+  Ellipsis,
   Film,
   Radar,
   RefreshCw,
@@ -27,9 +28,7 @@ const NAV: Array<{ to: string; label: string; icon: LucideIcon }> = [
   { to: "/search", label: "جستجو", icon: Search },
   { to: "/calendar", label: "تقویم", icon: CalendarDays },
   { to: "/movies", label: "فیلم‌ها", icon: Film },
-  { to: "/boxoffice", label: "گیشه", icon: Ticket },
   { to: "/favorites", label: "ستاره‌ها", icon: Star },
-  { to: "/settings", label: "تنظیمات", icon: Settings },
 ];
 
 export function Layout() {
@@ -38,13 +37,32 @@ export function Layout() {
   const { updatedAt, refresh, refreshing } = useScheduleContext();
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
+  const moreRef = useRef<HTMLDivElement>(null);
+  const [moreOpen, setMoreOpen] = useState(false);
   const totalStars = items.length + movies.items.length;
   const network = useNetworkState();
 
   useEffect(() => {
     mainRef.current?.focus();
     window.scrollTo({ top: 0, behavior: "auto" });
+    setMoreOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const close = (event: MouseEvent) => {
+      if (!moreRef.current?.contains(event.target as Node)) setMoreOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMoreOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [moreOpen]);
 
   return (
     <div className="app-shell">
@@ -52,7 +70,7 @@ export function Layout() {
         پرش به محتوای اصلی
       </a>
       {network.offline && (
-        <div role="status" aria-live="polite" className="border-b border-amber-400/25 bg-amber-500/15 px-4 py-2 text-center text-[11px] text-amber-200">
+        <div role="status" aria-live="polite" className="border-b border-amber-400/25 bg-amber-500/15 px-4 py-2 text-center text-caption text-amber-200">
           <span>
             اتصال برقرار نشد — نمایش آخرین داده
             {network.savedAt ? ` (${new Date(network.savedAt).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })})` : ""}
@@ -99,6 +117,44 @@ export function Layout() {
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} strokeWidth={1.8} />
             </Button>
+            <div ref={moreRef} className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="بیشتر"
+                aria-expanded={moreOpen}
+                aria-haspopup="menu"
+                onClick={() => setMoreOpen((value) => !value)}
+                className="h-9 w-9"
+              >
+                <Ellipsis className="h-4 w-4" strokeWidth={1.8} />
+              </Button>
+              {moreOpen && (
+                <div
+                  role="menu"
+                  className="sr-pop absolute left-0 top-full z-40 mt-2 w-44 overflow-hidden rounded-card border border-edge/15 bg-panel-raised p-1 shadow-float"
+                >
+                  <Link
+                    to="/boxoffice"
+                    role="menuitem"
+                    onClick={() => setMoreOpen(false)}
+                    className="flex items-center gap-2 rounded-control px-3 py-2 text-caption text-copy transition hover:bg-white/6"
+                  >
+                    <Ticket className="h-4 w-4 text-muted" strokeWidth={1.8} />
+                    گیشه
+                  </Link>
+                  <Link
+                    to="/settings"
+                    role="menuitem"
+                    onClick={() => setMoreOpen(false)}
+                    className="flex items-center gap-2 rounded-control px-3 py-2 text-caption text-copy transition hover:bg-white/6"
+                  >
+                    <Settings className="h-4 w-4 text-muted" strokeWidth={1.8} />
+                    تنظیمات
+                  </Link>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -109,11 +165,13 @@ export function Layout() {
 
       <main id="main-content" ref={mainRef} tabIndex={-1} className="sr-main">
         <ErrorBoundary resetKey={location.pathname}>
-          <Outlet />
+          <div key={location.pathname} className="sr-page-enter">
+            <Outlet />
+          </div>
         </ErrorBoundary>
       </main>
 
-      <nav className="sr-safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-white/8 bg-ink-950/92 backdrop-blur-xl">
+      <nav className="sr-safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-edge/10 bg-ink-950/92 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-stretch justify-around px-1">
           {NAV.map((item) => {
             const active = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
@@ -122,15 +180,19 @@ export function Layout() {
                 key={item.to}
                 to={item.to}
                 aria-current={active ? "page" : undefined}
-                className={`sr-no-tap flex flex-1 flex-col items-center gap-1 py-2 text-micro font-medium transition ${
+                className={`sr-no-tap flex flex-1 flex-col items-center gap-1 py-1.5 text-micro font-medium transition ${
                   active ? "text-brand" : "text-muted"
                 }`}
               >
-                <item.icon
-                  className="h-[18px] w-[18px]"
-                  strokeWidth={active ? 2.2 : 1.7}
-                  fill={item.icon === Star && active ? "currentColor" : "none"}
-                />
+                <span className={`grid h-7 w-11 place-items-center rounded-full transition ${
+                  active ? "bg-brand/12" : "bg-transparent"
+                }`}>
+                  <item.icon
+                    className="h-[18px] w-[18px]"
+                    strokeWidth={active ? 2.2 : 1.7}
+                    fill={item.icon === Star && active ? "currentColor" : "none"}
+                  />
+                </span>
                 <span>{item.label}</span>
               </Link>
             );

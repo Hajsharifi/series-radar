@@ -41,9 +41,9 @@ export default function SeriesDetailPage() {
 
   if (!series) {
     return (
-      <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-14 text-center">
+      <div className="rounded-card border border-edge/10 bg-panel/70 px-4 py-14 text-center">
         <p className="text-sm font-semibold text-white">این سریال پیدا نشد</p>
-        <p className="mt-1 text-xs text-ink-400">ممکن است از برنامهٔ آینده حذف شده باشد.</p>
+        <p className="mt-1 text-xs text-muted">ممکن است از برنامهٔ آینده حذف شده باشد.</p>
         <Link to="/" className="mt-4 inline-block rounded-lg bg-amber-400 px-4 py-2 text-xs font-semibold text-ink-950">
           بازگشت به رادار
         </Link>
@@ -56,10 +56,10 @@ export default function SeriesDetailPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <BackButton className="text-ink-400" />
+        <BackButton className="text-muted" />
       </div>
 
-      <article className="overflow-hidden rounded-3xl border border-white/8 bg-ink-850/70">
+      <article className="overflow-hidden rounded-3xl border border-edge/10 bg-panel/80">
         <div className="relative">
           <Poster
             show={{
@@ -87,14 +87,14 @@ export default function SeriesDetailPage() {
             />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="rounded-full bg-sky-400/90 px-2 py-0.5 text-[10px] font-bold text-sky-950">سریال</span>
+                <span className="rounded-full bg-sky-400/90 px-2 py-0.5 text-micro font-bold text-sky-950">سریال</span>
                 {series.status && (
-                  <span className="rounded-full bg-black/55 px-2 py-0.5 text-[10px] text-ink-200">
+                  <span className="rounded-full bg-black/55 px-2 py-0.5 text-micro text-ink-200">
                     {series.status === "Ended" ? "پایان‌یافته" : series.status}
                   </span>
                 )}
                 {typeof series.rating?.average === "number" && series.rating.average > 0 && (
-                  <span className="rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                  <span className="rounded-full bg-black/55 px-2 py-0.5 text-micro font-bold text-amber-300">
                     ★ {toPersianDigits(series.rating.average.toFixed(1))}
                   </span>
                 )}
@@ -107,7 +107,7 @@ export default function SeriesDetailPage() {
         </div>
 
         <div className="space-y-4 p-4">
-          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+          <div className="flex flex-wrap items-center gap-2 text-caption">
             {series.genres?.slice(0, 5).map((genre: string) => (
               <span key={genre} className="rounded-lg bg-white/6 px-2 py-1 text-ink-200">
                 {genre}
@@ -126,10 +126,10 @@ export default function SeriesDetailPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
+          <div className="rounded-card border border-edge/10 bg-black/25 p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] text-ink-400">پیشرفت تماشا</p>
+                <p className="text-caption text-muted">پیشرفت تماشا</p>
                 <div className="mt-1 flex items-center gap-2">
                   <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
                     <div
@@ -144,7 +144,7 @@ export default function SeriesDetailPage() {
               </div>
             </div>
             {series.episodes.length > 0 && (
-              <p className="mt-2 text-[11px] text-ink-400">
+              <p className="mt-2 text-caption text-muted">
                 {toPersianDigits(progress.watched)} از {toPersianDigits(progress.total)} قسمت دیده شده
               </p>
             )}
@@ -154,24 +154,24 @@ export default function SeriesDetailPage() {
             <h2 className="mb-2 text-sm font-bold text-white">تاریخ‌ها</h2>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <div className="rounded-xl bg-white/5 px-3 py-2">
-                <p className="text-[10px] text-ink-400">شروع پخش</p>
+                <p className="text-micro text-muted">شروع پخش</p>
                 <p className="mt-0.5 text-xs font-semibold text-white" dir="rtl">{formatDate(series.premiered).jalali}</p>
-                <p className="text-[10px] text-ink-400" dir="ltr">{formatDate(series.premiered).gregorian}</p>
+                <p className="text-micro text-muted" dir="ltr">{formatDate(series.premiered).gregorian}</p>
               </div>
               {series.ended && (
                 <div className="rounded-xl bg-white/5 px-3 py-2">
-                  <p className="text-[10px] text-ink-400">پایان</p>
+                  <p className="text-micro text-muted">پایان</p>
                   <p className="mt-0.5 text-xs font-semibold text-white" dir="rtl">{formatDate(series.ended).jalali}</p>
-                  <p className="text-[10px] text-ink-400" dir="ltr">{formatDate(series.ended).gregorian}</p>
+                  <p className="text-micro text-muted" dir="ltr">{formatDate(series.ended).gregorian}</p>
                 </div>
               )}
               {series.schedule && (
                 <div className="rounded-xl bg-white/5 px-3 py-2">
-                  <p className="text-[10px] text-ink-400">زمان پخش</p>
+                  <p className="text-micro text-muted">زمان پخش</p>
                   <p className="mt-0.5 text-xs font-semibold text-white">
                     {tehranClock(`2000-01-01T${series.schedule.time}`)}
                   </p>
-                  <p className="text-[10px] text-ink-400">
+                  <p className="text-micro text-muted">
                     {series.schedule.days?.join("، ")}
                   </p>
                 </div>
@@ -179,7 +179,7 @@ export default function SeriesDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
+          <div className="rounded-card border border-edge/10 bg-black/25 p-4">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-sm font-bold text-white">پیشرفت فصل‌ها</h2>
             </div>
@@ -210,7 +210,7 @@ export default function SeriesDetailPage() {
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-white">داستان</h2>
-                <span className="text-[10px] text-ink-400">خلاصه به انگلیسی</span>
+                <span className="text-micro text-muted">خلاصه به انگلیسی</span>
               </div>
               <p className="text-left text-[13px] leading-7 text-ink-300" dir="auto">
                 {(series.summary ?? "").replace(/<[^>]*>/g, "")}

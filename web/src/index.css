@@ -143,6 +143,21 @@ body {
   animation: sr-pop 0.22s var(--ease-out-soft) both;
 }
 
+@keyframes sr-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sr-page-enter {
+  animation: sr-page-enter 0.18s var(--ease-out-soft) both;
+}
+
 .sr-no-tap {
   -webkit-tap-highlight-color: transparent;
 }

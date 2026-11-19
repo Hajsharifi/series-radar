@@ -54,7 +54,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     return (
       <div
         role="alert"
-        className={`rounded-2xl border border-rose-400/25 bg-rose-500/8 text-center ${
+        className={`rounded-card border border-rose-400/25 bg-rose-500/8 text-center ${
           this.props.compact ? "px-4 py-8" : "px-4 py-12"
         }`}
       >

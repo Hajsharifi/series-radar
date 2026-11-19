@@ -78,17 +78,17 @@ export function MovieCard({ movie, tab, favorite, onToggleFavorite }: MovieCardP
         {(movie.imdbRating || movie.rottenTomatoesRating || movie.metacriticRating) && (
           <div className="absolute right-2 top-24 flex flex-col gap-1">
             {movie.imdbRating && (
-              <span className="rounded bg-black/75 px-1.5 py-0.5 text-[9px] font-bold text-amber-300 backdrop-blur">
+              <span className="rounded bg-black/75 px-1.5 py-0.5 text-micro font-bold text-amber-300 backdrop-blur">
                 IMDb {movie.imdbRating.split("/")[0]}
               </span>
             )}
             {movie.rottenTomatoesRating && (
-              <span className="rounded bg-black/75 px-1.5 py-0.5 text-[9px] font-bold text-red-400 backdrop-blur">
+              <span className="rounded bg-black/75 px-1.5 py-0.5 text-micro font-bold text-red-400 backdrop-blur">
                 RT {movie.rottenTomatoesRating.replace("%", "")}%
               </span>
             )}
             {movie.metacriticRating && (
-              <span className="rounded bg-black/75 px-1.5 py-0.5 text-[9px] font-bold text-green-400 backdrop-blur">
+              <span className="rounded bg-black/75 px-1.5 py-0.5 text-micro font-bold text-green-400 backdrop-blur">
                 MC {movie.metacriticRating.split("/")[0]}
               </span>
             )}
@@ -113,12 +113,12 @@ export function MovieCard({ movie, tab, favorite, onToggleFavorite }: MovieCardP
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <Link
           to={`/movie/${movie.id}`}
-          className="sr-no-tap line-clamp-2 min-h-[2.4em] text-sm font-bold leading-snug text-white"
+          className="sr-no-tap line-clamp-2 min-h-[2.4em] text-title leading-snug text-white"
           dir="auto"
         >
           {movie.title}
         </Link>
-        <p className="truncate text-caption text-ink-400" dir="auto">
+        <p className="truncate text-caption text-muted" dir="auto">
           {genres.length ? genres.join(" · ") : movie.originalTitle ?? "—"}
         </p>
         <div className="mt-auto flex items-center justify-between gap-1 border-t border-white/6 pt-1.5">
@@ -156,38 +156,38 @@ export function MovieRow({
       <Link to={`/movie/${movie.id}`} className="sr-no-tap shrink-0">
         <div className="relative">
           <MoviePoster movie={movie} className="h-[70px] w-[50px]" rounded="rounded-xl" />
-          <span className="absolute -bottom-1 -left-1 rounded-md bg-sky-400 px-1 py-0.5 text-[9px] font-bold text-sky-950">
+          <span className="absolute -bottom-1 -left-1 rounded-md bg-sky-400 px-1 py-0.5 text-micro font-bold text-sky-950">
             فیلم
           </span>
         </div>
       </Link>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">
-          <Link to={`/movie/${movie.id}`} className="sr-no-tap block truncate text-sm font-semibold text-white" dir="auto">
+          <Link to={`/movie/${movie.id}`} className="sr-no-tap block truncate text-title font-semibold text-white" dir="auto">
             {movie.title}
           </Link>
-          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${badge.className}`}>
+          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-micro font-semibold ${badge.className}`}>
             {badge.label}
           </span>
         </div>
-        <p className="mt-0.5 truncate text-caption text-ink-400" dir="auto">
+        <p className="mt-0.5 truncate text-caption text-muted" dir="auto">
           {genres.length ? genres.join(" · ") : movie.originalTitle ?? "—"}
           {caption ? ` · ${caption}` : ""}
         </p>
         <div className="mt-0.5 flex items-center gap-1.5 text-caption text-ink-300">
           <JalaliSpans stamp={date} />
           {movie.imdbRating && (
-            <span className="rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-bold text-amber-300">
+            <span className="rounded bg-black/50 px-1.5 py-0.5 text-micro font-bold text-amber-300">
               IMDb {movie.imdbRating.split("/")[0]}
             </span>
           )}
           {movie.rottenTomatoesRating && (
-            <span className="rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-bold text-red-400">
+            <span className="rounded bg-black/50 px-1.5 py-0.5 text-micro font-bold text-red-400">
               RT {movie.rottenTomatoesRating.replace("%", "")}%
             </span>
           )}
           {movie.metacriticRating && (
-            <span className="rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-bold text-green-400">
+            <span className="rounded bg-black/50 px-1.5 py-0.5 text-micro font-bold text-green-400">
               MC {movie.metacriticRating.split("/")[0]}
             </span>
           )}

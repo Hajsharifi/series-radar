@@ -9,7 +9,7 @@ interface PosterProps {
   sizesHint?: string;
 }
 
-export function Poster({ show, className = "", rounded = "rounded-2xl" }: PosterProps) {
+export function Poster({ show, className = "", rounded = "rounded-card" }: PosterProps) {
   const [failed, setFailed] = useState(false);
   const url = posterUrl(show);
 
@@ -43,7 +43,7 @@ export function Poster({ show, className = "", rounded = "rounded-2xl" }: Poster
 }
 
 export function SkeletonPoster({ className = "" }: { className?: string }) {
-  return <div className={`sr-skeleton rounded-2xl ${className}`} />;
+  return <div className={`sr-skeleton rounded-card ${className}`} />;
 }
 
 export function SectionTitle({ title, hint, action }: { title: string; hint?: string; action?: ReactNode }) {
@@ -51,7 +51,7 @@ export function SectionTitle({ title, hint, action }: { title: string; hint?: st
     <div className="mb-3 flex items-end justify-between gap-3">
       <div>
         <h2 className="text-base font-bold text-white">{title}</h2>
-        {hint && <p className="mt-0.5 text-xs text-ink-400">{hint}</p>}
+        {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
       </div>
       {action}
     </div>

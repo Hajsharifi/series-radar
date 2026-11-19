@@ -146,8 +146,8 @@ export function MoviesPage() {
       <section className="space-y-2.5">
         <div className="flex flex-wrap items-baseline gap-2">
           <h3 className="text-sm font-bold text-white">{title}</h3>
-          <span className="text-[11px] text-ink-400">{toPersianDigits(items.length)} فیلم</span>
-          {note && <span className="text-[11px] text-ink-400">· {note}</span>}
+          <span className="text-caption text-muted">{toPersianDigits(items.length)} فیلم</span>
+          {note && <span className="text-caption text-muted">· {note}</span>}
         </div>
         {renderGrid(items)}
       </section>
@@ -156,12 +156,12 @@ export function MoviesPage() {
 
   return (
     <div className="space-y-5">
-      <section className="relative overflow-hidden rounded-3xl border border-white/8 bg-gradient-to-br from-ink-850 via-ink-900 to-ink-950 p-5">
+      <section className="relative overflow-hidden rounded-3xl border border-edge/10 bg-gradient-to-br from-ink-850 via-ink-900 to-ink-950 p-5">
         <div className="pointer-events-none absolute -top-16 left-8 h-40 w-40 rounded-full bg-sky-400/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-20 right-0 h-44 w-44 rounded-full bg-amber-400/10 blur-3xl" />
         <div className="relative space-y-4">
           <div>
-            <p className="text-[11px] font-medium tracking-wide text-sky-300/90">سینما و انتشار خانگی</p>
+            <p className="text-caption font-medium tracking-wide text-sky-300/90">سینما و انتشار خانگی</p>
             <h1 className="mt-1 text-2xl font-extrabold leading-snug text-white">
               فیلمها، از <span className="text-amber-300">پردهٔ سینما</span> تا خانه
             </h1>
@@ -176,7 +176,7 @@ export function MoviesPage() {
               onChange={(event) => setQuery(event.target.value)}
               placeholder="جستوجوی نام فیلم (انگلیسی)"
               aria-label="جستوجوی نام فیلم"
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-ink-400 focus:border-sky-400/60 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-muted focus:border-sky-400/60 focus:outline-none"
               dir="auto"
             />
             {query && (
@@ -184,7 +184,7 @@ export function MoviesPage() {
                 type="button"
                 onClick={() => setQuery("")}
                 aria-label="پاک کردن جستوجو"
-                className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full px-2 py-1 text-xs text-ink-400"
+                className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full px-2 py-1 text-xs text-muted"
               >
                 ✕
               </button>
@@ -219,7 +219,7 @@ export function MoviesPage() {
                   type="button"
                   aria-pressed={qualityFilter === key}
                   onClick={() => setQualityFilter(key)}
-                  className={`sr-no-tap rounded-lg px-2.5 py-1 text-[11px] font-medium ${
+                  className={`sr-no-tap rounded-lg px-2.5 py-1 text-caption font-medium ${
                     qualityFilter === key
                       ? "bg-amber-400 text-ink-950"
                       : "border border-white/10 bg-white/4 text-ink-300"
@@ -237,7 +237,7 @@ export function MoviesPage() {
               type="button"
               aria-pressed={genre === null}
               onClick={() => setGenre(null)}
-              className={`sr-no-tap rounded-lg px-2.5 py-1 text-[11px] ${
+              className={`sr-no-tap rounded-lg px-2.5 py-1 text-caption ${
                 genre === null ? "bg-white/15 text-white" : "bg-white/4 text-ink-300"
               }`}
             >
@@ -249,7 +249,7 @@ export function MoviesPage() {
                 type="button"
                 aria-pressed={genre === item}
                 onClick={() => setGenre((prev) => (prev === item ? null : item))}
-                className={`sr-no-tap rounded-lg px-2.5 py-1 text-[11px] ${
+                className={`sr-no-tap rounded-lg px-2.5 py-1 text-caption ${
                   genre === item ? "bg-white/15 text-white" : "bg-white/4 text-ink-300"
                 }`}
               >
@@ -257,7 +257,7 @@ export function MoviesPage() {
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-ink-300">{activeTab.hint}</p>
+          <p className="text-caption text-ink-300">{activeTab.hint}</p>
         </div>
       </section>
 
@@ -272,7 +272,7 @@ export function MoviesPage() {
                 ? "در حال دریافت فیلمها"
                 : `${toPersianDigits(shown.length)} فیلم`}
           </h2>
-          <p className="mt-0.5 text-[11px] text-ink-400">
+          <p className="mt-0.5 text-caption text-muted">
             {listState.source === "seed"
               ? "نمایش نسخهٔ همراه اپ؛ برای دادهٔ تازه به اینترنت وصل شوید"
               : <RelativeUpdated iso={listState.updatedAt} />}
@@ -302,7 +302,7 @@ export function MoviesPage() {
         <button
           type="button"
           onClick={() => setTab(tab === "quality" ? "upcoming" : "quality")}
-          className="w-full rounded-xl border border-sky-400/25 bg-sky-500/10 px-3 py-2 text-right text-[11px] text-sky-200"
+          className="w-full rounded-xl border border-sky-400/25 bg-sky-500/10 px-3 py-2 text-right text-caption text-sky-200"
         >
           {toPersianDigits(otherStageCount)} نتیجهٔ دیگر در تب «{tab === "quality" ? "بهزودی" : "در انتظار کیفیت خوب"}» است — رفتن به آن تب ←
         </button>
@@ -341,11 +341,11 @@ export function MoviesPage() {
         <div className="space-y-6">{section("اکرانهای پیشرو", shown)}</div>
       )}
 
-      <section className="rounded-2xl border border-white/8 bg-ink-850/50 p-4">
+      <section className="rounded-card border border-edge/10 bg-panel/60 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold text-white">دربارهٔ این بخش</h3>
-            <p className="mt-1 max-w-2xl text-[11px] leading-relaxed text-ink-300">
+            <p className="mt-1 max-w-2xl text-caption leading-relaxed text-ink-300">
               فهرست فیلمها و تاریخهای اکران/انتشار از TMDB میآید و تاریخها به شمسی و میلادی نمایش داده
               میشوند. هر فیلم اکرانشدهای را ستارهدار میکنید، یعنی منتظر نسخهٔ دیجیتال باکیفیت آن هستید — وقتی
               منتشر شد به شما اطلاع داده میشود و از فهرست ستارهها هم حذف میشود.

@@ -58,11 +58,11 @@ function ReleaseRow({
   } as const;
   return (
     <div className={`rounded-xl px-3 py-2 ${tones[tone]}`}>
-      <p className="text-[10px] opacity-70">{label}</p>
+      <p className="text-micro opacity-70">{label}</p>
       <p className="mt-0.5 text-xs font-semibold" dir="rtl">
         {jalali ? jalaliDate(jalali) : "نامشخص"}
       </p>
-      <p className="text-[10px] opacity-60" dir="ltr" style={{ unicodeBidi: "isolate" }}>
+      <p className="text-micro opacity-60" dir="ltr" style={{ unicodeBidi: "isolate" }}>
         {gregorian || "—"}
       </p>
     </div>
@@ -131,7 +131,7 @@ export function MovieDetailsPage() {
 
   if (!movie) {
     return (
-      <div className="rounded-2xl border border-white/8 bg-ink-850/60 px-4 py-14 text-center">
+      <div className="rounded-card border border-edge/10 bg-panel/70 px-4 py-14 text-center">
         {loading ? (
           <>
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-white/10 border-t-sky-400" />
@@ -140,7 +140,7 @@ export function MovieDetailsPage() {
         ) : (
           <>
             <p className="text-sm font-semibold text-white">{failed ? "ارتباط با سرور برقرار نشد" : "این فیلم پیدا نشد"}</p>
-            <p className="mt-1 text-xs text-ink-400">ممکن است از فهرست حذف شده باشد یا اینترنت قطع باشد.</p>
+            <p className="mt-1 text-xs text-muted">ممکن است از فهرست حذف شده باشد یا اینترنت قطع باشد.</p>
             <Link to="/movies" className="mt-4 inline-block rounded-lg bg-sky-400 px-4 py-2 text-xs font-semibold text-sky-950">
               بازگشت به فیلم‌ها
             </Link>
@@ -153,7 +153,7 @@ export function MovieDetailsPage() {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-2">
-        <BackButton className="text-ink-400" />
+        <BackButton className="text-muted" />
         <div className="flex items-center gap-2">
           {stage === "quality" && (
             <button
@@ -184,7 +184,7 @@ export function MovieDetailsPage() {
         </div>
       </div>
 
-      <article className="overflow-hidden rounded-3xl border border-white/8 bg-ink-850/70">
+      <article className="overflow-hidden rounded-3xl border border-edge/10 bg-panel/80">
         <div className="relative">
           {backdrop ? (
             <img
@@ -202,8 +202,8 @@ export function MovieDetailsPage() {
             <MoviePoster movie={movie} className="h-[104px] w-[74px] shrink-0 border border-white/15" rounded="rounded-xl" />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="rounded-full bg-sky-400/90 px-2 py-0.5 text-[10px] font-bold text-sky-950">فیلم</span>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                <span className="rounded-full bg-sky-400/90 px-2 py-0.5 text-micro font-bold text-sky-950">فیلم</span>
+                <span className={`rounded-full px-2 py-0.5 text-micro font-bold ${
                   stage === "upcoming"
                     ? "bg-sky-400/90 text-sky-950"
                     : stage === "quality"
@@ -213,10 +213,10 @@ export function MovieDetailsPage() {
                   {movieStageLabel(stage)}
                 </span>
                 {movie.certification && (
-                  <span className="rounded-full bg-black/55 px-2 py-0.5 text-[10px] text-ink-200">{movie.certification}</span>
+                  <span className="rounded-full bg-black/55 px-2 py-0.5 text-micro text-ink-200">{movie.certification}</span>
                 )}
                 {typeof movie.rating === "number" && movie.rating > 0 && (
-                  <span className="rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-bold text-amber-300">
+                  <span className="rounded-full bg-black/55 px-2 py-0.5 text-micro font-bold text-amber-300">
                     ★ {toPersianDigits(movie.rating.toFixed(1))}
                   </span>
                 )}
@@ -225,7 +225,7 @@ export function MovieDetailsPage() {
                 {movie.title}
               </h1>
               {movie.originalTitle && movie.originalTitle !== movie.title && (
-                <p className="truncate text-[11px] text-ink-300" dir="auto">
+                <p className="truncate text-caption text-ink-300" dir="auto">
                   {movie.originalTitle}
                 </p>
               )}
@@ -234,7 +234,7 @@ export function MovieDetailsPage() {
         </div>
 
         <div className="space-y-4 p-4">
-          <div className="flex flex-wrap items-center gap-2 text-[11px]">
+          <div className="flex flex-wrap items-center gap-2 text-caption">
             {genres.map((genre) => (
               <span key={genre} className="rounded-lg bg-white/6 px-2 py-1 text-ink-200">
                 {genre}
@@ -255,7 +255,7 @@ export function MovieDetailsPage() {
               <ReleaseRow label="نسخهٔ دیجیتال" day={movie.digitalDate} tone="sky" />
             </div>
             {digitalDay && (
-              <p className="mt-2 text-[11px] text-ink-400">
+              <p className="mt-2 text-caption text-muted">
                 {movie.availableNow
                   ? `نسخهٔ دیجیتال از ${dayCountdownLabel(digitalDay).replace("پخش شده", "چند روز پیش")} در دسترس است.`
                   : `انتشار نسخهٔ دیجیتال ${dayCountdownLabel(digitalDay)} است.`}
@@ -264,14 +264,14 @@ export function MovieDetailsPage() {
           </div>
 
           {digitalFuture ? (
-            <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
-              <p className="text-[11px] text-ink-400">یادآوری انتشار کیفیت خوب</p>
+            <div className="rounded-card border border-edge/10 bg-black/25 p-4">
+              <p className="text-caption text-muted">یادآوری انتشار کیفیت خوب</p>
               <p className="mt-1 text-sm font-semibold text-white">
                 <JalaliSpans date={reminderDay} className="text-sm font-semibold text-white" />
                 {" "}ساعت {reminderClock}
               </p>
               <div className="mt-2 flex items-center justify-between gap-3">
-                <p className="text-[11px] text-ink-400">
+                <p className="text-caption text-muted">
                   {!favorite
                     ? "با ستاره‌کردن فیلم فعال می‌شود"
                     : favorite.reminderEnabled === false
@@ -298,13 +298,13 @@ export function MovieDetailsPage() {
               </div>
             </div>
           ) : theatricalFuture ? (
-            <div className="rounded-2xl border border-sky-400/20 bg-sky-500/8 p-4">
-              <p className="text-[11px] text-ink-300">یادآوری اکران سینمایی</p>
+            <div className="rounded-card border border-sky-400/20 bg-sky-500/8 p-4">
+              <p className="text-caption text-ink-300">یادآوری اکران سینمایی</p>
               <p className="mt-1 text-sm font-semibold text-white">
                 <JalaliSpans stamp={theatricalDay ? `${theatricalDay}T12:00:00Z` : null} className="text-sm font-semibold text-white" />
                 {" "}ساعت {theatricalClock}
               </p>
-              <p className="mt-2 text-[11px] leading-relaxed text-ink-300">
+              <p className="mt-2 text-caption leading-relaxed text-ink-300">
                 {!favorite
                   ? "با انتخاب ستاره، روز اکرانش یادآوری میشود؛ سپس منتظر کیفیت خوبش میمانیم."
                   : favorite.reminderEnabled === false
@@ -313,54 +313,54 @@ export function MovieDetailsPage() {
               </p>
             </div>
           ) : finished ? (
-            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-500/8 p-4 text-xs leading-relaxed text-emerald-200">
+            <div className="rounded-card border border-emerald-400/20 bg-emerald-500/8 p-4 text-xs leading-relaxed text-emerald-200">
               کیفیت خوب این فیلم منتشر شده و از فهرست انتظار و ستاره‌ها حذف شده است.
             </div>
           ) : (
-            <div className="rounded-2xl border border-white/8 bg-black/25 p-4 text-[11px] leading-relaxed text-ink-300">
+            <div className="rounded-card border border-edge/10 bg-black/25 p-4 text-caption leading-relaxed text-ink-300">
               تاریخ دقیق اکران یا انتشار دیجیتال اعلام نشده است. فیلم را ستاره بزن تا بهمحض اعلام یا انتشار، یک اطلاعیه دریافت کنی.
             </div>
           )}
 
           { (movie.budget || movie.revenue || movie.imdbRating || movie.rottenTomatoesRating || movie.metacriticRating) ? (
-            <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
+            <div className="rounded-card border border-edge/10 bg-black/25 p-4">
               <div className="mb-2 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-white">امتیازات و بودجه</h2>
-                <Link to="/boxoffice" className="text-[11px] text-sky-300">
+                <Link to="/boxoffice" className="text-caption text-sky-300">
                   گیشهٔ کامل
                 </Link>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 {movie.imdbRating && (
                   <div className="rounded-xl bg-white/5 px-3 py-2">
-                    <p className="text-[10px] text-ink-400">IMDb</p>
+                    <p className="text-micro text-muted">IMDb</p>
                     <p className="mt-0.5 font-semibold text-amber-300">{movie.imdbRating}</p>
                   </div>
                 )}
                 {movie.rottenTomatoesRating && (
                   <div className="rounded-xl bg-white/5 px-3 py-2">
-                    <p className="text-[10px] text-ink-400">Rotten Tomatoes</p>
+                    <p className="text-micro text-muted">Rotten Tomatoes</p>
                     <p className="mt-0.5 font-semibold text-red-400">{movie.rottenTomatoesRating}</p>
                   </div>
                 )}
                 {movie.metacriticRating && (
                   <div className="rounded-xl bg-white/5 px-3 py-2">
-                    <p className="text-[10px] text-ink-400">Metacritic</p>
+                    <p className="text-micro text-muted">Metacritic</p>
                     <p className="mt-0.5 font-semibold text-green-400">{movie.metacriticRating}</p>
                   </div>
                 )}
                 {movie.budget && (
                   <div className="rounded-xl bg-white/5 px-3 py-2">
-                    <p className="text-[10px] text-ink-400">بودجهٔ تولید</p>
+                    <p className="text-micro text-muted">بودجهٔ تولید</p>
                     <p className="mt-0.5 font-semibold text-ink-100">{usdShort(movie.budget)}</p>
-                    <p className="text-[10px] text-ink-400" dir="ltr">{usdFull(movie.budget)}</p>
+                    <p className="text-micro text-muted" dir="ltr">{usdFull(movie.budget)}</p>
                   </div>
                 )}
                 {movie.revenue && (
                   <div className="rounded-xl bg-white/5 px-3 py-2 sm:col-span-2">
-                    <p className="text-[10px] text-ink-400">فروش جهانی</p>
+                    <p className="text-micro text-muted">فروش جهانی</p>
                     <p className="mt-0.5 font-semibold text-ink-100">{usdShort(movie.revenue)}</p>
-                    <p className="text-[10px] text-ink-400" dir="ltr">{usdFull(movie.revenue)}</p>
+                    <p className="text-micro text-muted" dir="ltr">{usdFull(movie.revenue)}</p>
                   </div>
                 )}
               </div>
@@ -368,13 +368,13 @@ export function MovieDetailsPage() {
           ) : null}
 
           {(movie.productionCountries?.length || movie.spokenLanguages?.length || movie.certification) ? (
-            <div className="rounded-2xl border border-white/8 bg-black/25 p-4">
+            <div className="rounded-card border border-edge/10 bg-black/25 p-4">
               <h2 className="mb-2 text-sm font-bold text-white">اطلاعات بیشتر</h2>
-              <div className="grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-3">
-                {movie.certification && <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-ink-400">درجهبندی</p><p className="mt-0.5 font-semibold text-ink-100">{movie.certification}</p></div>}
-                {movie.productionCountries?.length ? <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-ink-400">کشور</p><p className="mt-0.5 font-semibold text-ink-100">{movie.productionCountries.join(" · ")}</p></div> : null}
-                {movie.spokenLanguages?.length ? <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-ink-400">زبان</p><p className="mt-0.5 font-semibold text-ink-100">{movie.spokenLanguages.join(" · ")}</p></div> : null}
-                {movie.omdbAwards && <div className="rounded-xl bg-white/5 px-3 py-2 sm:col-span-2"><p className="text-ink-400">جوایز</p><p className="mt-0.5 font-semibold text-ink-100" dir="auto">{movie.omdbAwards}</p></div>}
+              <div className="grid grid-cols-2 gap-2 text-caption sm:grid-cols-3">
+                {movie.certification && <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-muted">درجهبندی</p><p className="mt-0.5 font-semibold text-ink-100">{movie.certification}</p></div>}
+                {movie.productionCountries?.length ? <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-muted">کشور</p><p className="mt-0.5 font-semibold text-ink-100">{movie.productionCountries.join(" · ")}</p></div> : null}
+                {movie.spokenLanguages?.length ? <div className="rounded-xl bg-white/5 px-3 py-2"><p className="text-muted">زبان</p><p className="mt-0.5 font-semibold text-ink-100">{movie.spokenLanguages.join(" · ")}</p></div> : null}
+                {movie.omdbAwards && <div className="rounded-xl bg-white/5 px-3 py-2 sm:col-span-2"><p className="text-muted">جوایز</p><p className="mt-0.5 font-semibold text-ink-100" dir="auto">{movie.omdbAwards}</p></div>}
               </div>
             </div>
           ) : null}
@@ -392,7 +392,7 @@ export function MovieDetailsPage() {
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-white">داستان</h2>
-                <span className="text-[10px] text-ink-400">ترجمهٔ TMDB</span>
+                <span className="text-micro text-muted">ترجمهٔ TMDB</span>
               </div>
               <p className="text-left text-[13px] leading-7 text-ink-300" dir="auto">
                 {movie.overview}
@@ -441,9 +441,9 @@ export function MovieDetailsPage() {
             {similarQuery.data!.items.map((item) => (
               <Link key={item.id} to={`/movie/${item.id}`} className="sr-no-tap w-[120px] shrink-0">
                 <MoviePoster movie={item} className="aspect-[2/3] w-full" />
-                <p className="mt-1 line-clamp-2 text-[11px] font-semibold text-white" dir="auto">{item.title}</p>
+                <p className="mt-1 line-clamp-2 text-caption font-semibold text-white" dir="auto">{item.title}</p>
                 {item.originalTitle && item.originalTitle !== item.title && (
-                  <p className="truncate text-[10px] text-ink-400" dir="auto">{item.originalTitle}</p>
+                  <p className="truncate text-micro text-muted" dir="auto">{item.originalTitle}</p>
                 )}
               </Link>
             ))}
@@ -451,7 +451,7 @@ export function MovieDetailsPage() {
         </section>
       )}
 
-      <p className="text-[11px] leading-relaxed text-ink-400">
+      <p className="text-caption leading-relaxed text-muted">
         دادهٔ این صفحه از TMDB می‌آید و ممکن است تاریخ‌های انتشار بعد از اعلام رسمی تغییر کنند.
         {moviePosterUrl(movie) ? "" : " پوستر رسمی برای این فیلم در دسترس نیست."}
       </p>

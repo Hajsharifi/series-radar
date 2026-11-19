@@ -89,11 +89,11 @@ export default function SearchPage() {
     <div className="space-y-5">
       <header className="space-y-3">
         <div>
-          <p className="text-[11px] font-medium tracking-wide text-amber-300/90">جستجو و کشف</p>
+          <p className="text-caption font-medium tracking-wide text-amber-300/90">جستجو و کشف</p>
           <h1 className="mt-1 text-2xl font-extrabold leading-snug text-white">
             هر چه دنبالش هستید، <span className="text-amber-300">اینجا</span>
           </h1>
-          <p className="mt-1.5 text-xs leading-relaxed text-ink-400">
+          <p className="mt-1.5 text-xs leading-relaxed text-muted">
             فیلم و سریال را جستجو کنید یا با فیلترها کشف کنید.
           </p>
         </div>
@@ -109,10 +109,10 @@ export default function SearchPage() {
               if (e.key === "Enter") remember(query);
             }}
             placeholder="نام فیلم یا سریال… (حداقل ۲ حرف)" aria-label="نام فیلم یا سریال… (حداقل ۲ حرف)"
-            className="w-full rounded-2xl border border-white/10 bg-black/30 py-3 pr-11 pl-10 text-sm text-white placeholder:text-ink-400 focus:border-amber-400/60 focus:outline-none"
+            className="w-full rounded-card border border-white/10 bg-black/30 py-3 pr-11 pl-10 text-sm text-white placeholder:text-muted focus:border-amber-400/60 focus:outline-none"
             autoFocus
           />
-          <svg className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="pointer-events-none absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           {query && (
@@ -120,7 +120,7 @@ export default function SearchPage() {
               type="button"
               onClick={() => setQuery("")}
               aria-label="پاک کردن جستجو"
-              className="absolute left-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-sm text-ink-400 hover:bg-white/10"
+              className="absolute left-3 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-full text-sm text-muted hover:bg-white/10"
             >
               ✕
             </button>
@@ -142,18 +142,18 @@ export default function SearchPage() {
 
         {!isLive && history.length > 0 && (
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] text-ink-400">جستجوهای اخیر:</span>
+            <span className="text-caption text-muted">جستجوهای اخیر:</span>
             {history.map((item) => (
               <button
                 key={item}
                 type="button"
                 onClick={() => setQuery(item)}
-                className="sr-no-tap rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-ink-200 active:bg-white/10"
+                className="sr-no-tap rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-caption text-ink-200 active:bg-white/10"
               >
                 {item}
               </button>
             ))}
-            <button type="button" onClick={clearHistory} className="text-[11px] text-ink-400 underline">
+            <button type="button" onClick={clearHistory} className="text-caption text-muted underline">
               پاک کردن
             </button>
           </div>
@@ -188,48 +188,48 @@ export default function SearchPage() {
 
         {/* Filter panel: ژانر / سال / امتیاز / مرتبسازی */}
         {showFilters && (
-          <div className="space-y-3 rounded-2xl border border-white/8 bg-black/20 p-3">
+          <div className="space-y-3 rounded-card border border-edge/10 bg-black/20 p-3">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="w-16 shrink-0 text-[11px] text-ink-400">ژانر</span>
+              <span className="w-16 shrink-0 text-caption text-muted">ژانر</span>
               <div className="sr-hide-scrollbar flex flex-1 gap-1.5 overflow-x-auto">
-                <button type="button" onClick={() => update("genre", "")} className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] ${!filters.genre ? "bg-white/15 text-white" : "bg-white/5 text-ink-400"}`}>همه</button>
+                <button type="button" onClick={() => update("genre", "")} className={`shrink-0 rounded-lg px-2.5 py-1 text-caption ${!filters.genre ? "bg-white/15 text-white" : "bg-white/5 text-muted"}`}>همه</button>
                 {ALL_GENRES.map((g) => (
-                  <button key={g.id} type="button" onClick={() => update("genre", String(g.id))} className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] ${filters.genre === String(g.id) ? "bg-white/15 text-white" : "bg-white/5 text-ink-400"}`}>
+                  <button key={g.id} type="button" onClick={() => update("genre", String(g.id))} className={`shrink-0 rounded-lg px-2.5 py-1 text-caption ${filters.genre === String(g.id) ? "bg-white/15 text-white" : "bg-white/5 text-muted"}`}>
                     {g.name}
                   </button>
                 ))}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="w-16 shrink-0 text-[11px] text-ink-400">سال</span>
+              <span className="w-16 shrink-0 text-caption text-muted">سال</span>
               <div className="sr-hide-scrollbar flex flex-1 gap-1.5 overflow-x-auto">
-                <button type="button" onClick={() => update("year", "")} className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] ${!filters.year ? "bg-white/15 text-white" : "bg-white/5 text-ink-400"}`}>همه</button>
+                <button type="button" onClick={() => update("year", "")} className={`shrink-0 rounded-lg px-2.5 py-1 text-caption ${!filters.year ? "bg-white/15 text-white" : "bg-white/5 text-muted"}`}>همه</button>
                 {Array.from({ length: 15 }, (_, i) => 2026 - i).map((y) => (
-                  <button key={y} type="button" onClick={() => update("year", String(y))} className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] tabular-nums ${filters.year === String(y) ? "bg-white/15 text-white" : "bg-white/5 text-ink-400"}`}>
+                  <button key={y} type="button" onClick={() => update("year", String(y))} className={`shrink-0 rounded-lg px-2.5 py-1 text-caption tabular-nums ${filters.year === String(y) ? "bg-white/15 text-white" : "bg-white/5 text-muted"}`}>
                     {toPersianDigits(String(y))}
                   </button>
                 ))}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="w-16 shrink-0 text-[11px] text-ink-400">امتیاز</span>
+              <span className="w-16 shrink-0 text-caption text-muted">امتیاز</span>
               <div className="flex flex-1 gap-1.5">
                 {RATING_OPTIONS.map((opt) => (
-                  <button key={opt.value} type="button" onClick={() => update("rating", opt.value)} className={`rounded-lg px-2.5 py-1 text-[11px] ${filters.rating === opt.value ? "bg-white/15 text-white" : "bg-white/5 text-ink-400"}`}>
+                  <button key={opt.value} type="button" onClick={() => update("rating", opt.value)} className={`rounded-lg px-2.5 py-1 text-caption ${filters.rating === opt.value ? "bg-white/15 text-white" : "bg-white/5 text-muted"}`}>
                     {opt.label}
                   </button>
                 ))}
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="w-16 shrink-0 text-[11px] text-ink-400">مرتبسازی</span>
+              <span className="w-16 shrink-0 text-caption text-muted">مرتبسازی</span>
               <div className="flex flex-1 flex-wrap gap-1.5">
                 {SORT_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => { update("sortBy", opt.value); update("sortOrder", "desc"); }}
-                    className={`rounded-lg px-2.5 py-1 text-[11px] ${filters.sortBy === opt.value ? "bg-white/15 text-white" : "bg-white/5 text-ink-400"}`}
+                    className={`rounded-lg px-2.5 py-1 text-caption ${filters.sortBy === opt.value ? "bg-white/15 text-white" : "bg-white/5 text-muted"}`}
                   >
                     {opt.label}
                   </button>
@@ -237,7 +237,7 @@ export default function SearchPage() {
               </div>
             </div>
             {(hasActiveFilters || query) && (
-              <button type="button" onClick={clearAll} className="text-[11px] text-amber-400">پاک کردن همه</button>
+              <button type="button" onClick={clearAll} className="text-caption text-amber-400">پاک کردن همه</button>
             )}
           </div>
         )}
@@ -252,7 +252,7 @@ export default function SearchPage() {
               : loading ? "در حال بارگذاری…" : `${toPersianDigits(results.length)} عنوان`}
           </h2>
           {!isLive && !loading && (
-            <span className="text-[11px] text-ink-400">
+            <span className="text-caption text-muted">
               {hasActiveFilters ? "نتایج فیلترشده" : "پربازدیدترینها"}
             </span>
           )}
@@ -315,12 +315,12 @@ function SearchResultCard({ item, byId }: { item: SearchResult; byId: Map<number
         ? "bg-emerald-400/90 text-emerald-950"
         : "bg-violet-400/90 text-violet-950";
   const badgeClass =
-    "rounded-full px-2 py-0.5 text-[10px] font-bold " +
+    "rounded-full px-2 py-0.5 text-micro font-bold " +
     (isTV ? "bg-sky-400/90 text-sky-950" : movieTone);
 
   return (
     <Link to={isTV ? `/tv/${item.id}` : `/movie/${item.id}`} className="sr-no-tap block">
-      <article className="sr-card-hover group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/8 bg-ink-850/80">
+      <article className="sr-card-hover group relative flex h-full flex-col overflow-hidden rounded-card border border-edge/10 bg-panel/85">
         <div className="relative">
           <Poster
             show={{
@@ -338,7 +338,7 @@ function SearchResultCard({ item, byId }: { item: SearchResult; byId: Map<number
             <span className={`absolute right-2 top-8 ${movieTone}`}>{movieLabel}</span>
           )}
           {typeof item.rating === "number" && item.rating > 0 && (
-            <span className="absolute left-2 top-2 rounded-lg bg-black/65 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 backdrop-blur">
+            <span className="absolute left-2 top-2 rounded-lg bg-black/65 px-1.5 py-0.5 text-micro font-bold text-amber-300 backdrop-blur">
               ★ {toPersianDigits(item.rating.toFixed(1))}
             </span>
           )}
@@ -348,14 +348,14 @@ function SearchResultCard({ item, byId }: { item: SearchResult; byId: Map<number
             {item.title || "بدون عنوان"}
           </h3>
           {item.originalTitle && item.originalTitle !== item.title && (
-            <p className="truncate text-[10px] text-ink-400" dir="auto">{item.originalTitle}</p>
+            <p className="truncate text-micro text-muted" dir="auto">{item.originalTitle}</p>
           )}
           {item.overview && (
-            <p className="line-clamp-2 text-[10px] leading-relaxed text-ink-400" dir="auto">
+            <p className="line-clamp-2 text-micro leading-relaxed text-muted" dir="auto">
               {item.overview}
             </p>
           )}
-          <div className="mt-auto flex items-center justify-between gap-1 pt-1 text-[10px] text-ink-400">
+          <div className="mt-auto flex items-center justify-between gap-1 pt-1 text-micro text-muted">
             <span className="truncate">{genreNames || "—"}</span>
             {date && <span className="shrink-0 tabular-nums">{jalaliDate(new Date(date + "T12:00:00"))}</span>}
           </div>

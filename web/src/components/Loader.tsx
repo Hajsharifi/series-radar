@@ -29,7 +29,7 @@ export function Loader() {
             </path>
           </svg>
         </div>
-        <p className="text-sm text-ink-400">در حال بارگذاری…</p>
+        <p className="text-sm text-muted">در حال بارگذاری…</p>
       </div>
     </div>
   );

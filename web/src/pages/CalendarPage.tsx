@@ -264,7 +264,7 @@ export default function CalendarPage() {
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-medium tracking-wide text-amber-300/90">
+          <p className="text-caption font-medium tracking-wide text-amber-300/90">
             {view === "week" ? "برنامهٔ هفت روزه" : "برنامهٔ ماهانه"}
           </p>
           <h1 className="mt-1 text-2xl font-extrabold text-white">تقویم سریال‌ها و فیلم‌ها</h1>
@@ -276,14 +276,14 @@ export default function CalendarPage() {
           <button
             type="button"
             onClick={() => setView(view === "week" ? "month" : "week")}
-            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[11px] text-ink-200"
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-caption text-ink-200"
           >
             {view === "week" ? "نمای ماهانه" : "نمای هفتگی"}
           </button>
           <button
             type="button"
             onClick={exportCalendar}
-            className="rounded-lg bg-emerald-400 px-3 py-2 text-[11px] font-semibold text-emerald-950"
+            className="rounded-lg bg-emerald-400 px-3 py-2 text-caption font-semibold text-emerald-950"
           >
             خروجی تقویم
           </button>
@@ -291,7 +291,7 @@ export default function CalendarPage() {
       </header>
 
       {notice && (
-        <p role="status" className="rounded-xl border border-emerald-400/20 bg-emerald-500/8 px-3 py-2 text-[11px] text-emerald-200">
+        <p role="status" className="rounded-xl border border-emerald-400/20 bg-emerald-500/8 px-3 py-2 text-caption text-emerald-200">
           {notice}
         </p>
       )}
@@ -307,13 +307,13 @@ export default function CalendarPage() {
                 type="button"
                 aria-pressed={active}
                 onClick={() => setActiveDay(day.key)}
-                className={`sr-no-tap flex w-[74px] shrink-0 flex-col items-center rounded-2xl border px-2 py-2.5 transition ${
-                  active ? "border-amber-400/60 bg-amber-400/15" : "border-white/8 bg-ink-850/60"
+                className={`sr-no-tap flex w-[74px] shrink-0 flex-col items-center rounded-card border px-2 py-2.5 transition ${
+                  active ? "border-amber-400/60 bg-amber-400/15" : "border-edge/10 bg-panel/70"
                 }`}
               >
-                <span className={`text-[11px] font-semibold ${active ? "text-amber-200" : "text-ink-300"}`}>{day.label}</span>
-                <span className="mt-1 text-[10px] leading-tight text-ink-400">{day.jalali}</span>
-                <span className="mt-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-white/8 px-1 text-[10px] font-bold text-white">
+                <span className={`text-caption font-semibold ${active ? "text-amber-200" : "text-ink-300"}`}>{day.label}</span>
+                <span className="mt-1 text-micro leading-tight text-muted">{day.jalali}</span>
+                <span className="mt-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-white/8 px-1 text-micro font-bold text-white">
                   {toPersianDigits(count)}
                 </span>
               </button>
@@ -321,14 +321,14 @@ export default function CalendarPage() {
           })}
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/8 bg-ink-850/60 p-3">
+        <div className="rounded-card border border-edge/10 bg-panel/70 p-3">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-bold text-white">{monthLabel}</h2>
-            <span className="text-[11px] text-ink-400">{toPersianDigits(days.length)} روز</span>
+            <span className="text-caption text-muted">{toPersianDigits(days.length)} روز</span>
           </div>
           <div className="grid grid-cols-7 gap-1 text-center">
             {["ش", "ی", "د", "س", "چ", "پ", "ج"].map((label) => (
-              <span key={label} className="py-1 text-[10px] text-ink-400">{label}</span>
+              <span key={label} className="py-1 text-micro text-muted">{label}</span>
             ))}
             {Array.from({ length: leadingBlanks }).map((_, index) => (
               <span key={`blank-${index}`} />
@@ -342,17 +342,17 @@ export default function CalendarPage() {
                   type="button"
                   aria-pressed={active}
                   onClick={() => setActiveDay(day.key)}
-                  className={`sr-no-tap flex min-h-12 flex-col items-center justify-center rounded-xl border text-[11px] transition ${
+                  className={`sr-no-tap flex min-h-12 flex-col items-center justify-center rounded-xl border text-caption transition ${
                     active
                       ? "border-amber-400/60 bg-amber-400/15 text-amber-100"
                       : day.today
                         ? "border-sky-400/40 bg-sky-400/10 text-sky-100"
-                        : "border-white/8 bg-black/20 text-ink-200"
+                        : "border-edge/10 bg-black/20 text-ink-200"
                   }`}
                 >
                   <span className="font-bold">{day.label}</span>
                   {count > 0 && (
-                    <span className="mt-0.5 rounded-full bg-white/10 px-1.5 text-[9px] text-white">
+                    <span className="mt-0.5 rounded-full bg-white/10 px-1.5 text-micro text-white">
                       {toPersianDigits(count)}
                     </span>
                   )}
@@ -371,7 +371,7 @@ export default function CalendarPage() {
           type="button"
           aria-pressed={onlyFavorites}
           onClick={() => setOnlyFavorites((value) => !value)}
-          className={`sr-no-tap rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
+          className={`sr-no-tap rounded-full px-3 py-1.5 text-caption font-semibold transition ${
             onlyFavorites ? "bg-amber-400 text-ink-950" : "border border-white/10 bg-white/5 text-ink-300"
           }`}
         >
@@ -399,7 +399,7 @@ export default function CalendarPage() {
                   : { text: "رادار", className: "bg-amber-400/90 text-ink-950" };
             return (
               <Link key={item.key} to={item.path} className="sr-no-tap block">
-                <article className="flex items-center gap-3 rounded-2xl border border-white/8 bg-ink-850/70 p-3">
+                <article className="flex items-center gap-3 rounded-card border border-edge/10 bg-panel/80 p-3">
                   <Poster
                     show={{
                       id: Number(item.key.replace(/\D/g, "")) || 0,
@@ -414,15 +414,15 @@ export default function CalendarPage() {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${badge.className}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-micro font-bold ${badge.className}`}>
                         {badge.text}
                       </span>
                       {item.favorite && <Star className="h-3 w-3 text-brand" fill="currentColor" strokeWidth={0} />}
                     </div>
                     <p className="mt-1 line-clamp-1 text-sm font-semibold text-white" dir="auto">{item.title}</p>
-                    <p className="mt-0.5 text-[11px] text-ink-300">{item.subtitle}</p>
+                    <p className="mt-0.5 text-caption text-ink-300">{item.subtitle}</p>
                   </div>
-                  <span className="shrink-0 text-[11px] font-semibold tabular-nums text-amber-300">{item.clock}</span>
+                  <span className="shrink-0 text-caption font-semibold tabular-nums text-amber-300">{item.clock}</span>
                 </article>
               </Link>
             );
@@ -430,7 +430,7 @@ export default function CalendarPage() {
         </div>
       )}
 
-      <p className="text-[11px] leading-relaxed text-ink-300">
+      <p className="text-caption leading-relaxed text-ink-300">
         دادهها از TVMaze و TMDB میآیند. ساعت دقیق پخش تنها برای سریالهای رادار موجود است؛ برای فیلمها و سریالهای روی آنتن فقط تاریخ اعلام شده است.
       </p>
     </div>

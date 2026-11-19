@@ -23,7 +23,7 @@ function splitNames(value?: string | null): string[] {
 
 function PersonChip({ id, name }: { id?: number; name: string }) {
   const className =
-    "rounded-lg bg-white/6 px-2 py-1 text-[11px] font-semibold text-ink-100 transition hover:bg-white/10";
+    "rounded-lg bg-white/6 px-2 py-1 text-caption font-semibold text-ink-100 transition hover:bg-white/10";
   if (id) {
     return (
       <Link to={`/person/${id}`} className={className} dir="auto">
@@ -61,11 +61,11 @@ export function CreditsSection({
   if (leadNames.length === 0 && people.length === 0) return null;
 
   return (
-    <section className="rounded-2xl border border-white/8 bg-black/25 p-4">
+    <section className="rounded-card border border-edge/10 bg-black/25 p-4">
       <h2 className="mb-3 text-sm font-bold text-white">عوامل اصلی</h2>
       {leadNames.length > 0 && (
         <div className="mb-3">
-          <p className="text-[10px] text-ink-400">{kind === "movie" ? "کارگردان" : "سازنده"}</p>
+          <p className="text-micro text-muted">{kind === "movie" ? "کارگردان" : "سازنده"}</p>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {leadNames.map((name, index) => (
               <PersonChip key={`${name}-${index}`} id={leadIds?.[index]} name={name} />
@@ -75,12 +75,12 @@ export function CreditsSection({
       )}
       {people.length > 0 && (
         <div>
-          <p className="text-[10px] text-ink-400">بازیگران اصلی</p>
+          <p className="text-micro text-muted">بازیگران اصلی</p>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {people.map((person, index) => (
               <span
                 key={`${person.name}-${index}`}
-                className="rounded-lg bg-white/6 px-2 py-1 text-[11px]"
+                className="rounded-lg bg-white/6 px-2 py-1 text-caption"
                 dir="auto"
               >
                 {person.id ? (
@@ -90,7 +90,7 @@ export function CreditsSection({
                 ) : (
                   <span className="font-semibold text-ink-100">{person.name}</span>
                 )}
-                {person.character && <span className="text-ink-400"> · {person.character}</span>}
+                {person.character && <span className="text-muted"> · {person.character}</span>}
               </span>
             ))}
           </div>

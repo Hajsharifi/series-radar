@@ -20,7 +20,7 @@ function CreditCard({ credit }: { credit: PersonCredit }) {
   const path = credit.mediaType === "movie" ? `/movie/${credit.id}` : `/tv/${credit.id}`;
   return (
     <Link to={path} className="sr-no-tap block">
-      <article className="sr-card-hover flex gap-2.5 rounded-2xl border border-white/8 bg-ink-850/70 p-2.5">
+      <article className="sr-card-hover flex gap-2.5 rounded-card border border-edge/10 bg-panel/80 p-2.5">
         <Poster
           show={{
             id: credit.id,
@@ -35,14 +35,14 @@ function CreditCard({ credit }: { credit: PersonCredit }) {
         />
         <div className="min-w-0 flex-1">
           <p className="line-clamp-2 text-xs font-semibold text-white" dir="auto">{credit.title}</p>
-          {credit.character && <p className="mt-0.5 truncate text-[10px] text-ink-400" dir="auto">{credit.character}</p>}
-          <div className="mt-1 flex items-center justify-between gap-2 text-[10px] text-ink-400">
+          {credit.character && <p className="mt-0.5 truncate text-micro text-muted" dir="auto">{credit.character}</p>}
+          <div className="mt-1 flex items-center justify-between gap-2 text-micro text-muted">
             <span>{creditDate(credit.date)}</span>
             {typeof credit.rating === "number" && credit.rating > 0 && (
               <span className="text-amber-300">★ {toPersianDigits(credit.rating.toFixed(1))}</span>
             )}
           </div>
-          <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-[9px] font-semibold ${
+          <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-micro font-semibold ${
             credit.mediaType === "movie" ? "bg-sky-400/15 text-sky-200" : "bg-amber-400/15 text-amber-200"
           }`}>
             {credit.mediaType === "movie" ? "فیلم" : "سریال"}
@@ -59,7 +59,7 @@ function CreditGroup({ title, credits }: { title: string; credits: PersonCredit[
     <section className="space-y-2">
       <div className="flex items-baseline gap-2">
         <h2 className="text-sm font-bold text-white">{title}</h2>
-        <span className="text-[11px] text-ink-400">{toPersianDigits(credits.length)} مورد</span>
+        <span className="text-caption text-muted">{toPersianDigits(credits.length)} مورد</span>
       </div>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {credits.map((credit) => (
@@ -113,9 +113,9 @@ export default function PersonPage() {
     <div className="space-y-5">
       <BackButton />
 
-      <article className="overflow-hidden rounded-3xl border border-white/8 bg-ink-850/70">
+      <article className="overflow-hidden rounded-3xl border border-edge/10 bg-panel/80">
         <div className="flex flex-col gap-4 p-4 sm:flex-row">
-          <div className="mx-auto h-32 w-24 shrink-0 overflow-hidden rounded-2xl bg-white/5 sm:mx-0">
+          <div className="mx-auto h-32 w-24 shrink-0 overflow-hidden rounded-card bg-white/5 sm:mx-0">
             {person.profilePath ? (
               <img src={`https://image.tmdb.org/t/p/w300${person.profilePath}`} alt={person.name} className="h-full w-full object-cover" />
             ) : (
@@ -125,9 +125,9 @@ export default function PersonPage() {
             )}
           </div>
           <div className="min-w-0 flex-1 text-center sm:text-right">
-            <p className="text-[10px] font-semibold text-amber-300">عوامل</p>
+            <p className="text-micro font-semibold text-amber-300">عوامل</p>
             <h1 className="mt-1 text-2xl font-extrabold text-white" dir="auto">{person.name}</h1>
-            <div className="mt-2 flex flex-wrap justify-center gap-1.5 text-[11px] sm:justify-start">
+            <div className="mt-2 flex flex-wrap justify-center gap-1.5 text-caption sm:justify-start">
               {person.knownForDepartment && (
                 <span className="rounded-lg bg-white/6 px-2 py-1 text-ink-200">{person.knownForDepartment}</span>
               )}

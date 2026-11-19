@@ -22,7 +22,7 @@ function hashTitle(title?: string): number {
 export function MoviePoster({
   movie,
   className = "",
-  rounded = "rounded-2xl",
+  rounded = "rounded-card",
 }: {
   movie: Movie;
   className?: string;

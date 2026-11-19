@@ -28,11 +28,11 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
         <Poster show={show} className="aspect-[2/3] w-full" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-ink-950 via-ink-950/70 to-transparent" />
         <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-1">
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${EVENT_CHIP[event]}`}>
+          <span className={`rounded-full px-2 py-0.5 text-micro font-semibold ring-1 ${EVENT_CHIP[event]}`}>
             {EVENT_LABEL[event]}
           </span>
           {countdown && (
-            <span className="rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-medium text-ink-200 backdrop-blur">
+            <span className="rounded-full bg-black/55 px-2 py-0.5 text-micro font-medium text-ink-200 backdrop-blur">
               {countdown}
             </span>
           )}
@@ -60,13 +60,13 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
       <div className="flex flex-1 flex-col gap-1.5 p-3">
         <Link
           to={detailPath}
-          className="sr-no-tap line-clamp-2 min-h-[2.4em] text-sm font-bold leading-snug text-white"
+          className="sr-no-tap line-clamp-2 min-h-[2.4em] text-title leading-snug text-white"
           dir="auto"
         >
           {show.title}
         </Link>
         {show.originalTitle && show.originalTitle !== show.title && (
-          <p className="-mt-1 truncate text-[10px] text-ink-400" dir="auto">{show.originalTitle}</p>
+          <p className="-mt-1 truncate text-micro text-muted" dir="auto">{show.originalTitle}</p>
         )}
 
         <div className="flex items-center justify-between gap-1 text-caption text-muted" dir="rtl">
@@ -74,9 +74,9 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
           {clock && <span className="shrink-0 tabular-nums">{clock}</span>}
         </div>
 
-        <div className="mt-auto flex items-center justify-between gap-1 border-t border-white/6 pt-1.5 text-[11px]">
+        <div className="mt-auto flex items-center justify-between gap-1 border-t border-white/6 pt-1.5 text-caption">
           {dateStamp ? (
-            <JalaliSpans stamp={dateStamp} className="text-[11px] font-medium text-ink-200" />
+            <JalaliSpans stamp={dateStamp} className="text-caption font-medium text-ink-200" />
           ) : (
             <span className="text-caption text-muted">در حال پخش</span>
           )}
@@ -85,7 +85,7 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
               سریال جدید
             </span>
           ) : event === "new-episode" && nextSeason && nextNumber ? (
-            <span className="shrink-0 rounded-md bg-emerald-400/12 px-1.5 py-0.5 text-[10px] text-emerald-200">
+            <span className="shrink-0 rounded-md bg-emerald-400/12 px-1.5 py-0.5 text-micro text-emerald-200">
               فصل {toPersianDigits(nextSeason)} · قسمت {toPersianDigits(nextNumber)}
             </span>
           ) : nextSeason ? (
@@ -121,13 +121,13 @@ export function ShowRow({ show, favorite, onToggleFavorite }: ShowCardProps) {
       <Link to={detailPath} className="sr-no-tap shrink-0">
         <div className="relative">
           <Poster show={show} className="h-[70px] w-[50px]" rounded="rounded-xl" />
-          <span className={`absolute -bottom-1 -left-1 rounded-md px-1 py-0.5 text-[9px] font-bold ring-1 ${EVENT_CHIP[event]}`}>
+          <span className={`absolute -bottom-1 -left-1 rounded-md px-1 py-0.5 text-micro font-bold ring-1 ${EVENT_CHIP[event]}`}>
             {EVENT_LABEL[event]}
           </span>
         </div>
       </Link>
       <div className="min-w-0 flex-1">
-        <Link to={detailPath} className="sr-no-tap block truncate text-sm font-semibold text-white" dir="auto">
+        <Link to={detailPath} className="sr-no-tap block truncate text-title font-semibold text-white" dir="auto">
           {show.title}
         </Link>
         <p className="mt-0.5 truncate text-caption text-muted" dir="rtl">
