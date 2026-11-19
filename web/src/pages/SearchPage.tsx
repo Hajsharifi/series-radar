@@ -12,6 +12,7 @@ import {
 } from "../hooks/useSearch";
 import { Poster } from "../components/Poster";
 import { EmptyState, SkeletonCards } from "../components/StateViews";
+import { SearchX } from "lucide-react";
 import { toPersianDigits, jalaliDate } from "../lib/date";
 import { useSearchHistory } from "../lib/searchHistory";
 import { useMovieCatalog } from "../hooks/useMovies";
@@ -267,7 +268,7 @@ export default function SearchPage() {
           <SkeletonCards count={6} />
         ) : results.length === 0 ? (
           <EmptyState
-            icon="⌕"
+            icon={<SearchX className="h-5 w-5" strokeWidth={1.8} />}
             title="نتیجه‌ای پیدا نشد"
             description={isLive ? "عبارت دیگری امتحان کنید یا فیلترها را تغییر دهید." : "فیلترها را پاک کنید."}
             compact

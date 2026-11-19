@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BackButton } from "../components/BackButton";
 import { Poster } from "../components/Poster";
 import { EmptyState, LoadingState } from "../components/StateViews";
+import { UserRound } from "lucide-react";
 import { cachedFetchJson } from "../lib/offline";
 import { API_BASE } from "../lib/api";
 import { jalaliDate, toPersianDigits } from "../lib/date";
@@ -96,7 +97,7 @@ export default function PersonPage() {
   if (!person) {
     return (
       <EmptyState
-        icon="☆"
+        icon={<UserRound className="h-5 w-5" strokeWidth={1.8} />}
         title="این فرد پیدا نشد"
         description="ممکن است شناسه اشتباه باشد یا اتصال برقرار نباشد."
         action={
@@ -150,7 +151,7 @@ export default function PersonPage() {
       <CreditGroup title="سریال‌ها" credits={series} />
 
       {movies.length === 0 && series.length === 0 && (
-        <EmptyState icon="☆" title="فیلموگرافی‌ای ثبت نشده است" description="برای این فرد فیلم یا سریالی در TMDB ثبت نشده." compact />
+        <EmptyState icon={<UserRound className="h-5 w-5" strokeWidth={1.8} />} title="فیلموگرافی‌ای ثبت نشده است" description="برای این فرد فیلم یا سریالی در TMDB ثبت نشده." compact />
       )}
     </div>
   );

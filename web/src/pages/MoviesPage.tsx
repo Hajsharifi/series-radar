@@ -11,6 +11,7 @@ import { RelativeUpdated } from "../components/DateChip";
 import { MovieCard } from "../components/MovieCard";
 import { MovieHistoryPageLink } from "../components/MovieHistoryLink";
 import { EmptyState, SkeletonCards } from "../components/StateViews";
+import { Film } from "lucide-react";
 
 const TABS: Array<{ key: MovieTab; label: string; hint: string }> = [
   {
@@ -310,7 +311,7 @@ export function MoviesPage() {
       {searchingActive ? (
         shown.length === 0 ? (
           <EmptyState
-            icon="▤"
+            icon={<Film className="h-5 w-5" strokeWidth={1.8} />}
             title="فیلمی با این نام پیدا نشد"
             description="نام انگلیسی فیلم را کامل‌تر بنویسید."
             compact
@@ -324,7 +325,7 @@ export function MoviesPage() {
         <SkeletonCards count={8} />
       ) : shown.length === 0 ? (
         <EmptyState
-          icon="▤"
+          icon={<Film className="h-5 w-5" strokeWidth={1.8} />}
           title="فعلاً فیلمی در این بخش نیست"
           description="کمی بعد دوباره به‌روزرسانی کنید."
           compact

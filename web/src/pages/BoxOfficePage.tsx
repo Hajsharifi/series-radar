@@ -8,6 +8,7 @@ import { toPersianDigits } from "../lib/date";
 import { RelativeUpdated } from "../components/DateChip";
 import { MoviePoster } from "../components/MoviePoster";
 import { EmptyState, SkeletonRows } from "../components/StateViews";
+import { Ticket } from "lucide-react";
 
 function EntryTitle({ entry }: { entry: BoxOfficeEntry }) {
   const content = (
@@ -201,7 +202,7 @@ export function BoxOfficePage() {
         {loading && weekend.length === 0 ? (
           <SkeletonRows count={4} />
         ) : weekend.length === 0 ? (
-          <EmptyState icon="◫" title="جدول آخر هفته در دسترس نیست" compact />
+          <EmptyState icon={<Ticket className="h-5 w-5" strokeWidth={1.8} />} title="جدول آخر هفته در دسترس نیست" compact />
         ) : (
           <div className="grid gap-2.5 sm:grid-cols-2">
             {weekend.map((entry) => (

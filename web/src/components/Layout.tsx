@@ -1,5 +1,16 @@
 import { useEffect, useRef } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
+import {
+  CalendarDays,
+  Film,
+  Radar,
+  RefreshCw,
+  Search,
+  Settings,
+  Star,
+  Ticket,
+  type LucideIcon,
+} from "lucide-react";
 import { useFavorites } from "../hooks/useFavorites";
 import { useMovieFavorites } from "../hooks/useMovies";
 import { useScheduleContext } from "../hooks/ScheduleContext";
@@ -9,15 +20,16 @@ import { toPersianDigits } from "../lib/date";
 import { useNetworkState, retryNetwork } from "../lib/offline";
 import { queryClient } from "../lib/queryClient";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { Button } from "./ui/Button";
 
-const NAV = [
-  { to: "/", label: "رادار", icon: "◉" },
-  { to: "/search", label: "جستجو", icon: "🔍" },
-  { to: "/calendar", label: "تقویم", icon: "▦" },
-  { to: "/movies", label: "فیلم‌ها", icon: "▤" },
-  { to: "/boxoffice", label: "گیشه", icon: "◫" },
-  { to: "/favorites", label: "ستاره‌ها", icon: "★" },
-  { to: "/settings", label: "تنظیمات", icon: "⚙" },
+const NAV: Array<{ to: string; label: string; icon: LucideIcon }> = [
+  { to: "/", label: "رادار", icon: Radar },
+  { to: "/search", label: "جستجو", icon: Search },
+  { to: "/calendar", label: "تقویم", icon: CalendarDays },
+  { to: "/movies", label: "فیلم‌ها", icon: Film },
+  { to: "/boxoffice", label: "گیشه", icon: Ticket },
+  { to: "/favorites", label: "ستاره‌ها", icon: Star },
+  { to: "/settings", label: "تنظیمات", icon: Settings },
 ];
 
 export function Layout() {
@@ -45,16 +57,17 @@ export function Layout() {
             اتصال برقرار نشد — نمایش آخرین داده
             {network.savedAt ? ` (${new Date(network.savedAt).toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" })})` : ""}
           </span>
-          <button
-            type="button"
+          <Button
+            size="sm"
+            variant="ghost"
+            className="mr-2 min-h-7 px-2 text-caption text-amber-200"
             onClick={() => {
               retryNetwork();
               queryClient.invalidateQueries();
             }}
-            className="mr-2 rounded-md bg-amber-400/20 px-2 py-0.5 font-semibold"
           >
             تلاش مجدد
-          </button>
+          </Button>
         </div>
       )}
       <header className="sr-sticky">
@@ -63,27 +76,29 @@ export function Layout() {
             {(location.pathname !== "/" || hasInAppHistory(location)) && (
               <BackButton compact />
             )}
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-400 text-base font-black text-ink-950">
-              ◉
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-control bg-brand text-ink-950">
+              <Radar className="h-[18px] w-[18px]" strokeWidth={2.2} />
             </div>
             <div className="min-w-0">
-              <h1 className="truncate text-sm font-extrabold leading-tight text-white">رادار</h1>
-              <p className="truncate text-[11px] text-ink-400">سریال و فیلم‌هایی که به‌زودی می‌آیند</p>
+              <h1 className="truncate text-title text-white">رادار</h1>
+              <p className="truncate text-caption text-muted">سریال و فیلم‌هایی که به‌زودی می‌آیند</p>
             </div>
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
-            <span className="hidden rounded-full border border-white/8 bg-white/4 px-2.5 py-1 text-[11px] text-ink-300 sm:block">
-              {toPersianDigits(totalStars)} ستاره
+            <span className="hidden items-center gap-1.5 rounded-full border border-edge/12 bg-white/4 px-2.5 py-1 text-caption text-ink-300 sm:inline-flex">
+              <Star className="h-3.5 w-3.5 text-brand" fill="currentColor" strokeWidth={0} />
+              {toPersianDigits(totalStars)}
             </span>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={refresh}
               aria-label="به‌روزرسانی داده‌ها"
-              className="sr-no-tap rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-ink-200 active:bg-white/10"
+              className="h-9 w-9"
             >
-              <span className={refreshing ? "inline-block animate-spin" : "inline-block"}>↻</span>
-            </button>
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} strokeWidth={1.8} />
+            </Button>
           </div>
         </div>
 
@@ -107,11 +122,15 @@ export function Layout() {
                 key={item.to}
                 to={item.to}
                 aria-current={active ? "page" : undefined}
-                className={`sr-no-tap flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium transition ${
-                  active ? "text-amber-300" : "text-ink-400"
+                className={`sr-no-tap flex flex-1 flex-col items-center gap-1 py-2 text-micro font-medium transition ${
+                  active ? "text-brand" : "text-muted"
                 }`}
               >
-                <span className="text-base leading-none">{item.icon}</span>
+                <item.icon
+                  className="h-[18px] w-[18px]"
+                  strokeWidth={active ? 2.2 : 1.7}
+                  fill={item.icon === Star && active ? "currentColor" : "none"}
+                />
                 <span>{item.label}</span>
               </Link>
             );

@@ -2,15 +2,66 @@
 
 @theme {
   --font-sans: "Vazirmatn", "Vazir", "Segoe UI", Tahoma, system-ui, sans-serif;
-  --color-ink-950: #070b16;
-  --color-ink-900: #0b1020;
-  --color-ink-850: #111830;
-  --color-ink-800: #161e3a;
-  --color-ink-700: #212b4d;
-  --color-ink-600: #2e3a62;
-  --color-ink-400: #8f9bba;
-  --color-ink-300: #b2bcd7;
-  --color-amber-glow: #f5b642;
+
+  /* Cinematic slate — surfaces stay neutral so amber keeps its meaning. */
+  --color-canvas: #080c12;
+  --color-panel: #121a24;
+  --color-panel-raised: #172230;
+  --color-edge: #94a3b4;
+  --color-copy: #eef2f7;
+  --color-muted: #b6c0cf;
+
+  --color-ink-950: #080c12;
+  --color-ink-900: #0c121a;
+  --color-ink-850: #121a24;
+  --color-ink-800: #172230;
+  --color-ink-700: #223040;
+  --color-ink-600: #2d3d50;
+  --color-ink-400: #93a0b4;
+  --color-ink-300: #b8c3d4;
+
+  --color-brand: #f3b64b;
+  --color-amber-glow: #f3b64b;
+  --color-info: #7cc4ff;
+  --color-success: #68d6a6;
+  --color-warning: #f2c66d;
+  --color-danger: #f08a8a;
+
+  /* Type scale: fewer sizes, stronger hierarchy. */
+  --text-display: 1.75rem;
+  --text-display--line-height: 2.15rem;
+  --text-display--letter-spacing: -0.025em;
+  --text-display--font-weight: 800;
+  --text-headline: 1.125rem;
+  --text-headline--line-height: 1.65rem;
+  --text-headline--letter-spacing: -0.015em;
+  --text-headline--font-weight: 750;
+  --text-title: 0.9375rem;
+  --text-title--line-height: 1.45rem;
+  --text-title--font-weight: 700;
+  --text-body: 0.8125rem;
+  --text-body--line-height: 1.35rem;
+  --text-caption: 0.6875rem;
+  --text-caption--line-height: 1.1rem;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1rem;
+  --text-label--letter-spacing: 0.02em;
+  --text-label--font-weight: 600;
+  --text-micro: 0.625rem;
+  --text-micro--line-height: 0.9rem;
+  --text-micro--font-weight: 700;
+
+  --radius-control: 0.75rem;
+  --radius-card: 1.25rem;
+  --radius-sheet: 1.75rem;
+
+  --spacing-gutter: 1rem;
+  --spacing-section: 1.75rem;
+
+  --shadow-card: 0 12px 32px -26px rgba(0, 0, 0, 0.9);
+  --shadow-float: 0 18px 44px -30px rgba(0, 0, 0, 0.95);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @font-face {
@@ -23,13 +74,13 @@
 
 :root {
   color-scheme: dark;
-  --bg: #070b16;
-  --surface: #111830;
-  --surface-2: #161e3a;
-  --border: rgba(148, 163, 196, 0.14);
-  --text: #eef2ff;
-  --muted: #b2bcd7;
-  --amber: #f5b642;
+  --bg: #080c12;
+  --surface: #121a24;
+  --surface-2: #172230;
+  --border: rgba(148, 163, 180, 0.12);
+  --text: #eef2f7;
+  --muted: #b6c0cf;
+  --amber: #f3b64b;
 }
 
 html,
@@ -40,10 +91,7 @@ body,
 
 body {
   margin: 0;
-  background:
-    radial-gradient(1100px 620px at 85% -10%, rgba(245, 182, 66, 0.13), transparent 60%),
-    radial-gradient(900px 520px at 5% 0%, rgba(56, 189, 248, 0.1), transparent 55%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -55,7 +103,7 @@ body {
 }
 
 ::selection {
-  background: rgba(245, 182, 66, 0.28);
+  background: rgba(243, 182, 75, 0.28);
 }
 
 .sr-scroll-x {
@@ -75,7 +123,7 @@ body {
 }
 
 .sr-skeleton {
-  background: linear-gradient(90deg, #131b33 25%, #1d2745 37%, #131b33 63%);
+  background: linear-gradient(90deg, #121a24 25%, #1a2533 37%, #121a24 63%);
   background-size: 200% 100%;
   animation: sr-shimmer 1.5s ease-in-out infinite;
 }
@@ -83,7 +131,7 @@ body {
 @keyframes sr-pop {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.985);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
@@ -92,7 +140,7 @@ body {
 }
 
 .sr-pop {
-  animation: sr-pop 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: sr-pop 0.22s var(--ease-out-soft) both;
 }
 
 .sr-no-tap {
@@ -100,12 +148,12 @@ body {
 }
 
 .sr-card-hover {
-  transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+  transition: transform 0.18s var(--ease-out-soft), border-color 0.18s ease, background-color 0.18s ease;
 }
 
 @media (hover: hover) {
   .sr-card-hover:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
   }
 }
 
@@ -126,6 +174,9 @@ body {
   --color-ink-800: #050505;
   --color-ink-700: #0a0a0a;
   --color-ink-600: #121212;
+  --color-canvas: #000000;
+  --color-panel: #000000;
+  --color-panel-raised: #050505;
   --bg: #000000;
   --surface: #000000;
   --surface-2: #050505;
@@ -152,7 +203,7 @@ body {
 }
 /* Keyboard focus is always visible, including inside the WebView. */
 :focus-visible {
-  outline: 2px solid rgba(245, 182, 66, 0.9);
+  outline: 2px solid rgba(243, 182, 75, 0.9);
   outline-offset: 2px;
 }
 

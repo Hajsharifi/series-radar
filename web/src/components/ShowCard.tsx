@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Star } from "lucide-react";
 import type { Show } from "../types";
 import { EVENT_CHIP, EVENT_LABEL } from "../lib/labels";
 import { showEventKind } from "../lib/show-event";
@@ -22,7 +23,7 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
   const detailPath = show.source === "tmdb" ? `/tv/${show.id}` : `/show/${show.id}`;
 
   return (
-    <article className="sr-card-hover sr-pop group relative flex flex-col overflow-hidden rounded-2xl border border-white/8 bg-ink-850/80 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.9)]">
+    <article className="sr-card-hover sr-pop group relative flex flex-col overflow-hidden rounded-card border border-edge/10 bg-panel/85 shadow-card">
       <Link to={detailPath} className="sr-no-tap relative block">
         <Poster show={show} className="aspect-[2/3] w-full" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-ink-950 via-ink-950/70 to-transparent" />
@@ -39,8 +40,8 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
       </Link>
 
       {typeof show.rating === "number" && show.rating > 0 && (
-        <span className="pointer-events-none absolute right-2 top-2 z-10 rounded-lg bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 backdrop-blur">
-          ★ {toPersianDigits(show.rating.toFixed(1))}
+        <span className="pointer-events-none absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-lg bg-black/60 px-1.5 py-0.5 text-micro font-bold text-brand backdrop-blur">
+          <Star className="h-3 w-3" fill="currentColor" strokeWidth={0} /> {toPersianDigits(show.rating.toFixed(1))}
         </span>
       )}
 
@@ -53,7 +54,7 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
           favorite ? "bg-amber-400 text-ink-950" : "bg-black/45 text-white/85 hover:bg-black/65"
         }`}
       >
-        {favorite ? "★" : "☆"}
+        <Star className="h-[18px] w-[18px]" fill={favorite ? "currentColor" : "none"} strokeWidth={1.8} />
       </button>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">
@@ -68,7 +69,7 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
           <p className="-mt-1 truncate text-[10px] text-ink-400" dir="auto">{show.originalTitle}</p>
         )}
 
-        <div className="flex items-center justify-between gap-1 text-[11px] text-ink-400" dir="rtl">
+        <div className="flex items-center justify-between gap-1 text-caption text-muted" dir="rtl">
           <span className="truncate">{show.network ?? show.networkNames?.[0] ?? "—"}</span>
           {clock && <span className="shrink-0 tabular-nums">{clock}</span>}
         </div>
@@ -77,10 +78,10 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
           {dateStamp ? (
             <JalaliSpans stamp={dateStamp} className="text-[11px] font-medium text-ink-200" />
           ) : (
-            <span className="text-[11px] text-ink-400">در حال پخش</span>
+            <span className="text-caption text-muted">در حال پخش</span>
           )}
           {event === "series-premiere" ? (
-            <span className="shrink-0 rounded-md bg-amber-400/12 px-1.5 py-0.5 text-[10px] text-amber-200">
+            <span className="shrink-0 rounded-md bg-amber-400/12 px-1.5 py-0.5 text-micro text-warning">
               سریال جدید
             </span>
           ) : event === "new-episode" && nextSeason && nextNumber ? (
@@ -88,11 +89,11 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
               فصل {toPersianDigits(nextSeason)} · قسمت {toPersianDigits(nextNumber)}
             </span>
           ) : nextSeason ? (
-            <span className="shrink-0 rounded-md bg-white/6 px-1.5 py-0.5 text-[10px] text-ink-300">
+            <span className="shrink-0 rounded-md bg-white/6 px-1.5 py-0.5 text-micro text-ink-300">
               فصل {toPersianDigits(nextSeason)}
             </span>
           ) : (
-            <span className="shrink-0 rounded-md bg-amber-400/12 px-1.5 py-0.5 text-[10px] text-amber-200">
+            <span className="shrink-0 rounded-md bg-amber-400/12 px-1.5 py-0.5 text-micro text-warning">
               سریال جدید
             </span>
           )}
@@ -116,7 +117,7 @@ export function ShowRow({ show, favorite, onToggleFavorite }: ShowCardProps) {
         ? `فصل ${toPersianDigits(nextSeason)}`
         : null;
   return (
-    <article className="sr-card-hover flex items-center gap-3 rounded-2xl border border-white/8 bg-ink-850/70 p-2.5">
+    <article className="sr-card-hover flex items-center gap-3 rounded-card border border-edge/10 bg-panel/80 p-2.5">
       <Link to={detailPath} className="sr-no-tap shrink-0">
         <div className="relative">
           <Poster show={show} className="h-[70px] w-[50px]" rounded="rounded-xl" />
@@ -129,15 +130,15 @@ export function ShowRow({ show, favorite, onToggleFavorite }: ShowCardProps) {
         <Link to={detailPath} className="sr-no-tap block truncate text-sm font-semibold text-white" dir="auto">
           {show.title}
         </Link>
-        <p className="mt-0.5 truncate text-[11px] text-ink-400" dir="rtl">
+        <p className="mt-0.5 truncate text-caption text-muted" dir="rtl">
           {[show.network ?? show.networkNames?.[0] ?? "—", show.airstamp && show.source !== "tmdb" ? tehranClock(show.airstamp) : null, episodeText, countdown]
             .filter(Boolean)
             .join(" · ")}
           {typeof show.rating === "number" && show.rating > 0 ? (
-            <span className="mr-1 text-amber-300">★ {toPersianDigits(show.rating.toFixed(1))}</span>
+            <span className="mr-1 inline-flex items-center gap-1 text-brand"><Star className="h-3 w-3" fill="currentColor" strokeWidth={0} /> {toPersianDigits(show.rating.toFixed(1))}</span>
           ) : null}
         </p>
-        <div className="mt-0.5 text-[11px] text-ink-300">
+        <div className="mt-0.5 text-caption text-ink-300">
           {show.airstamp ? <JalaliSpans stamp={show.airstamp} /> : <span>در حال پخش</span>}
         </div>
       </div>
@@ -150,7 +151,7 @@ export function ShowRow({ show, favorite, onToggleFavorite }: ShowCardProps) {
           favorite ? "bg-amber-400 text-ink-950" : "bg-white/6 text-white/70"
         }`}
       >
-        {favorite ? "★" : "☆"}
+        <Star className="h-[18px] w-[18px]" fill={favorite ? "currentColor" : "none"} strokeWidth={1.8} />
       </button>
     </article>
   );

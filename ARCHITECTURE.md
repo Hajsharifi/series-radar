@@ -90,6 +90,14 @@
 - کش سرور به‌صورت اتمیک نوشته می‌شود (`os.replace`) و فایل‌های قدیمی پاک
   می‌شوند.
 
+## Design System
+
+- توکن‌های رنگ، تایپوگرافی، شعاع و سایه در `web/src/index.css` با `@theme` تعریف شده‌اند.
+- کامپوننت‌های پایه در `web/src/components/ui/`: Button، Chip، Input و SectionHeader.
+- آیکون‌ها از Lucide با استایل Outline و ضخامت ۱.۷–۲.۲ استفاده می‌کنند؛ ایموجی به‌عنوان آیکون رابط ممنوع است.
+- مقیاس متن: display ۲۸، headline ۱۸، title ۱۵، body ۱۳، caption/label ۱۱ و micro ۱۰ (فقط badge).
+- حرکت‌ها کوتاه‌اند (۱۶۰–۲۲۰ms) و `prefers-reduced-motion` رعایت می‌شود.
+
 ## تست
 
 - `web/src/lib/__tests__` — منطق خالص تگ‌ها و رتبه‌بندی (Vitest).

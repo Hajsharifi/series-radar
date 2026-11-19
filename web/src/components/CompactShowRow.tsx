@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Star } from "lucide-react";
 import type { Show } from "../types";
 import { jalaliDate, tehranClock, toPersianDigits } from "../lib/date";
 import { showEventKind } from "../lib/show-event";
@@ -24,18 +25,18 @@ export function CompactShowRow({ show, favorite, onToggleFavorite }: CompactShow
   const clock = show.airstamp && show.source !== "tmdb" ? tehranClock(show.airstamp) : "";
 
   return (
-    <div className="flex items-center gap-2 rounded-xl border border-white/8 bg-ink-850/70 px-2.5 py-1.5">
+    <div className="flex items-center gap-2 rounded-control border border-edge/10 bg-panel/80 px-2.5 py-1.5">
       <Link to={detailPath} className="sr-no-tap min-w-0 flex-1">
         <p className="truncate text-xs font-semibold text-white" dir="auto">
           {show.title}
         </p>
-        <p className="mt-0.5 truncate text-[10px] text-ink-400" dir="rtl">
+        <p className="mt-0.5 truncate text-caption text-muted" dir="rtl">
           {[
             show.network ?? show.networkNames?.[0] ?? "—",
             show.airstamp ? jalaliDate(new Date(show.airstamp)) : null,
             clock,
             episode,
-            typeof show.rating === "number" && show.rating > 0 ? `★ ${toPersianDigits(show.rating.toFixed(1))}` : null,
+            typeof show.rating === "number" && show.rating > 0 ? `امتیاز ${toPersianDigits(show.rating.toFixed(1))}` : null,
           ]
             .filter(Boolean)
             .join(" · ")}
@@ -50,7 +51,7 @@ export function CompactShowRow({ show, favorite, onToggleFavorite }: CompactShow
           favorite ? "bg-amber-400 text-ink-950" : "bg-white/6 text-white/70"
         }`}
       >
-        {favorite ? "★" : "☆"}
+        <Star className="h-[18px] w-[18px]" fill={favorite ? "currentColor" : "none"} strokeWidth={1.8} />
       </button>
     </div>
   );

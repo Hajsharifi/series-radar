@@ -27,6 +27,7 @@ import { ShowRow } from "../components/ShowCard";
 import { MovieRow } from "../components/MovieCard";
 import { MovieHistoryPageLink } from "../components/MovieHistoryLink";
 import { EmptyState } from "../components/StateViews";
+import { Star } from "lucide-react";
 
 type Tab = "series" | "movies";
 
@@ -354,7 +355,7 @@ export function FavoritesPage() {
 function EmptySeries() {
   return (
     <EmptyState
-      icon="☆"
+      icon={<Star className="h-5 w-5" strokeWidth={1.8} />}
       title="هنوز سریالی را ستاره نکرده‌اید"
       description="در صفحهٔ رادار روی ستارهٔ هر سریال بزنید تا یادآوری برایش فعال شود."
       action={
@@ -369,7 +370,7 @@ function EmptySeries() {
 function EmptyMovies() {
   return (
     <EmptyState
-      icon="☆"
+      icon={<Star className="h-5 w-5" strokeWidth={1.8} />}
       title="هنوز فیلمی را ستاره نکرده‌اید"
       description="در بخش فیلم‌ها روی ستارهٔ هر فیلم بزنید تا مشخص شود منتظر اکرانش هستید یا کیفیت خوبش."
       action={

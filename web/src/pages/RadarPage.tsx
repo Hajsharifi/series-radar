@@ -31,6 +31,8 @@ import type { Show } from "../types";
 import { ShowCard, ShowRow } from "../components/ShowCard";
 import { CompactShowRow } from "../components/CompactShowRow";
 import { EmptyState, SkeletonCards } from "../components/StateViews";
+import { Radar, Search, X } from "lucide-react";
+import { Chip, Input, SectionHeader } from "../components/ui";
 import { Poster } from "../components/Poster";
 
 const FILTERS: Array<{ key: ShowFilters["category"]; label: string }> = [
@@ -255,85 +257,67 @@ export function RadarPage() {
             </p>
           </div>
 
-          <div className="relative">
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="جست‌وجوی سریال، شبکه یا ژانر" aria-label="جست‌وجوی سریال، شبکه یا ژانر"
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2.5 text-sm text-white placeholder:text-ink-400 focus:border-amber-400/60 focus:outline-none"
-            />
-            {search && (
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="جست‌وجوی سریال، شبکه یا ژانر"
+            aria-label="جست‌وجوی سریال، شبکه یا ژانر"
+            leadingIcon={<Search className="h-4 w-4" strokeWidth={1.8} />}
+            trailing={search ? (
               <button
                 type="button"
                 onClick={() => setSearch("")}
                 aria-label="پاک کردن جست‌وجو"
-                className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full px-2 py-1 text-xs text-ink-400"
+                className="grid h-8 w-8 place-items-center rounded-full text-muted hover:text-white"
               >
-                ✕
+                <X className="h-4 w-4" strokeWidth={1.8} />
               </button>
-            )}
-          </div>
+            ) : undefined}
+          />
 
           <div className="flex flex-wrap gap-2">
             {FILTERS.map((item) => (
-              <button
+              <Chip
                 key={item.key}
-                type="button"
+                selected={filters.category === item.key}
                 onClick={() => setFilters((prev) => ({ ...prev, category: item.key }))}
-                className={`sr-no-tap rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                  filters.category === item.key
-                    ? "bg-amber-400 text-ink-950"
-                    : "border border-white/10 bg-white/5 text-ink-300"
-                }`}
               >
                 {item.label}
-              </button>
+              </Chip>
             ))}
-            <button
-              type="button"
+            <Chip
+              tone="info"
+              selected={filters.onlyPopular}
               onClick={() => setFilters((prev) => ({ ...prev, onlyPopular: !prev.onlyPopular }))}
-              className={`sr-no-tap rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                filters.onlyPopular
-                  ? "bg-sky-400/20 text-sky-200 ring-1 ring-sky-400/40"
-                  : "border border-white/10 bg-white/5 text-ink-300"
-              }`}
             >
               فقط محبوب‌ها
-            </button>
-            <button
-              type="button"
+            </Chip>
+            <Chip
+              tone="success"
+              selected={hideUnscripted}
               onClick={() => setHideUnscripted((value) => !value)}
-              className={`sr-no-tap rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                hideUnscripted
-                  ? "bg-emerald-400/20 text-emerald-200 ring-1 ring-emerald-400/40"
-                  : "border border-white/10 bg-white/5 text-ink-300"
-              }`}
             >
               بدون رئالیتی/تاک‌شو
-            </button>
+            </Chip>
           </div>
 
           <div className="flex flex-wrap gap-1.5">
-            <button
-              type="button"
+            <Chip
+              tone="neutral"
+              selected={genre === null}
               onClick={() => setGenre(null)}
-              className={`sr-no-tap rounded-lg px-2.5 py-1 text-[11px] ${
-                genre === null ? "bg-white/15 text-white" : "bg-white/4 text-ink-400"
-              }`}
             >
               همه ژانرها
-            </button>
+            </Chip>
             {GENRES.map((item) => (
-              <button
+              <Chip
                 key={item}
-                type="button"
+                tone="neutral"
+                selected={genre === item}
                 onClick={() => setGenre((prev) => (prev === item ? null : item))}
-                className={`sr-no-tap rounded-lg px-2.5 py-1 text-[11px] ${
-                  genre === item ? "bg-white/15 text-white" : "bg-white/4 text-ink-400"
-                }`}
               >
                 {genreLabel(item)}
-              </button>
+              </Chip>
             ))}
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -407,10 +391,11 @@ export function RadarPage() {
 
       {featured.length > 0 && !hasFilters && (
         <section>
-          <div className="mb-2.5 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white">پیشنهاد رادار</h2>
-            <span className="text-[11px] text-ink-400">امتیاز، محبوبیت، نزدیکی پخش و تنوع ژانر</span>
-          </div>
+          <SectionHeader
+            className="mb-3"
+            title="پیشنهاد رادار"
+            description="انتخاب بر اساس امتیاز، محبوبیت، نزدیکی پخش و تنوع ژانر"
+          />
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {featured.map((suggestion) => {
               const show = suggestion.show;
@@ -440,10 +425,7 @@ export function RadarPage() {
       {/* Live TV - On the Air */}
       {liveTV.onTheAir.length > 0 && !hasFilters && (
         <section>
-          <div className="mb-2.5 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white">در حال پخش</h2>
-            <span className="text-[11px] text-ink-400">روی آنتن</span>
-          </div>
+          <SectionHeader className="mb-3" title="در حال پخش" description="روی آنتن" />
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {liveTV.onTheAir.slice(0, 10).map((show: typeof liveTV.onTheAir[0]) => (
               <div key={show.id} className="w-[136px] shrink-0">
@@ -457,10 +439,7 @@ export function RadarPage() {
       {/* Live TV - Airing Today */}
       {liveTV.airingToday.length > 0 && !hasFilters && (
         <section>
-          <div className="mb-2.5 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white">امروز پخش می‌شود</h2>
-            <span className="text-[11px] text-ink-400">قسمت تازه</span>
-          </div>
+          <SectionHeader className="mb-3" title="امروز پخش می‌شود" description="قسمت تازه" />
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {liveTV.airingToday.slice(0, 10).map((show: typeof liveTV.airingToday[0]) => (
               <div key={show.id} className="w-[136px] shrink-0">
@@ -474,10 +453,11 @@ export function RadarPage() {
       {/* This Week - Personal Calendar */}
       {thisWeek.length > 0 && !hasFilters && (
         <section>
-          <div className="mb-2.5 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-white">این هفته</h2>
-            <span className="text-[11px] text-ink-400">قسمت‌های پیش‌رو و فصل‌های جدید ستاره‌ها</span>
-          </div>
+          <SectionHeader
+            className="mb-3"
+            title="این هفته"
+            description="قسمت‌های پیش‌رو و فصل‌های جدید ستاره‌ها"
+          />
           <div className="space-y-2">
             {thisWeek.map((show) => {
               const next = show.nextEpisode;
@@ -575,7 +555,7 @@ export function RadarPage() {
           <SkeletonCards count={8} />
         ) : filtered.length === 0 ? (
           <EmptyState
-            icon="◉"
+            icon={<Radar className="h-5 w-5" strokeWidth={1.8} />}
             title="سریالی با این فیلترها پیدا نشد"
             description="فیلترها را پاک کنید، «فقط محبوب‌ها» را خاموش کنید یا عبارت دیگری جست‌وجو کنید."
             compact

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Star } from "lucide-react";
 import type { Movie, MovieTab } from "../types";
 import { dayCountdownLabel, toPersianDigits } from "../lib/date";
 import {
@@ -54,23 +55,23 @@ export function MovieCard({ movie, tab, favorite, onToggleFavorite }: MovieCardP
   const genres = movieGenres(movie).slice(0, 2);
 
   return (
-    <article className="sr-card-hover sr-pop group relative flex flex-col overflow-hidden rounded-2xl border border-white/8 bg-ink-850/80 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.9)]">
+    <article className="sr-card-hover sr-pop group relative flex flex-col overflow-hidden rounded-card border border-edge/10 bg-panel/85 shadow-card">
       <Link to={`/movie/${movie.id}`} className="sr-no-tap relative block">
         <MoviePoster movie={movie} className="aspect-[2/3] w-full" />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-ink-950 via-ink-950/70 to-transparent" />
         <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-1">
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.className}`}>
+          <span className={`rounded-full px-2 py-0.5 text-micro font-semibold ${badge.className}`}>
             {badge.label}
           </span>
           {caption && (
-            <span className="rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-medium text-ink-200 backdrop-blur">
+            <span className="rounded-full bg-black/55 px-2 py-0.5 text-micro font-medium text-ink-200 backdrop-blur">
               {caption}
             </span>
           )}
         </div>
         {typeof movie.rating === "number" && movie.rating > 0 && (
-          <span className="absolute right-2 top-2 rounded-lg bg-black/65 px-1.5 py-0.5 text-[10px] font-bold text-amber-300 backdrop-blur">
-            ★ {toPersianDigits(movie.rating.toFixed(1))}
+          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-lg bg-black/65 px-1.5 py-0.5 text-micro font-bold text-brand backdrop-blur">
+            <Star className="h-3 w-3" fill="currentColor" strokeWidth={0} /> {toPersianDigits(movie.rating.toFixed(1))}
           </span>
         )}
         {/* OMDB ratings badges */}
@@ -105,7 +106,7 @@ export function MovieCard({ movie, tab, favorite, onToggleFavorite }: MovieCardP
             favorite ? "bg-amber-400 text-ink-950" : "bg-black/45 text-white/85 hover:bg-black/65"
           }`}
         >
-          {favorite ? "★" : "☆"}
+          <Star className="h-[18px] w-[18px]" fill={favorite ? "currentColor" : "none"} strokeWidth={1.8} />
         </button>
       )}
 
@@ -117,17 +118,17 @@ export function MovieCard({ movie, tab, favorite, onToggleFavorite }: MovieCardP
         >
           {movie.title}
         </Link>
-        <p className="truncate text-[11px] text-ink-400" dir="auto">
+        <p className="truncate text-caption text-ink-400" dir="auto">
           {genres.length ? genres.join(" · ") : movie.originalTitle ?? "—"}
         </p>
         <div className="mt-auto flex items-center justify-between gap-1 border-t border-white/6 pt-1.5">
-          <JalaliSpans stamp={date} className="text-[11px] font-medium text-ink-200" />
+          <JalaliSpans stamp={date} className="text-caption font-medium text-ink-200" />
           {stage === "quality" && movie.releaseKind === "digital" ? (
-            <span className="shrink-0 rounded-md bg-white/6 px-1.5 py-0.5 text-[10px] text-ink-300">
+            <span className="shrink-0 rounded-md bg-white/6 px-1.5 py-0.5 text-micro text-ink-300">
               دیجیتال
             </span>
           ) : movie.certification ? (
-            <span className="shrink-0 rounded-md bg-white/6 px-1.5 py-0.5 text-[10px] text-ink-300">
+            <span className="shrink-0 rounded-md bg-white/6 px-1.5 py-0.5 text-micro text-ink-300">
               {movie.certification}
             </span>
           ) : null}
@@ -151,7 +152,7 @@ export function MovieRow({
   const caption = waitingCaption(movie, stage, date);
 
   return (
-    <article className="sr-card-hover flex items-center gap-3 rounded-2xl border border-white/8 bg-ink-850/70 p-2.5">
+    <article className="sr-card-hover flex items-center gap-3 rounded-card border border-edge/10 bg-panel/80 p-2.5">
       <Link to={`/movie/${movie.id}`} className="sr-no-tap shrink-0">
         <div className="relative">
           <MoviePoster movie={movie} className="h-[70px] w-[50px]" rounded="rounded-xl" />
@@ -169,11 +170,11 @@ export function MovieRow({
             {badge.label}
           </span>
         </div>
-        <p className="mt-0.5 truncate text-[11px] text-ink-400" dir="auto">
+        <p className="mt-0.5 truncate text-caption text-ink-400" dir="auto">
           {genres.length ? genres.join(" · ") : movie.originalTitle ?? "—"}
           {caption ? ` · ${caption}` : ""}
         </p>
-        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-ink-300">
+        <div className="mt-0.5 flex items-center gap-1.5 text-caption text-ink-300">
           <JalaliSpans stamp={date} />
           {movie.imdbRating && (
             <span className="rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-bold text-amber-300">
@@ -201,7 +202,7 @@ export function MovieRow({
           favorite ? "bg-amber-400 text-ink-950" : "bg-white/6 text-white/70"
         }`}
       >
-        {favorite ? "★" : "☆"}
+        <Star className="h-[18px] w-[18px]" fill={favorite ? "currentColor" : "none"} strokeWidth={1.8} />
       </button>
     </article>
   );

@@ -22,6 +22,7 @@ import { movieStage, tehranTodayISO } from "../lib/movies";
 import { Poster } from "../components/Poster";
 import { buildIcs, downloadTextFile, icsFilename } from "../lib/ics";
 import { EmptyState } from "../components/StateViews";
+import { CalendarDays, Star } from "lucide-react";
 import { isNativeApp, saveCalendarFile } from "../lib/native";
 
 interface CalendarItem {
@@ -380,7 +381,7 @@ export default function CalendarPage() {
 
       {visible.length === 0 ? (
         <EmptyState
-          icon="▦"
+          icon={<CalendarDays className="h-5 w-5" strokeWidth={1.8} />}
           title="موردی برای این روز ثبت نشده"
           description="روز دیگری را از بالا انتخاب کنید یا فیلتر ستاره‌ها را خاموش کنید."
           compact
@@ -416,7 +417,7 @@ export default function CalendarPage() {
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${badge.className}`}>
                         {badge.text}
                       </span>
-                      {item.favorite && <span className="text-[10px] text-amber-300">★</span>}
+                      {item.favorite && <Star className="h-3 w-3 text-brand" fill="currentColor" strokeWidth={0} />}
                     </div>
                     <p className="mt-1 line-clamp-1 text-sm font-semibold text-white" dir="auto">{item.title}</p>
                     <p className="mt-0.5 text-[11px] text-ink-300">{item.subtitle}</p>

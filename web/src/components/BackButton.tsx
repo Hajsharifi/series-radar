@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 
 export interface BackTarget {
   to: string;
@@ -73,7 +74,7 @@ export function BackButton({ compact = false, label, className = "" }: BackButto
         title={text}
         className={`sr-no-tap grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5 text-base text-ink-200 active:bg-white/10 ${className}`}
       >
-        <span aria-hidden="true">→</span>
+        <ArrowRight aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
       </button>
     );
   }
@@ -83,9 +84,9 @@ export function BackButton({ compact = false, label, className = "" }: BackButto
       type="button"
       onClick={goBack}
       aria-label={text}
-      className={`sr-no-tap inline-flex items-center gap-1 rounded-lg py-1 text-xs font-medium text-ink-300 active:bg-white/5 ${className}`}
+      className={`sr-no-tap inline-flex items-center gap-1 rounded-lg py-1 text-caption font-medium text-muted active:bg-white/5 ${className}`}
     >
-      <span aria-hidden="true">→</span>
+      <ArrowRight aria-hidden="true" className="h-4 w-4" strokeWidth={2} />
       <span>{text}</span>
     </button>
   );
