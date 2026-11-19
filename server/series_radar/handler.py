@@ -21,6 +21,7 @@ from .catalog import (
     upcoming,
 )
 from .config import PORT, TMDB, TMDB_HEADERS, TMDB_TOKEN
+from .downloads import MAX_KEYS, match_downloads
 from .http import localized_collection, tmdb_get
 from .metrics import inc_error, inc_request, snapshot
 from .people import person_detail
@@ -68,6 +69,9 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path == "/api/health":
                 return self.send_json({"ok": True, "time": dt.datetime.utcnow().isoformat() + "Z"})
+            if path == "/api/downloads/match":
+                keys = [item.strip() for item in (query.get("keys") or [""])[0].split(",") if item.strip()]
+                return self.send_json({"items": match_downloads(keys[:MAX_KEYS], force)})
             if path == "/api/metrics":
                 files, size = cache_stats()
                 return self.send_json(snapshot(files, size))
