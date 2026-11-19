@@ -18,6 +18,9 @@ interface AndroidReminderBridge {
   syncMovieWatchlist?(json: string): void;
   backgroundCheckStatus?(): string;
   checkMovieWatchlistNow?(): void;
+  syncDownloadWatchlist?(json: string): void;
+  downloadLinksStatus?(): string;
+  checkDownloadLinksNow?(): void;
   openExternal?(url: string): void;
   downloadAndInstall?(url: string, version: string): void;
   saveCalendarFile?(filename: string, content: string): boolean;
@@ -164,6 +167,73 @@ export function checkMovieWatchlistNow(): void {
   if (!isNativeApp()) return;
   try {
     window.AndroidReminders?.checkMovieWatchlistNow?.();
+  } catch {
+    /* ignore */
+  }
+}
+
+/** A starred title handed to the hourly download-link checker. */
+export interface DownloadWatchItem {
+  key: string;
+  title: string;
+  kind: "movie" | "series";
+  source?: "tmdb" | "tvmaze";
+  archived?: boolean;
+}
+
+export interface DownloadQuietSettings {
+  enabled: boolean;
+  start: string;
+  end: string;
+}
+
+export function syncDownloadWatchlist(
+  items: DownloadWatchItem[],
+  quiet?: DownloadQuietSettings,
+): void {
+  if (!isNativeApp()) return;
+  try {
+    window.AndroidReminders?.syncDownloadWatchlist?.(JSON.stringify({
+      items,
+      quiet: quiet ?? { enabled: false, start: "23:00", end: "07:00" },
+    }));
+  } catch {
+    /* bridge must never break the UI */
+  }
+}
+
+export interface DownloadCheckStatus {
+  lastCheck: number;
+  lastOk: boolean;
+  watched: number;
+  armed: boolean;
+  notified: number;
+}
+
+/** Status of the separate hourly download-link worker. */
+export function getDownloadCheckStatus(): DownloadCheckStatus | null {
+  if (!isNativeApp()) return null;
+  try {
+    const raw = window.AndroidReminders?.downloadLinksStatus?.();
+    if (!raw) return null;
+    const value = JSON.parse(raw) as Partial<DownloadCheckStatus>;
+    return {
+      lastCheck: Number(value.lastCheck) || 0,
+      lastOk: Boolean(value.lastOk),
+      watched: Number(value.watched) || 0,
+      armed: Boolean(value.armed),
+      notified: Number(value.notified) || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Asks the download-link checker to run now (throttled natively). */
+export function checkDownloadLinksNow(): void {
+  if (!isNativeApp()) return;
+  try {
+    window.AndroidReminders?.checkDownloadLinksNow?.();
   } catch {
     /* ignore */
   }

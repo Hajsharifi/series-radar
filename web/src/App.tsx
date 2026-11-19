@@ -3,6 +3,7 @@ import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ScheduleProvider } from "./hooks/ScheduleContext";
 import { NativeReminders } from "./components/NativeReminders";
+import { DownloadsWatchlist } from "./components/DownloadsWatchlist";
 import { Layout } from "./components/Layout";
 import { queryClient } from "./lib/queryClient";
 import { Loader } from "./components/Loader";
@@ -22,6 +23,7 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const CalendarPage = lazy(() => import("./pages/CalendarPage"));
 const MovieHistoryPage = lazy(() => import("./pages/MovieHistoryPage"));
+const DownloadsPage = lazy(() => import("./pages/DownloadsPage"));
 const PersonPage = lazy(() => import("./pages/PersonPage"));
 
 export default function App() {
@@ -29,6 +31,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ScheduleProvider>
         <NativeReminders />
+        <DownloadsWatchlist />
         <HashRouter>
           <Suspense fallback={<Loader />}>
             <Routes>
@@ -46,6 +49,7 @@ export default function App() {
 <Route path="/search" element={<SearchPage />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/movie-history" element={<MovieHistoryPage />} />
+                <Route path="/downloads" element={<DownloadsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

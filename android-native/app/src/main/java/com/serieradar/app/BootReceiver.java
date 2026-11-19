@@ -15,6 +15,7 @@ public class BootReceiver extends BroadcastReceiver {
                 || "android.intent.action.QUICKBOOT_POWERON".equals(action)) {
             ReminderScheduler.rescheduleAll(context);
             WatchlistScheduler.armIfNeeded(context);
+            DownloadsScheduler.armIfNeeded(context);
         }
     }
 }

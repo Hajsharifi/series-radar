@@ -9,6 +9,8 @@ import { GENRE_MAP } from "../hooks/useSearch";
 import { useEpisodeTracking } from "../hooks/useEpisodeTracking";
 import { Poster } from "../components/Poster";
 import { CreditsSection } from "../components/CreditsSection";
+import { DownloadPanel } from "../components/DownloadPanel";
+import { seriesDownloadKey } from "../lib/downloads";
 import type { CastMember } from "../types";
 import { API_BASE } from "../lib/api";
 import { Star } from "lucide-react";
@@ -312,6 +314,8 @@ export default function TmdbSeriesPage() {
           )}
         </div>
       </article>
+
+      <DownloadPanel keyName={seriesDownloadKey(showId, "tmdb")} enabled={Boolean(favorite)} />
 
       {/* Seasons / episodes */}
       <section className="space-y-2">

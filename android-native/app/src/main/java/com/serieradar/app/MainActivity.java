@@ -300,6 +300,21 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void syncDownloadWatchlist(String payload) {
+            DownloadsScheduler.sync(getApplicationContext(), payload);
+        }
+
+        @JavascriptInterface
+        public String downloadLinksStatus() {
+            return DownloadsScheduler.statusJson(getApplicationContext());
+        }
+
+        @JavascriptInterface
+        public void checkDownloadLinksNow() {
+            DownloadsScheduler.triggerNow(getApplicationContext());
+        }
+
+        @JavascriptInterface
         public void requestNotificationPermission() {
             requestNotificationPermissionInternal();
         }

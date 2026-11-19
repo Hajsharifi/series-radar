@@ -20,6 +20,8 @@ import { Poster } from "../components/Poster";
 import { JalaliSpans } from "../components/DateChip";
 import { ShowCard } from "../components/ShowCard";
 import { CreditsSection } from "../components/CreditsSection";
+import { DownloadPanel } from "../components/DownloadPanel";
+import { seriesDownloadKey } from "../lib/downloads";
 import { useTvmazeCredits } from "../hooks/useTvmazeCredits";
 import { Star } from "lucide-react";
 import { Button } from "../components/ui";
@@ -253,6 +255,8 @@ export function ShowDetailsPage() {
           )}
         </div>
       </article>
+
+      <DownloadPanel keyName={seriesDownloadKey(showId, "tvmaze")} enabled={isFavorite} />
 
       {related.length > 0 && (
         <section>

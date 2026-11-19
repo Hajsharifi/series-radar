@@ -7,8 +7,10 @@ import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { leadHoursLabel, relativeSyncLabel, toPersianDigits } from "../lib/date";
 import { LEAD_OPTIONS, getSettings, setDefaultLeadHours, setQuietHours } from "../lib/settings";
 import {
+  checkDownloadLinksNow,
   checkMovieWatchlistNow,
   downloadAndInstallApk,
+  getDownloadCheckStatus,
   getBackgroundCheckStatus,
   isNativeApp,
   openExactAlarmSettings,
@@ -42,11 +44,15 @@ export function SettingsPage() {
   const [quietStart, setQuietStart] = useState(() => getSettings().quietStart);
   const [quietEnd, setQuietEnd] = useState(() => getSettings().quietEnd);
   const [bgCheck, setBgCheck] = useState(() => getBackgroundCheckStatus());
+  const [dlCheck, setDlCheck] = useState(() => getDownloadCheckStatus());
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
 
   useEffect(() => {
-    const sync = () => setBgCheck(getBackgroundCheckStatus());
+    const sync = () => {
+      setBgCheck(getBackgroundCheckStatus());
+      setDlCheck(getDownloadCheckStatus());
+    };
     sync();
     document.addEventListener("visibilitychange", sync);
     return () => document.removeEventListener("visibilitychange", sync);
@@ -343,6 +349,42 @@ export function SettingsPage() {
             className="mt-3 rounded-lg border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-ink-200 active:bg-white/10"
           >
             بررسی فیلمها همین حالا
+          </button>
+        </section>
+      )}
+
+      {isNativeApp() && (
+        <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
+          <h2 className="mb-2 text-sm font-bold text-white">بررسی لینکهای دانلود</h2>
+          <p className="mb-1 text-caption leading-relaxed text-muted">
+            سریالها و فیلمهای ستارهشده (و فیلمهای اخیراً آرشیوشده) هر ۱ ساعت یکبار از منبع دانلود چک میشوند.
+            لینک جدید فقط یکبار اعلان میدهد؛ خطای منبع یا اینترنت اعلانی ندارد.
+          </p>
+          <Row
+            label="آخرین بررسی"
+            value={
+              dlCheck?.lastCheck
+                ? relativeSyncLabel(new Date(dlCheck.lastCheck).toISOString())
+                : "هنوز انجام نشده"
+            }
+          />
+          <Row label="نتیجهٔ آخرین بررسی" value={!dlCheck?.lastCheck ? "—" : dlCheck.lastOk ? "موفق" : "ناموفق (اتصال)"} />
+          <Row label="آیتمهای تحت بررسی" value={`${toPersianDigits(dlCheck?.watched ?? 0)} مورد`} />
+          {!dlCheck?.armed && (
+            <p className="mt-2 text-caption text-muted">
+              با ستارهزدن یک عنوان، بررسی لینک دانلود هم فعال میشود.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              checkDownloadLinksNow();
+              setMessage("درخواست بررسی لینکها ارسال شد؛ چند ثانیه بعد دوباره نگاه کنید.");
+              window.setTimeout(() => setDlCheck(getDownloadCheckStatus()), 2500);
+            }}
+            className="mt-3 rounded-lg border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-ink-200 active:bg-white/10"
+          >
+            بررسی لینکها همین حالا
           </button>
         </section>
       )}

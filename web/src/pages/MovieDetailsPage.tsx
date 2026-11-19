@@ -33,6 +33,9 @@ import { usdFull, usdShort } from "../lib/format";
 import { MoviePoster } from "../components/MoviePoster";
 import { JalaliSpans } from "../components/DateChip";
 import { CreditsSection } from "../components/CreditsSection";
+import { DownloadPanel } from "../components/DownloadPanel";
+import { movieDownloadKey } from "../lib/downloads";
+import { getMovieRemovals } from "../lib/movie-removals";
 import { API_BASE } from "../lib/api";
 import { Bell, Star } from "lucide-react";
 import { Button } from "../components/ui";
@@ -108,6 +111,10 @@ export function MovieDetailsPage() {
   }, [movieId]);
 
   const favorite = favorites.items.find((item) => item.movieId === movieId);
+  const archived = getMovieRemovals().some(
+    (item) => item.movieId === movieId && item.reason === "available",
+  );
+  const downloadKey = movieDownloadKey(movieId);
   const reminderOn = Boolean(favorite) && favorite?.reminderEnabled !== false;
   const genres = useMemo(() => (movie ? movieGenres(movie) : []), [movie]);
   const backdrop = movie ? movieBackdropUrl(movie) : null;
@@ -387,6 +394,8 @@ export function MovieDetailsPage() {
             fallbackDirector={movie.omdbDirector}
             fallbackActors={movie.omdbActors}
           />
+
+          <DownloadPanel keyName={downloadKey} enabled={Boolean(favorite) || archived} />
 
           {movie.overview && (
             <div>
