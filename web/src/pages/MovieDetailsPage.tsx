@@ -34,6 +34,8 @@ import { MoviePoster } from "../components/MoviePoster";
 import { JalaliSpans } from "../components/DateChip";
 import { CreditsSection } from "../components/CreditsSection";
 import { API_BASE } from "../lib/api";
+import { Bell, Star } from "lucide-react";
+import { Button } from "../components/ui";
 
 function formatDay(day?: string | null): { jalali: Date | null; gregorian: string } {
   const date = tehranDateFromStamp(day ? `${day}T12:00:00Z` : null);
@@ -156,30 +158,28 @@ export function MovieDetailsPage() {
         <BackButton className="text-muted" />
         <div className="flex items-center gap-2">
           {stage === "quality" && (
-            <button
-              type="button"
+            <Button
+              variant={tracked.ids.has(movie.id) ? "secondary" : "ghost"}
+              size="sm"
               onClick={() => tracked.toggle(movie.id)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-                tracked.ids.has(movie.id) ? "bg-sky-400 text-sky-950" : "bg-white/8 text-white"
-              }`}
             >
-              {tracked.ids.has(movie.id) ? "🔔 در رادار" : "🔔 پیگیری کیفیت"}
-            </button>
+              <Bell className="h-3.5 w-3.5" strokeWidth={1.8} />
+              {tracked.ids.has(movie.id) ? "در رادار" : "پیگیری کیفیت"}
+            </Button>
           )}
           {finished ? (
-            <span className="rounded-lg bg-white/6 px-3 py-1.5 text-xs text-ink-300">
+            <span className="rounded-control border border-edge/10 bg-white/5 px-3 py-1.5 text-caption text-ink-300">
               کیفیت منتشر شد
             </span>
           ) : (
-            <button
-              type="button"
+            <Button
+              variant={favorites.ids.has(movie.id) ? "primary" : "secondary"}
+              size="sm"
               onClick={() => favorites.toggle(movie.id)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-                favorites.ids.has(movie.id) ? "bg-amber-400 text-ink-950" : "bg-white/8 text-white"
-              }`}
             >
-              {favorites.ids.has(movie.id) ? "★ ستاره‌دار" : "☆ ستاره"}
-            </button>
+              <Star className="h-3.5 w-3.5" fill={favorites.ids.has(movie.id) ? "currentColor" : "none"} strokeWidth={1.8} />
+              {favorites.ids.has(movie.id) ? "ستاره‌دار" : "ستاره"}
+            </Button>
           )}
         </div>
       </div>
@@ -216,12 +216,12 @@ export function MovieDetailsPage() {
                   <span className="rounded-full bg-black/55 px-2 py-0.5 text-micro text-ink-200">{movie.certification}</span>
                 )}
                 {typeof movie.rating === "number" && movie.rating > 0 && (
-                  <span className="rounded-full bg-black/55 px-2 py-0.5 text-micro font-bold text-amber-300">
-                    ★ {toPersianDigits(movie.rating.toFixed(1))}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-micro font-bold text-brand">
+                    <Star className="h-3 w-3" fill="currentColor" strokeWidth={0} /> {toPersianDigits(movie.rating.toFixed(1))}
                   </span>
                 )}
               </div>
-              <h1 className="mt-1 text-xl font-extrabold leading-tight text-white" dir="auto">
+              <h1 className="mt-1 text-headline text-white" dir="auto">
                 {movie.title}
               </h1>
               {movie.originalTitle && movie.originalTitle !== movie.title && (
@@ -325,7 +325,7 @@ export function MovieDetailsPage() {
           { (movie.budget || movie.revenue || movie.imdbRating || movie.rottenTomatoesRating || movie.metacriticRating) ? (
             <div className="rounded-card border border-edge/10 bg-black/25 p-4">
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white">امتیازات و بودجه</h2>
+                <h2 className="text-title text-white">امتیازات و بودجه</h2>
                 <Link to="/boxoffice" className="text-caption text-sky-300">
                   گیشهٔ کامل
                 </Link>
@@ -391,10 +391,10 @@ export function MovieDetailsPage() {
           {movie.overview && (
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white">داستان</h2>
+                <h2 className="text-title text-white">داستان</h2>
                 <span className="text-micro text-muted">ترجمهٔ TMDB</span>
               </div>
-              <p className="text-left text-[13px] leading-7 text-ink-300" dir="auto">
+              <p className="text-left text-body leading-7 text-ink-300" dir="auto">
                 {movie.overview}
               </p>
             </div>
@@ -436,7 +436,7 @@ export function MovieDetailsPage() {
 
       {(similarQuery.data?.items?.length ?? 0) > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-bold text-white">عنوانهای مشابه</h2>
+          <h2 className="text-title text-white">عنوانهای مشابه</h2>
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {similarQuery.data!.items.map((item) => (
               <Link key={item.id} to={`/movie/${item.id}`} className="sr-no-tap w-[120px] shrink-0">

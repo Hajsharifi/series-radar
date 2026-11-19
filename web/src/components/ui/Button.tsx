@@ -32,7 +32,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       type={type}
       className={cn(
-        "sr-no-tap inline-flex items-center justify-center gap-2 font-semibold transition",
+        "sr-no-tap inline-flex items-center justify-center gap-2 font-semibold transition active:scale-[0.98]",
         "focus-visible:outline-none disabled:pointer-events-none disabled:opacity-40",
         VARIANTS[variant],
         SIZES[size],

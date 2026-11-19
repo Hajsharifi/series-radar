@@ -21,6 +21,8 @@ import { JalaliSpans } from "../components/DateChip";
 import { ShowCard } from "../components/ShowCard";
 import { CreditsSection } from "../components/CreditsSection";
 import { useTvmazeCredits } from "../hooks/useTvmazeCredits";
+import { Star } from "lucide-react";
+import { Button } from "../components/ui";
 
 export function ShowDetailsPage() {
   const { id } = useParams();
@@ -78,15 +80,14 @@ export function ShowDetailsPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <BackButton className="text-muted" />
-        <button
-          type="button"
+        <Button
+          variant={isFavorite ? "primary" : "secondary"}
+          size="sm"
           onClick={() => favorites.toggle(show.id, "tvmaze")}
-          className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-            isFavorite ? "bg-amber-400 text-ink-950" : "bg-white/8 text-white"
-          }`}
         >
-          {isFavorite ? "★ ستاره‌دار" : "☆ ستاره"}
-        </button>
+          <Star className="h-3.5 w-3.5" fill={isFavorite ? "currentColor" : "none"} strokeWidth={1.8} />
+          {isFavorite ? "ستاره‌دار" : "ستاره"}
+        </Button>
       </div>
 
       <article className="overflow-hidden rounded-3xl border border-edge/10 bg-panel/80">
@@ -118,8 +119,8 @@ export function ShowDetailsPage() {
               </span>
             )}
             {typeof show.rating === "number" && show.rating > 0 && (
-              <span className="rounded-lg bg-amber-400/15 px-2 py-1 text-amber-200">
-                امتیاز {toPersianDigits(show.rating.toFixed(1))}
+              <span className="inline-flex items-center gap-1 rounded-lg bg-brand/12 px-2 py-1 text-brand">
+                <Star className="h-3 w-3" fill="currentColor" strokeWidth={0} /> {toPersianDigits(show.rating.toFixed(1))}
               </span>
             )}
             <span className="rounded-lg bg-white/6 px-2 py-1 text-ink-300">
@@ -219,10 +220,10 @@ export function ShowDetailsPage() {
           {show.overview && (
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white">داستان</h2>
+                <h2 className="text-title text-white">داستان</h2>
                 <span className="text-micro text-muted">خلاصه به انگلیسی</span>
               </div>
-              <p className="text-left text-[13px] leading-7 text-ink-300" dir="auto">
+              <p className="text-left text-body leading-7 text-ink-300" dir="auto">
                 {show.overview}
               </p>
             </div>

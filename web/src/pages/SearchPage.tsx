@@ -12,7 +12,7 @@ import {
 } from "../hooks/useSearch";
 import { Poster } from "../components/Poster";
 import { EmptyState, SkeletonCards } from "../components/StateViews";
-import { SearchX } from "lucide-react";
+import { SearchX, SlidersHorizontal, Star } from "lucide-react";
 import { toPersianDigits, jalaliDate } from "../lib/date";
 import { useSearchHistory } from "../lib/searchHistory";
 import { useMovieCatalog } from "../hooks/useMovies";
@@ -182,7 +182,8 @@ export default function SearchPage() {
                 : "border border-white/10 bg-white/5 text-ink-300"
             }`}
           >
-            ⚙ فیلترها {hasActiveFilters ? "•" : ""}
+            <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={1.8} />
+            فیلترها {hasActiveFilters ? "•" : ""}
           </button>
         </div>
 
@@ -338,8 +339,8 @@ function SearchResultCard({ item, byId }: { item: SearchResult; byId: Map<number
             <span className={`absolute right-2 top-8 ${movieTone}`}>{movieLabel}</span>
           )}
           {typeof item.rating === "number" && item.rating > 0 && (
-            <span className="absolute left-2 top-2 rounded-lg bg-black/65 px-1.5 py-0.5 text-micro font-bold text-amber-300 backdrop-blur">
-              ★ {toPersianDigits(item.rating.toFixed(1))}
+            <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-lg bg-black/65 px-1.5 py-0.5 text-micro font-bold text-brand backdrop-blur">
+              <Star className="h-3 w-3" fill="currentColor" strokeWidth={0} /> {toPersianDigits(item.rating.toFixed(1))}
             </span>
           )}
         </div>

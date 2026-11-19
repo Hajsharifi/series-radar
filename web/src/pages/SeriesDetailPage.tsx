@@ -6,6 +6,7 @@ import { toPersianDigits, jalaliDate, tehranClock } from "../lib/date";
 import { EpisodeList } from "../components/EpisodeList";
 import { Poster } from "../components/Poster";
 import { CreditsSection } from "../components/CreditsSection";
+import { Star } from "lucide-react";
 
 function formatDate(date?: string | null) {
   if (!date) return { jalali: "—", gregorian: "—" };
@@ -94,8 +95,8 @@ export default function SeriesDetailPage() {
                   </span>
                 )}
                 {typeof series.rating?.average === "number" && series.rating.average > 0 && (
-                  <span className="rounded-full bg-black/55 px-2 py-0.5 text-micro font-bold text-amber-300">
-                    ★ {toPersianDigits(series.rating.average.toFixed(1))}
+                  <span className="inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-micro font-bold text-brand">
+                    <Star className="h-3 w-3" fill="currentColor" strokeWidth={0} /> {toPersianDigits(series.rating.average.toFixed(1))}
                   </span>
                 )}
               </div>
@@ -181,7 +182,7 @@ export default function SeriesDetailPage() {
 
           <div className="rounded-card border border-edge/10 bg-black/25 p-4">
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-bold text-white">پیشرفت فصل‌ها</h2>
+              <h2 className="text-title text-white">پیشرفت فصل‌ها</h2>
             </div>
             <div className="space-y-2">
               {(() => {
@@ -209,10 +210,10 @@ export default function SeriesDetailPage() {
           {series.summary && (
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-white">داستان</h2>
+                <h2 className="text-title text-white">داستان</h2>
                 <span className="text-micro text-muted">خلاصه به انگلیسی</span>
               </div>
-              <p className="text-left text-[13px] leading-7 text-ink-300" dir="auto">
+              <p className="text-left text-body leading-7 text-ink-300" dir="auto">
                 {(series.summary ?? "").replace(/<[^>]*>/g, "")}
               </p>
             </div>

@@ -11,6 +11,8 @@ import { Poster } from "../components/Poster";
 import { CreditsSection } from "../components/CreditsSection";
 import type { CastMember } from "../types";
 import { API_BASE } from "../lib/api";
+import { Star } from "lucide-react";
+import { Button } from "../components/ui";
 import { useFavorites } from "../hooks/useFavorites";
 import { LEAD_OPTIONS, getSettings } from "../lib/settings";
 
@@ -168,15 +170,14 @@ export default function TmdbSeriesPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-2">
         <BackButton className="text-muted" />
-        <button
-          type="button"
+        <Button
+          variant={favorite ? "primary" : "secondary"}
+          size="sm"
           onClick={() => favorites.toggle(showId, "tmdb")}
-          className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
-            favorite ? "bg-amber-400 text-ink-950" : "bg-white/8 text-white"
-          }`}
         >
-          {favorite ? "★ ستاره‌دار" : "☆ ستاره"}
-        </button>
+          <Star className="h-3.5 w-3.5" fill={favorite ? "currentColor" : "none"} strokeWidth={1.8} />
+          {favorite ? "ستاره‌دار" : "ستاره"}
+        </Button>
       </div>
 
       <article className="overflow-hidden rounded-3xl border border-edge/10 bg-panel/80">
@@ -191,7 +192,7 @@ export default function TmdbSeriesPage() {
             />
             <div className="min-w-0">
               <p className="text-micro font-semibold text-amber-300">سریال</p>
-              <h1 className="line-clamp-2 text-lg font-extrabold leading-snug text-white" dir="auto">{show.title}</h1>
+              <h1 className="line-clamp-2 text-headline leading-snug text-white" dir="auto">{show.title}</h1>
               {show.originalTitle && show.originalTitle !== show.title && (
                 <p className="truncate text-xs text-ink-300" dir="auto">{show.originalTitle}</p>
               )}
@@ -203,7 +204,9 @@ export default function TmdbSeriesPage() {
         <div className="space-y-4 p-4">
           <div className="flex flex-wrap items-center gap-2 text-caption">
             {typeof show.rating === "number" && show.rating > 0 && (
-              <span className="rounded-lg bg-amber-400/15 px-2 py-1 font-bold text-amber-200">★ {toPersianDigits(show.rating.toFixed(1))}</span>
+              <span className="inline-flex items-center gap-1 rounded-lg bg-brand/12 px-2 py-1 font-bold text-brand">
+                <Star className="h-3 w-3" fill="currentColor" strokeWidth={0} /> {toPersianDigits(show.rating.toFixed(1))}
+              </span>
             )}
             {show.imdbRating && <span className="rounded-lg bg-white/6 px-2 py-1 text-ink-200">IMDb {show.imdbRating}</span>}
             {genreNames.slice(0, 4).map((genre) => (
@@ -211,7 +214,7 @@ export default function TmdbSeriesPage() {
             ))}
           </div>
 
-          {show.overview && <p className="text-xs leading-relaxed text-ink-200" dir="auto">{show.overview}</p>}
+          {show.overview && <p className="text-body leading-relaxed text-ink-200" dir="auto">{show.overview}</p>}
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             <Info label="وضعیت" value={show.status === "Returning Series" ? "در حال پخش" : show.status === "Ended" ? "پایان یافته" : show.status} />
@@ -313,7 +316,7 @@ export default function TmdbSeriesPage() {
       {/* Seasons / episodes */}
       <section className="space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold text-white">قسمتها</h2>
+          <h2 className="text-title text-white">قسمتها</h2>
           <span className="text-caption text-muted">
             {toPersianDigits(watchedCount)} / {toPersianDigits(episodes.length)} دیده شده
           </span>
@@ -383,7 +386,7 @@ export default function TmdbSeriesPage() {
 
       {similar.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-bold text-white">عنوانهای مشابه</h2>
+          <h2 className="text-title text-white">عنوانهای مشابه</h2>
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {similar.map((item) => (
               <Link key={item.id} to={`/tv/${item.id}`} className="sr-no-tap w-[120px] shrink-0">

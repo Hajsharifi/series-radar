@@ -24,8 +24,8 @@ declare const __APP_VERSION__: string;
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-3 border-b border-white/6 py-2.5 last:border-0">
-      <span className="text-xs text-muted">{label}</span>
-      <span className="text-xs font-medium text-ink-100">{value}</span>
+      <span className="text-caption text-muted">{label}</span>
+      <span className="text-body font-medium text-copy">{value}</span>
     </div>
   );
 }
@@ -130,13 +130,13 @@ export function SettingsPage() {
     <div className="space-y-5">
       <BackButton />
       <header>
-        <h1 className="text-xl font-extrabold text-white">تنظیمات</h1>
-        <p className="mt-1 text-xs text-muted">داده‌ها، یادآوری و وضعیت اپ</p>
+        <h1 className="text-headline text-white">تنظیمات</h1>
+        <p className="mt-1 text-caption text-muted">داده‌ها، یادآوری و وضعیت اپ</p>
       </header>
 
       <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-white">داده‌ها</h2>
+          <h2 className="text-title text-white">داده‌ها</h2>
           <span className="rounded-full bg-emerald-400/12 px-2 py-0.5 text-micro font-medium text-emerald-300">
             TVMaze + TMDB
           </span>
@@ -147,8 +147,8 @@ export function SettingsPage() {
           value={schedule.source === "network" ? "آنلاین" : schedule.source === "cache" ? "کش‌شده" : "دادهٔ همراه اپ"}
         />
         <div className="flex items-center justify-between gap-3 py-2.5">
-          <span className="text-xs text-muted">آخرین به‌روزرسانی</span>
-          <span className="text-xs font-medium text-ink-100">{relativeSyncLabel(schedule.updatedAt)}</span>
+          <span className="text-caption text-muted">آخرین به‌روزرسانی</span>
+          <span className="text-body font-medium text-copy">{relativeSyncLabel(schedule.updatedAt)}</span>
         </div>
         <div className="mt-2 flex flex-wrap gap-2">
           <button
@@ -175,7 +175,7 @@ export function SettingsPage() {
       <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-bold text-white">حالت AMOLED</h2>
+            <h2 className="text-title text-white">حالت AMOLED</h2>
             <p className="mt-0.5 text-caption leading-relaxed text-muted">
               پسزمینهٔ مشکی مطلق؛ مصرف باتری را در صفحههای OLED کاهش میدهد.
             </p>
@@ -194,7 +194,7 @@ export function SettingsPage() {
 
       <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-white">یادآوری</h2>
+          <h2 className="text-title text-white">یادآوری</h2>
           <span className="rounded-full bg-emerald-400/12 px-2 py-0.5 text-micro font-medium text-emerald-300">
             {isNativeApp() ? "فعال" : "در اپ اندروید"}
           </span>

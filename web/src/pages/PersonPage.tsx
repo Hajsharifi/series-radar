@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BackButton } from "../components/BackButton";
 import { Poster } from "../components/Poster";
 import { EmptyState, LoadingState } from "../components/StateViews";
-import { UserRound } from "lucide-react";
+import { Star, UserRound } from "lucide-react";
 import { cachedFetchJson } from "../lib/offline";
 import { API_BASE } from "../lib/api";
 import { jalaliDate, toPersianDigits } from "../lib/date";
@@ -39,7 +39,7 @@ function CreditCard({ credit }: { credit: PersonCredit }) {
           <div className="mt-1 flex items-center justify-between gap-2 text-micro text-muted">
             <span>{creditDate(credit.date)}</span>
             {typeof credit.rating === "number" && credit.rating > 0 && (
-              <span className="text-amber-300">★ {toPersianDigits(credit.rating.toFixed(1))}</span>
+              <span className="inline-flex items-center gap-1 text-brand"><Star className="h-3 w-3" fill="currentColor" strokeWidth={0} /> {toPersianDigits(credit.rating.toFixed(1))}</span>
             )}
           </div>
           <span className={`mt-1 inline-block rounded-md px-1.5 py-0.5 text-micro font-semibold ${

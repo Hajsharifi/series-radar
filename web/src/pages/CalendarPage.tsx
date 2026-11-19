@@ -375,7 +375,8 @@ export default function CalendarPage() {
             onlyFavorites ? "bg-amber-400 text-ink-950" : "border border-white/10 bg-white/5 text-ink-300"
           }`}
         >
-          ★ فقط ستارهها
+          <Star className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} />
+          فقط ستاره‌ها
         </button>
       </div>
 
