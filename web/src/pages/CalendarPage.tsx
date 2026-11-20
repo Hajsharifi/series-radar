@@ -111,14 +111,15 @@ export default function CalendarPage() {
       if (!parts) continue;
       const day = toIsoDay({ y: parts.y, m: parts.m, d: parts.d });
       if (!validDays.has(day)) continue;
+      const source = show.source === "tmdb" ? "tmdb" : "tvmaze";
       result.push({
-        key: `show-${show.id}-${day}`,
+        key: `show-${source}-${show.id}-${day}`,
         day,
         title: show.title,
         subtitle: show.seasonNumber ? `فصل ${toPersianDigits(show.seasonNumber)}` : show.network ?? "سریال",
-        clock: tehranClock(show.airstamp),
-        path: `/show/${show.id}`,
-        source: "tvmaze",
+        clock: source === "tmdb" ? "زمان اعلام نشده" : tehranClock(show.airstamp),
+        path: source === "tmdb" ? `/tv/${show.id}` : `/show/${show.id}`,
+        source,
         kind: "series",
         posterPath: show.posterPath,
         posterOriginal: show.posterOriginal,
