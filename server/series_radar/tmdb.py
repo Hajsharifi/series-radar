@@ -37,6 +37,8 @@ def norm_movie(movie):
 
 def norm_tv_show(show):
     next_ep = show.get("next_episode_to_air") or None
+    origin_countries = show.get("origin_country") or []
+    country_code = origin_countries[0] if origin_countries else None
     return {
         "mediaType": "tv",
         "source": "tmdb",
@@ -59,6 +61,8 @@ def norm_tv_show(show):
         "networks": show.get("networks") or [],
         "networkNames": [n.get("name") for n in (show.get("networks") or []) if n.get("name")],
         "genres": [g.get("name") for g in (show.get("genres") or []) if g.get("name")],
+        "originCountry": origin_countries,
+        "countryCode": country_code,
         "nextEpisode": ({
             "id": next_ep.get("id"),
             "season": next_ep.get("season_number"),
@@ -409,6 +413,9 @@ def enrich_tv_meta(shows, include_omdb=True):
             show["networkNames"] = [n.get("name") for n in detail["networks"] if n.get("name")]
         if not show.get("genres") and detail.get("genres"):
             show["genres"] = [g.get("name") for g in detail["genres"] if g.get("name")]
+        if not show.get("originCountry") and detail.get("origin_country"):
+            show["originCountry"] = detail["origin_country"]
+            show["countryCode"] = detail["origin_country"][0] if detail["origin_country"] else None
         imdb_id = show.get("imdbId") or (detail.get("external_ids") or {}).get("imdb_id")
         if imdb_id:
             show["imdbId"] = imdb_id

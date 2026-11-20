@@ -44,7 +44,7 @@ const FILTERS: Array<{ key: ShowFilters["category"]; label: string }> = [
 const GENRES = ["Drama", "Comedy", "Crime", "Thriller", "Sci-Fi", "Fantasy", "Animation", "Documentary"];
 
 const UNSCRIPTED_GENRES = new Set([
-  "Reality", "Talk Show", "Game Show", "رئالیتی", "تاک‌شو", "مسابقه",
+  "Reality", "Talk Show", "Talk", "Game Show", "رئالیتی", "تاک‌شو", "مسابقه",
 ]);
 
 function isUnscripted(show: Show): boolean {
@@ -106,10 +106,10 @@ export function RadarPage() {
   }));
   const [genre, setGenre] = useState<string | null>(() => readUiState("radar.genre", null));
   const [view, setView] = useState<"grid" | "list" | "compact">(() => readUiState("radar.view", "grid"));
-  const [hideUnscripted, setHideUnscripted] = useState<boolean>(() => readUiState("radar.hideUnscripted", false));
+  const [hideUnscripted, setHideUnscripted] = useState<boolean>(() => readUiState("radar.hideUnscripted", true));
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [language, setLanguage] = useState<string>(() => readUiState("radar.language", "all"));
-  const [country, setCountry] = useState<string>(() => readUiState("radar.country", "all"));
+  const [language, setLanguage] = useState<string>(() => readUiState("radar.language", "en"));
+  const [country, setCountry] = useState<string>(() => readUiState("radar.country", "US"));
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => writeUiState("radar.category", filters.category), [filters.category]);
@@ -149,7 +149,9 @@ export function RadarPage() {
     [favoriteKeys],
   );
 
-  const hasFilters = filters.category !== "all" || !!genre || !!debouncedSearch || hideUnscripted || language !== "all" || country !== "all";
+  // Narrowing filters hide the featured sections; content preferences do not.
+  const hasNarrowingFilters = filters.category !== "all" || !!genre || !!debouncedSearch;
+  const hasFilters = hasNarrowingFilters || hideUnscripted || language !== "all" || country !== "all";
   const activeFilterCount =
     (filters.category !== "all" ? 1 : 0) +
     (genre ? 1 : 0) +
@@ -161,9 +163,9 @@ export function RadarPage() {
   function clearFilters() {
     setSearch("");
     setGenre(null);
-    setHideUnscripted(false);
-    setLanguage("all");
-    setCountry("all");
+    setHideUnscripted(true);
+    setLanguage("en");
+    setCountry("US");
     setFilters({ search: "", category: "all", onlyPopular: true });
   }
 
@@ -177,11 +179,15 @@ export function RadarPage() {
       .filter((show) => {
         if (!show.airstamp) return false;
         const at = new Date(show.airstamp).getTime();
-        return at >= now - 6 * 3_600_000 && at <= weekLater;
+        if (at < now - 6 * 3_600_000 || at > weekLater) return false;
+        if (hideUnscripted && isUnscripted(show)) return false;
+        if (language !== "all" && languageKey(show.language) !== language) return false;
+        if (country !== "all" && (show.countryCode ?? "").toUpperCase() !== country) return false;
+        return true;
       })
       .sort((a, b) => (a.airstamp ?? "").localeCompare(b.airstamp ?? ""))
       .slice(0, 10);
-  }, [favoriteEpisodes.items, now]);
+  }, [favoriteEpisodes.items, now, hideUnscripted, language, country]);
 
   // Tonight = any episode airing on the current Tehran day, from both sources.
   const tonight = useMemo(() => {
@@ -197,10 +203,15 @@ export function RadarPage() {
       posterOriginal?: string | null;
     }> = [];
 
+    // TVMaze schedule shows
     for (const show of schedule.shows) {
       if (!show.airstamp) continue;
       const parts = tehranParts(show.airstamp);
       if (!parts || toIsoDay({ y: parts.y, m: parts.m, d: parts.d }) !== today) continue;
+      // Apply content preferences
+      if (hideUnscripted && isUnscripted(show)) continue;
+      if (language !== "all" && languageKey(show.language) !== language) continue;
+      if (country !== "all" && (show.countryCode ?? "").toUpperCase() !== country) continue;
       found.push({
         key: `tvmaze-${show.id}`,
         title: show.title,
@@ -213,12 +224,17 @@ export function RadarPage() {
       });
     }
 
+    // TMDB live shows (onTheAir and airingToday)
     const seen = new Set<number>();
     for (const show of [...liveTV.airingToday, ...liveTV.onTheAir]) {
       if (seen.has(show.id)) continue;
-      seen.add(show.id);
       const next = show.nextEpisode;
       if (next?.airdate !== today) continue;
+      // Apply content preferences
+      if (hideUnscripted && isUnscripted(show)) continue;
+      if (language !== "all" && languageKey(show.language) !== language) continue;
+      if (country !== "all" && (show.countryCode ?? "").toUpperCase() !== country) continue;
+      seen.add(show.id);
       found.push({
         key: `tmdb-${show.id}`,
         title: show.title,
@@ -234,7 +250,7 @@ export function RadarPage() {
       });
     }
     return found.slice(0, 4);
-  }, [schedule.shows, liveTV.airingToday, liveTV.onTheAir]);
+  }, [schedule.shows, liveTV.airingToday, liveTV.onTheAir, hideUnscripted, language, country]);
 
   const featured = useMemo(() => {
     const byKey = new Map(
@@ -258,6 +274,34 @@ export function RadarPage() {
       limit: 6,
     });
   }, [filtered, now, favorites.items, favoriteKeys, schedule.shows, tonight, liveTV.onTheAir, liveTV.airingToday, dismissedFeatured.keys]);
+
+  // Filter live TV sections with content preferences and date filtering for airingToday
+  const today = useMemo(() => toIsoDay(dateAfterDays(0)), [now]);
+  const filteredOnTheAir = useMemo(() => {
+    return liveTV.onTheAir.filter((show) => {
+      if (hideUnscripted && isUnscripted(show)) return false;
+      if (language !== "all" && languageKey(show.language) !== language) return false;
+      if (country !== "all" && (show.countryCode ?? "").toUpperCase() !== country) return false;
+      return true;
+    }).slice(0, 10);
+  }, [liveTV.onTheAir, hideUnscripted, language, country]);
+
+  const filteredAiringToday = useMemo(() => {
+    return liveTV.airingToday.filter((show) => {
+      const next = show.nextEpisode;
+      if (next?.airdate !== today) return false;
+      if (hideUnscripted && isUnscripted(show)) return false;
+      if (language !== "all" && languageKey(show.language) !== language) return false;
+      if (country !== "all" && (show.countryCode ?? "").toUpperCase() !== country) return false;
+      return true;
+    }).slice(0, 10);
+  }, [liveTV.airingToday, hideUnscripted, language, country, today]);
+
+  // Deduplicate between onTheAir and airingToday (prefer airingToday)
+  const dedupedOnTheAir = useMemo(() => {
+    const airingTodayIds = new Set(filteredAiringToday.map(s => s.id));
+    return filteredOnTheAir.filter(s => !airingTodayIds.has(s.id));
+  }, [filteredOnTheAir, filteredAiringToday]);
 
   return (
     <div className="space-y-6">
@@ -404,7 +448,7 @@ export function RadarPage() {
       </section>
 
       {/* Tonight - a compact highlight built from both data sources */}
-      {tonight.length > 0 && !hasFilters && (
+      {tonight.length > 0 && !hasNarrowingFilters && (
         <section className="rounded-card border border-edge/10 bg-panel/80 p-4">
           <SectionHeader
             className="mb-3"
@@ -442,7 +486,7 @@ export function RadarPage() {
         </section>
       )}
 
-      {featured.length > 0 && !hasFilters && (
+      {featured.length > 0 && !hasNarrowingFilters && (
         <section>
           <SectionHeader
             className="mb-3"
@@ -476,11 +520,11 @@ export function RadarPage() {
       )}
 
       {/* Live TV - On the Air */}
-      {liveTV.onTheAir.length > 0 && !hasFilters && (
+      {dedupedOnTheAir.length > 0 && !hasNarrowingFilters && (
         <section>
           <SectionHeader className="mb-3" title="در حال پخش" description="روی آنتن" />
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-            {liveTV.onTheAir.slice(0, 10).map((show: typeof liveTV.onTheAir[0]) => (
+            {dedupedOnTheAir.map((show: typeof liveTV.onTheAir[0]) => (
               <div key={show.id} className="w-[136px] shrink-0">
                 <ShowCard show={show} favorite={isFavorite(show)} onToggleFavorite={toggle} />
               </div>
@@ -490,11 +534,11 @@ export function RadarPage() {
       )}
 
       {/* Live TV - Airing Today */}
-      {liveTV.airingToday.length > 0 && !hasFilters && (
+      {filteredAiringToday.length > 0 && !hasNarrowingFilters && (
         <section>
           <SectionHeader className="mb-3" title="امروز پخش می‌شود" description="قسمت تازه" />
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-            {liveTV.airingToday.slice(0, 10).map((show: typeof liveTV.airingToday[0]) => (
+            {filteredAiringToday.map((show: typeof liveTV.airingToday[0]) => (
               <div key={show.id} className="w-[136px] shrink-0">
                 <ShowCard show={show} favorite={isFavorite(show)} onToggleFavorite={toggle} />
               </div>
@@ -504,7 +548,7 @@ export function RadarPage() {
       )}
 
       {/* This Week - Personal Calendar */}
-      {thisWeek.length > 0 && !hasFilters && (
+      {thisWeek.length > 0 && !hasNarrowingFilters && (
         <section>
           <SectionHeader
             className="mb-3"
