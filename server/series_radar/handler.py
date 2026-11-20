@@ -163,13 +163,14 @@ class Handler(BaseHTTPRequestHandler):
                             pass
                 return self.send_json({"episodes": all_episodes})
             if path == "/api/tv/on_the_air":
-                data = localized_collection("/tv/on_the_air", {"page": 1}, cache_ttl=1800, cache_key_extra="ontheair")
-                shows = [norm_tv_show(s) for s in (data.get("results") or [])[:50]]
+                # Fetch first 3 pages (≈60 items) to include popular shows beyond page 1
+                data = localized_collection("/tv/on_the_air", {}, cache_ttl=1800, cache_key_extra="ontheair", max_pages=3)
+                shows = [norm_tv_show(s) for s in (data.get("results") or [])[:60]]
                 shows = enrich_tv_meta(shows)
                 return self.send_json({"results": shows})
             if path == "/api/tv/airing_today":
-                data = localized_collection("/tv/airing_today", {"page": 1}, cache_ttl=900, cache_key_extra="airingtoday")
-                shows = [norm_tv_show(s) for s in (data.get("results") or [])[:50]]
+                data = localized_collection("/tv/airing_today", {}, cache_ttl=900, cache_key_extra="airingtoday", max_pages=3)
+                shows = [norm_tv_show(s) for s in (data.get("results") or [])[:60]]
                 shows = enrich_tv_meta(shows)
                 return self.send_json({"results": shows})
             if path == "/api/tv/search":

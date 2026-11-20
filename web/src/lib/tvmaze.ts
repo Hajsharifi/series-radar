@@ -112,11 +112,12 @@ function toShow(episode: TvmazeEpisode): Show {
   };
 }
 
-function fromEpisodes(episodes: TvmazeEpisode[]): Show[] {
+function fromEpisodes(episodes: TvmazeEpisode[], includeMidSeason = false): Show[] {
   const seen = new Set<number>();
   const items: Show[] = [];
   for (const episode of episodes) {
-    if (!episode?.airdate || episode.number !== 1) continue;
+    if (!episode?.airdate) continue;
+    if (!includeMidSeason && episode.number !== 1) continue;
     const show = episode._embedded?.show ?? episode.show;
     if (!show || !keepShow(show)) continue;
     if (seen.has(show.id)) continue;
@@ -236,7 +237,8 @@ export async function refreshNearby(): Promise<ScheduleSnapshot | null> {
   for (const result of settled) {
     if (result.status === "fulfilled" && Array.isArray(result.value)) episodes.push(...result.value);
   }
-  const incoming = fromEpisodes(episodes);
+  // Include mid-season episodes for today/tomorrow to capture ongoing series
+  const incoming = fromEpisodes(episodes, true);
   if (incoming.length === 0) return null;
 
   const base = readCache();
@@ -250,7 +252,8 @@ export async function refreshNearby(): Promise<ScheduleSnapshot | null> {
 /** Full refresh: the complete upcoming schedule (~2.7 MB gzip, every 6 hours). */
 export async function refreshFull(): Promise<ScheduleSnapshot> {
   const episodes = await getJson<TvmazeEpisode[]>(`${API}/schedule/full`, 45000);
-  let items = fromEpisodes(episodes);
+  // Include mid-season episodes for better coverage of ongoing series
+  let items = fromEpisodes(episodes, true);
   if (items.length === 0) throw new Error("پاسخ منبع داده خالی بود");
   // Supplement with TMDB TV shows for streaming-only and international series
   items = await enrichWithTMDBTV(items);

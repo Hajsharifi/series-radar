@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Copy, Download, ExternalLink, RefreshCw } from "lucide-react";
+import { Check, Copy, Download, ExternalLink, RefreshCw, ChevronDown } from "lucide-react";
 import { useDownloads } from "../hooks/useDownloads";
 import { openExternalUrl } from "../lib/native";
 import { relativeSyncLabel, toPersianDigits } from "../lib/date";
@@ -8,6 +8,7 @@ import {
   type DownloadEpisode,
   type DownloadLink,
   type DownloadPayload,
+  type DownloadSeason,
 } from "../lib/downloads";
 
 function LinkButton({ link }: { link: DownloadLink }) {
@@ -51,26 +52,119 @@ function LinkButton({ link }: { link: DownloadLink }) {
   );
 }
 
-function EpisodeRow({ episode }: { episode: DownloadEpisode }) {
+
+
+/** Groups episodes by number and collects qualities for each episode */
+function groupEpisodesByNumber(episodes: DownloadEpisode[]): Map<number, { episode: DownloadEpisode; qualities: DownloadEpisode[] }> {
+  const map = new Map<number, { episode: DownloadEpisode; qualities: DownloadEpisode[] }>();
+  for (const ep of episodes) {
+    const existing = map.get(ep.number);
+    if (!existing) {
+      map.set(ep.number, { episode: ep, qualities: [ep] });
+    } else {
+      existing.qualities.push(ep);
+    }
+  }
+  return map;
+}
+
+/** Merges seasons with same number (e.g., dubbled + hardsub for season 1) */
+function mergeSeasons(seasons: DownloadSeason[]): DownloadSeason[] {
+  const map = new Map<number, DownloadSeason>();
+  for (const season of seasons) {
+    const existing = map.get(season.number);
+    if (!existing) {
+      map.set(season.number, { ...season });
+    } else {
+      // Merge groups from same season number
+      existing.groups.push(...season.groups);
+      existing.label = season.label || existing.label;
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => (a.number || 0) - (b.number || 0));
+}
+
+function SeasonNode({ 
+  season, 
+  defaultOpen = false,
+  hasNewLinks = false
+}: { 
+  season: DownloadSeason; 
+  defaultOpen?: boolean;
+  hasNewLinks?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const totalEpisodes = season.groups.reduce((sum, g) => sum + (g.episodes?.length || 0), 0);
+  const qualities = new Set<string>();
+  season.groups.forEach(g => g.quality?.forEach(q => qualities.add(q)));
+  
   return (
-    <div className="rounded-xl border border-edge/10 bg-black/20 p-2.5">
-      <div className="mb-1.5 flex flex-wrap items-center gap-2">
-        <span className="rounded-md bg-emerald-400/12 px-2 py-0.5 text-micro font-semibold text-emerald-300">
-          {episode.label}
-        </span>
-        <span
-          className="truncate text-micro text-muted"
-          dir="ltr"
-          style={{ unicodeBidi: "isolate" }}
-        >
-          {episode.quality}
-        </span>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {episode.links.map((link) => (
-          <LinkButton key={link.id} link={link} />
-        ))}
-      </div>
+    <div className="rounded-xl border border-edge/10 bg-black/15 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        className="w-full flex items-center justify-between gap-2 p-3 text-right"
+      >
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5 text-caption font-semibold text-white">
+            {season.label}
+          </span>
+          {totalEpisodes > 0 && (
+            <span className="rounded-full bg-white/8 px-2 py-0.5 text-micro text-ink-200">
+              {toPersianDigits(totalEpisodes)} قسمت
+            </span>
+          )}
+          {qualities.size > 0 && (
+            <span className="text-micro text-muted">
+              {Array.from(qualities).join("، ")}
+            </span>
+          )}
+          {hasNewLinks && (
+            <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-micro font-semibold text-emerald-300">
+              لینک تازه
+            </span>
+          )}
+        </div>
+        <ChevronDown 
+          className={`h-4 w-4 text-muted transition-transform ${isOpen ? "rotate-180" : ""}`} 
+          strokeWidth={1.8} 
+        />
+      </button>
+      
+      {isOpen && (
+        <div className="space-y-2 p-3 border-t border-edge/10">
+          {season.groups.map((group, groupIndex) => (
+            <div key={`${group.id}-${groupIndex}`} className="space-y-2">
+              <p className="text-micro text-ink-300">{group.label}</p>
+              <div className="space-y-2">
+                {(() => {
+                  const epMap = groupEpisodesByNumber(group.episodes || []);
+                  return Array.from(epMap.entries())
+                    .sort((a, b) => a[0] - b[0])
+                    .map(([num, { episode, qualities }]) => (
+                      <div key={num} className="rounded-xl border border-edge/10 bg-black/20 p-2.5">
+                        <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                          <span className="rounded-md bg-emerald-400/12 px-2 py-0.5 text-micro font-semibold text-emerald-300">
+                            {episode.label}
+                          </span>
+                          <span className="text-micro text-muted">
+                            {qualities.map(q => q.quality).join("، ")}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {qualities.flatMap(q => q.links).map((link) => (
+                            <LinkButton key={link.id} link={link} />
+                          ))}
+                        </div>
+                      </div>
+                    ));
+                })()}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -99,21 +193,25 @@ export function DownloadLinksBody({ payload }: { payload: DownloadPayload }) {
           ))}
         </div>
       ))}
-      {payload.seasons?.map((season, seasonIndex) => (
-        <div key={`${season.number}-${seasonIndex}`} className="space-y-2">
-          <p className="text-caption font-semibold text-ink-100">{season.label}</p>
-          {season.groups.map((group, groupIndex) => (
-            <div key={`${group.id}-${groupIndex}`} className="space-y-2">
-              <p className="text-micro text-ink-300">{group.label}</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {group.episodes?.map((episode) => (
-                  <EpisodeRow key={`${episode.number}-${episode.quality}`} episode={episode} />
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      ))}
+      {payload.seasons?.length && (() => {
+        const mergedSeasons = mergeSeasons(payload.seasons!);
+        // Find season with new links to open by default
+        const seasonWithNewLinks = mergedSeasons.findIndex(s => 
+          s.groups.some(g => g.episodes?.some(ep => ep.links.length > 0))
+        );
+        return (
+          <>
+            {mergedSeasons.map((season, seasonIndex) => (
+              <SeasonNode
+                key={`${season.number}-${seasonIndex}`}
+                season={season}
+                defaultOpen={seasonIndex === 0 || seasonIndex === seasonWithNewLinks}
+                hasNewLinks={season.groups.some(g => g.episodes?.some(ep => ep.links.length > 0))}
+              />
+            ))}
+          </>
+        );
+      })()}
     </div>
   );
 }
