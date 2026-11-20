@@ -4,7 +4,7 @@ import type { Movie, MovieTab } from "../types";
 import { useMovieCatalog, useMovieFavorites } from "../hooks/useMovies";
 import { useDebounced } from "../hooks/useSchedule";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
-import { movieStage, searchMovies, tehranTodayISO } from "../lib/movies";
+import { moviePrimaryDate, movieStage, searchMovies, tehranTodayISO } from "../lib/movies";
 import { toPersianDigits } from "../lib/date";
 import { readUiState, writeUiState } from "../lib/ui-state";
 import { RelativeUpdated } from "../components/DateChip";
@@ -23,6 +23,13 @@ const TABS: Array<{ key: MovieTab; label: string; hint: string }> = [
 ];
 
 type QualityFilter = "all" | "dated" | "undated";
+type MovieSort = "date" | "rating" | "popularity" | "alphabetical";
+const MOVIE_SORTS: Array<{ key: MovieSort; label: string }> = [
+  { key: "date", label: "تاریخ" },
+  { key: "rating", label: "امتیاز" },
+  { key: "popularity", label: "محبوبیت" },
+  { key: "alphabetical", label: "الفبا" },
+];
 
 const GENRES = ["Action", "Adventure", "Animation", "Comedy", "Crime", "Documentary", "Drama", "Family", "Fantasy", "History", "Horror", "Music", "Mystery", "Romance", "Science Fiction", "TV Movie", "Thriller", "War", "Western"];
 
@@ -33,6 +40,7 @@ export function MoviesPage() {
   const [qualityFilter, setQualityFilter] = useState<QualityFilter>(() => readUiState("movies.qualityFilter", "all"));
   const [query, setQuery] = useState("");
   const [genre, setGenre] = useState<string | null>(() => readUiState("movies.genre", null));
+  const [sortBy, setSortBy] = useState<MovieSort>(() => readUiState("movies.sortBy", "date"));
   const [remote, setRemote] = useState<Movie[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState(false);
@@ -43,6 +51,7 @@ export function MoviesPage() {
   useEffect(() => writeUiState("movies.tab", tab), [tab]);
   useEffect(() => writeUiState("movies.qualityFilter", qualityFilter), [qualityFilter]);
   useEffect(() => writeUiState("movies.genre", genre), [genre]);
+  useEffect(() => writeUiState("movies.sortBy", sortBy), [sortBy]);
 
   usePullToRefresh(() => catalog.refresh(), { threshold: 80 });
 
@@ -95,13 +104,32 @@ export function MoviesPage() {
     const local = (tab === "quality" ? catalog.qualityItems : catalog.upcomingItems)
       .filter(inTab)
       .filter(matches);
-    if (!searchingActive) return local;
-    const ids = new Set(local.map((movie) => movie.id));
-    return [
-      ...local,
-      ...remote.filter((movie) => !ids.has(movie.id) && inTab(movie) && matches(movie)),
-    ];
-  }, [catalog.qualityItems, catalog.upcomingItems, tab, debounced, genre, searchingActive, remote]);
+    let result: Movie[];
+    if (!searchingActive) {
+      result = local;
+    } else {
+      const ids = new Set(local.map((movie) => movie.id));
+      result = [
+        ...local,
+        ...remote.filter((movie) => !ids.has(movie.id) && inTab(movie) && matches(movie)),
+      ];
+    }
+    const byDate = (a: Movie, b: Movie) => {
+      const da = moviePrimaryDate(a, tab === "upcoming" ? "upcoming" : "quality") ?? "9999";
+      const db = moviePrimaryDate(b, tab === "upcoming" ? "upcoming" : "quality") ?? "9999";
+      return da.localeCompare(db);
+    };
+    if (sortBy === "rating") {
+      return [...result].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0) || (b.votes ?? 0) - (a.votes ?? 0));
+    }
+    if (sortBy === "popularity") {
+      return [...result].sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0));
+    }
+    if (sortBy === "alphabetical") {
+      return [...result].sort((a, b) => a.title.localeCompare(b.title, "fa"));
+    }
+    return [...result].sort(byDate);
+  }, [catalog.qualityItems, catalog.upcomingItems, tab, debounced, genre, searchingActive, remote, sortBy]);
 
   const otherStageCount = useMemo(() => {
     if (!searchingActive) return 0;
@@ -257,7 +285,19 @@ export function MoviesPage() {
               </button>
             ))}
           </div>
-          <p className="text-caption text-ink-300">{activeTab.hint}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-caption text-ink-300">{activeTab.hint}</span>
+            <select
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value as MovieSort)}
+              aria-label="مرتب سازی فیلمها"
+              className="mr-auto rounded-lg border border-white/10 bg-black/30 px-2.5 py-1 text-caption text-ink-200 focus:border-sky-400/60 focus:outline-none"
+            >
+              {MOVIE_SORTS.map((item) => (
+                <option key={item.key} value={item.key}>{item.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </section>
 

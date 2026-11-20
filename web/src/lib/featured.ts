@@ -131,11 +131,10 @@ export function rankFeaturedSuggestions(
       });
       taste = hits / genres.size;
     }
-    // Weights are redistributed when there is no taste signal, so the ranking
-    // never silently treats "0" as a real preference.
-    const score = favoriteGenres.size
-      ? 0.4 * quality + 0.2 * popularity + 0.2 * proximity + 0.1 * confidence + 0.1 * taste
-      : 0.45 * quality + 0.22 * popularity + 0.22 * proximity + 0.11 * confidence;
+    // Rating first: quality (a lower confidence bound on the rating) dominates,
+    // with vote confidence and a little popularity as tie-breakers. Air-date
+    // proximity and taste no longer drive the ranking.
+    const score = 0.78 * quality + 0.17 * confidence + 0.05 * popularity;
     return { show, score, quality, popularity, proximity, taste, days };
   });
 
@@ -165,10 +164,10 @@ export function rankFeaturedSuggestions(
     const reasons: string[] = [];
     const event = showEventKind(entry.show);
     if (event !== "airing") reasons.push(EVENT_LABEL[event]);
-    if (entry.days <= 3) reasons.push("پخش نزدیک");
     if (entry.quality >= 8) reasons.push("امتیاز بالا");
     else if (entry.quality >= 7.2) reasons.push("امتیاز خوب");
     if (entry.taste >= 0.5) reasons.push("مطابق سلیقه");
+    if (entry.days <= 3) reasons.push("پخش نزدیک");
     if (entry.popularity >= 0.75) reasons.push("محبوب");
     return {
       show: entry.show,

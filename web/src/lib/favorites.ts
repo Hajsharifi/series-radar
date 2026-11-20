@@ -12,10 +12,26 @@ export interface StoredFavorite {
   reminderEnabled: boolean;
   reminderLeadHours: number;
   addedAt: string;
+  /** Normalized title used to keep one card per real show across TVmaze/TMDB ids. */
+  identity?: string;
 }
 
 export function favoriteKey(showId: number, source: FavoriteSource = "tvmaze"): string {
   return `${source}:${showId}`;
+}
+
+/** Normalize a title so the same show from TVMaze and TMDB maps to one identity. */
+export function titleIdentity(title?: string | null): string {
+  if (!title) return "";
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/[ئإأآ]/g, "ا")
+    .replace(/ي/g, "ی")
+    .replace(/ك/g, "ک")
+    .replace(/ة/g, "ه")
+    .replace(/[^a-z0-9\u0600-\u06ff]+/g, "")
+    .slice(0, 120);
 }
 
 export function favoriteSource(source?: string | null): FavoriteSource {
@@ -31,6 +47,7 @@ function normalize(item: Partial<StoredFavorite> & { showId: number }): StoredFa
       ? item.reminderLeadHours
       : getSettings().defaultLeadHours,
     addedAt: item.addedAt ?? new Date().toISOString(),
+    identity: item.identity || undefined,
   };
 }
 
@@ -94,25 +111,64 @@ export function isFavorite(showId: number, source: FavoriteSource = "tvmaze"): b
   return read().some((item) => item.showId === showId && item.source === source);
 }
 
-export function addFavorite(showId: number, source: FavoriteSource = "tvmaze"): void {
+export function addFavorite(
+  showId: number,
+  source: FavoriteSource = "tvmaze",
+  title?: string | null,
+): void {
   const items = read();
   if (items.some((item) => item.showId === showId && item.source === source)) return;
+  const identity = titleIdentity(title);
+  // One card per real show: if the same title is already starred from the other
+  // source, migrate that entry to this one instead of adding a duplicate card.
+  if (identity) {
+    const duplicate = items.find((item) => (item.identity || "") === identity);
+    if (duplicate) {
+      duplicate.showId = showId;
+      duplicate.source = source;
+      duplicate.identity = identity;
+      write(items);
+      return;
+    }
+  }
   items.push({
     showId,
     source,
     reminderEnabled: true,
     reminderLeadHours: getSettings().defaultLeadHours,
     addedAt: new Date().toISOString(),
+    identity: identity || undefined,
   });
   write(items);
+}
+
+/** Repair legacy lists that already contain the same show from two sources.
+ * Keeps the entry with the earlier addedAt so reminder settings stay stable. */
+export function dedupeFavorites(resolveTitle: (item: StoredFavorite) => string | null): void {
+  const items = read();
+  const seen = new Map<string, StoredFavorite>();
+  const kept: StoredFavorite[] = [];
+  for (const item of items) {
+    const identity = item.identity || titleIdentity(resolveTitle(item));
+    if (identity) item.identity = identity;
+    if (identity && seen.has(identity)) continue;
+    if (identity) seen.set(identity, item);
+    kept.push(item);
+  }
+  if (kept.length !== items.length) write(kept);
 }
 
 export function removeFavorite(showId: number, source: FavoriteSource = "tvmaze"): void {
   write(read().filter((item) => !(item.showId === showId && item.source === source)));
 }
 
-export function toggleFavorite(showId: number, source: FavoriteSource, enabled: boolean): void {
-  if (enabled) addFavorite(showId, source);
+export function toggleFavorite(
+  showId: number,
+  source: FavoriteSource,
+  enabled: boolean,
+  title?: string | null,
+): void {
+  if (enabled) addFavorite(showId, source, title);
   else removeFavorite(showId, source);
 }
 

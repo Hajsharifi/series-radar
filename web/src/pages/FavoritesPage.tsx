@@ -22,7 +22,7 @@ import {
   type MovieRemoval,
 } from "../lib/movie-removals";
 import type { Movie, Show } from "../types";
-import { favoriteKey } from "../lib/favorites";
+import { favoriteKey, titleIdentity } from "../lib/favorites";
 import { ShowRow } from "../components/ShowCard";
 import { MovieRow } from "../components/MovieCard";
 import { MovieHistoryPageLink } from "../components/MovieHistoryLink";
@@ -77,7 +77,13 @@ export function FavoritesPage() {
       )[0];
       if (chosen) merged.push(chosen);
     }
-    return merged
+    // One card per real show even if the stored list still holds both sources.
+    const unique = new Map<string, Show>();
+    for (const show of merged) {
+      const id = titleIdentity(show.title) || favoriteKey(show.id, show.source ?? "tvmaze");
+      if (!unique.has(id)) unique.set(id, show);
+    }
+    return Array.from(unique.values())
       .filter((show) => show.title.toLowerCase().includes(query.trim().toLowerCase()))
       .sort((a, b) => {
         const aStamp = a.airstamp ? new Date(a.airstamp).getTime() : Number.MAX_SAFE_INTEGER;
@@ -315,7 +321,7 @@ export function FavoritesPage() {
                 key={favoriteKey(show.id, show.source ?? "tvmaze")}
                 show={show}
                 favorite
-                onToggleFavorite={() => favorites.toggle(show.id, show.source ?? "tvmaze")}
+                onToggleFavorite={() => favorites.toggle(show.id, show.source ?? "tvmaze", show.title)}
               />
             ))}
           </div>

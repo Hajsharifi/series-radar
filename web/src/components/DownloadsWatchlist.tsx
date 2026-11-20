@@ -3,7 +3,7 @@ import { useFavorites } from "../hooks/useFavorites";
 import { useFavoriteEpisodes } from "../hooks/useFavoriteEpisodes";
 import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useMovieCatalog, useMovieFavorites } from "../hooks/useMovies";
-import { favoriteKey } from "../lib/favorites";
+import { dedupeFavorites, favoriteKey } from "../lib/favorites";
 import { movieDownloadKey, seriesDownloadKey } from "../lib/downloads";
 import { getMovieRemovals, subscribeMovieRemovals } from "../lib/movie-removals";
 import { getSettings } from "../lib/settings";
@@ -28,6 +28,19 @@ export function DownloadsWatchlist() {
     sync();
     return subscribeMovieRemovals(sync);
   }, []);
+
+  // Repair lists that already contain the same show from both TVMaze and TMDB.
+  // Resolves titles from the live data we already have here, without extra calls.
+  useEffect(() => {
+    if (schedule.shows.length === 0 && episodes.byKey.size === 0 && catalog.byId.size === 0) return;
+    dedupeFavorites((item) => {
+      const key = favoriteKey(item.showId, item.source);
+      const show = schedule.shows.find((s) => favoriteKey(s.id, s.source ?? "tvmaze") === key)
+        ?? episodes.byKey.get(key);
+      if (show?.title) return show.title;
+      return null;
+    });
+  }, [favorites.items, schedule.shows, episodes.byKey, catalog.byId]);
 
   useEffect(() => {
     const sync = () => setSettingsVersion((value) => value + 1);
@@ -89,7 +102,7 @@ export function DownloadsWatchlist() {
       }
     }
 
-    return Array.from(byKey.values()).slice(0, 20);
+    return Array.from(byKey.values()).slice(0, 40);
   }, [favorites.items, movieFavorites.items, schedule.shows, episodes.byKey, catalog.byId, removals]);
 
   useEffect(() => {

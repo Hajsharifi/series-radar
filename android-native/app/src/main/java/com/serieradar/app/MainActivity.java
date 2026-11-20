@@ -302,6 +302,10 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void syncDownloadWatchlist(String payload) {
             DownloadsScheduler.sync(getApplicationContext(), payload);
+            // Check right away when the starred list changes, so a newly
+            // starred title does not wait up to an hour for its first notice.
+            // triggerNow is internally throttled to one run per 30 seconds.
+            DownloadsScheduler.triggerNow(getApplicationContext());
         }
 
         @JavascriptInterface

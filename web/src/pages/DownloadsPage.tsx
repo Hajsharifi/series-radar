@@ -86,7 +86,7 @@ export default function DownloadsPage() {
         route: detailRouteFor(key),
       });
     }
-    return Array.from(byKey.values()).slice(0, 20);
+    return Array.from(byKey.values()).slice(0, 40);
   }, [favorites.items, movieFavorites.items, schedule.shows, episodes.byKey, catalog.byId, removals]);
 
   const { items, loading, refreshing, error, refresh } = useDownloads(

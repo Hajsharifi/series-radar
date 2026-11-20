@@ -32,16 +32,16 @@ export function useFavorites() {
   const ids = new Set(items.filter((item) => item.source === "tvmaze").map((item) => item.showId));
   const keys = new Set(items.map((item) => favoriteKey(item.showId, item.source)));
 
-  const toggle = useCallback((showId: number, source: FavoriteSource = "tvmaze") => {
+  const toggle = useCallback((showId: number, source: FavoriteSource = "tvmaze", title?: string | null) => {
     const enabled = !isFavorite(showId, source);
-    persistToggle(showId, source, enabled);
+    persistToggle(showId, source, enabled, title);
     if (enabled) requestNotificationPermission();
     setItems(getFavorites());
     return enabled;
   }, []);
 
-  const add = useCallback((showId: number, source: FavoriteSource = "tvmaze") => {
-    addFavorite(showId, source);
+  const add = useCallback((showId: number, source: FavoriteSource = "tvmaze", title?: string | null) => {
+    addFavorite(showId, source, title);
     requestNotificationPermission();
     setItems(getFavorites());
   }, []);

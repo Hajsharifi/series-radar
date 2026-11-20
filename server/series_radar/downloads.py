@@ -26,7 +26,7 @@ from .http import fetch_json, tmdb_get
 SOURCE = "https://www.myf2ms.top"
 SOURCE_UA = UA + " SeriesRadar/1.0"
 TIMEOUT = 18
-MAX_KEYS = 20
+MAX_KEYS = 40
 CACHE_PREFIX = "dl:v1:"
 CACHE_FOUND = 1800
 CACHE_NONE = 900

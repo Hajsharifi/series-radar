@@ -23,8 +23,6 @@ import {
   jalaliDate,
   jalaliFromStamp,
   dateAfterDays,
-  tehranClock,
-  tehranParts,
   toIsoDay,
 } from "../lib/date";
 import type { Show } from "../types";
@@ -42,6 +40,14 @@ const FILTERS: Array<{ key: ShowFilters["category"]; label: string }> = [
 ];
 
 const GENRES = ["Drama", "Comedy", "Crime", "Thriller", "Sci-Fi", "Fantasy", "Animation", "Documentary"];
+
+type RadarSort = "date" | "rating" | "popularity" | "alphabetical";
+const SORT_OPTIONS: Array<{ key: RadarSort; label: string }> = [
+  { key: "date", label: "تاریخ پخش" },
+  { key: "rating", label: "امتیاز" },
+  { key: "popularity", label: "محبوبیت" },
+  { key: "alphabetical", label: "الفبا" },
+];
 
 const UNSCRIPTED_GENRES = new Set([
   "Reality", "Talk Show", "Talk", "Game Show", "رئالیتی", "تاک‌شو", "مسابقه",
@@ -107,6 +113,7 @@ export function RadarPage() {
   const [genre, setGenre] = useState<string | null>(() => readUiState("radar.genre", null));
   const [view, setView] = useState<"grid" | "list" | "compact">(() => readUiState("radar.view", "grid"));
   const [hideUnscripted, setHideUnscripted] = useState<boolean>(() => readUiState("radar.hideUnscripted", true));
+  const [sortBy, setSortBy] = useState<RadarSort>(() => readUiState("radar.sortBy", "date"));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [language, setLanguage] = useState<string>(() => readUiState("radar.language", "en"));
   const [country, setCountry] = useState<string>(() => readUiState("radar.country", "US"));
@@ -117,6 +124,7 @@ export function RadarPage() {
   useEffect(() => writeUiState("radar.genre", genre), [genre]);
   useEffect(() => writeUiState("radar.view", view), [view]);
   useEffect(() => writeUiState("radar.hideUnscripted", hideUnscripted), [hideUnscripted]);
+  useEffect(() => writeUiState("radar.sortBy", sortBy), [sortBy]);
   useEffect(() => writeUiState("radar.language", language), [language]);
   useEffect(() => writeUiState("radar.country", country), [country]);
 
@@ -134,14 +142,22 @@ export function RadarPage() {
     if (hideUnscripted) base = base.filter((show) => !isUnscripted(show));
     if (language !== "all") base = base.filter((show) => languageKey(show.language) === language);
     if (country !== "all") base = base.filter((show) => (show.countryCode ?? "").toUpperCase() === country);
+    // Apply the chosen sort after filtering (filterShows already sorts by date).
+    if (sortBy === "rating") {
+      base = [...base].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0) || (b.votes ?? 0) - (a.votes ?? 0));
+    } else if (sortBy === "popularity") {
+      base = [...base].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0));
+    } else if (sortBy === "alphabetical") {
+      base = [...base].sort((a, b) => a.title.localeCompare(b.title, "fa"));
+    }
     return base;
-  }, [schedule.shows, effectiveFilters, genre, hideUnscripted, language, country, now]);
+  }, [schedule.shows, effectiveFilters, genre, hideUnscripted, language, country, now, sortBy]);
 
   const groups = useMemo(() => groupShows(filtered, now), [filtered, now]);
   const todayLabel = useMemo(() => jalaliFromStamp(new Date(now).toISOString()), [now]);
 
   const toggle = useCallback(
-    (show: Show) => favorites.toggle(show.id, show.source ?? "tvmaze"),
+    (show: Show) => favorites.toggle(show.id, show.source ?? "tvmaze", show.title),
     [favorites],
   );
   const isFavorite = useCallback(
@@ -189,69 +205,6 @@ export function RadarPage() {
       .slice(0, 10);
   }, [favoriteEpisodes.items, now, hideUnscripted, language, country]);
 
-  // Tonight = any episode airing on the current Tehran day, from both sources.
-  const tonight = useMemo(() => {
-    const today = toIsoDay(dateAfterDays(0));
-    const found: Array<{
-      key: string;
-      title: string;
-      subtitle: string;
-      clock: string;
-      path: string;
-      source: "tmdb" | "tvmaze";
-      posterPath?: string | null;
-      posterOriginal?: string | null;
-    }> = [];
-
-    // TVMaze schedule shows
-    for (const show of schedule.shows) {
-      if (!show.airstamp) continue;
-      const parts = tehranParts(show.airstamp);
-      if (!parts || toIsoDay({ y: parts.y, m: parts.m, d: parts.d }) !== today) continue;
-      // Apply content preferences
-      if (hideUnscripted && isUnscripted(show)) continue;
-      if (language !== "all" && languageKey(show.language) !== language) continue;
-      if (country !== "all" && (show.countryCode ?? "").toUpperCase() !== country) continue;
-      found.push({
-        key: `tvmaze-${show.id}`,
-        title: show.title,
-        subtitle: show.seasonNumber ? `فصل ${toPersianDigits(show.seasonNumber)}` : show.network ?? "سریال",
-        clock: tehranClock(show.airstamp),
-        path: `/show/${show.id}`,
-        source: "tvmaze",
-        posterPath: show.posterPath,
-        posterOriginal: show.posterOriginal,
-      });
-    }
-
-    // TMDB live shows (onTheAir and airingToday)
-    const seen = new Set<number>();
-    for (const show of [...liveTV.airingToday, ...liveTV.onTheAir]) {
-      if (seen.has(show.id)) continue;
-      const next = show.nextEpisode;
-      if (next?.airdate !== today) continue;
-      // Apply content preferences
-      if (hideUnscripted && isUnscripted(show)) continue;
-      if (language !== "all" && languageKey(show.language) !== language) continue;
-      if (country !== "all" && (show.countryCode ?? "").toUpperCase() !== country) continue;
-      seen.add(show.id);
-      found.push({
-        key: `tmdb-${show.id}`,
-        title: show.title,
-        subtitle:
-          next.season && next.number
-            ? `فصل ${toPersianDigits(next.season)} · قسمت ${toPersianDigits(next.number)}`
-            : show.network ?? "سریال",
-        clock: "امروز",
-        path: `/tv/${show.id}`,
-        source: "tmdb",
-        posterPath: show.posterPath,
-        posterOriginal: show.posterOriginal,
-      });
-    }
-    return found.slice(0, 4);
-  }, [schedule.shows, liveTV.airingToday, liveTV.onTheAir, hideUnscripted, language, country]);
-
   const featured = useMemo(() => {
     const byKey = new Map(
       schedule.shows.map((show) => [favoriteKey(show.id, show.source ?? "tvmaze"), show]),
@@ -260,10 +213,6 @@ export function RadarPage() {
       (item) => byKey.get(favoriteKey(item.showId, item.source))?.genres ?? [],
     );
     const excludedKeys = new Set<string>();
-    tonight.forEach((item) => {
-      const [source, id] = item.key.split("-");
-      excludedKeys.add(`${source}:${id}`);
-    });
     [...liveTV.onTheAir, ...liveTV.airingToday].forEach((show) => excludedKeys.add(`tmdb:${show.id}`));
     return rankFeaturedSuggestions(filtered, {
       now,
@@ -273,21 +222,23 @@ export function RadarPage() {
       dismissedKeys: dismissedFeatured.keys,
       limit: 6,
     });
-  }, [filtered, now, favorites.items, favoriteKeys, schedule.shows, tonight, liveTV.onTheAir, liveTV.airingToday, dismissedFeatured.keys]);
+  }, [filtered, now, favorites.items, favoriteKeys, schedule.shows, liveTV.onTheAir, liveTV.airingToday, dismissedFeatured.keys]);
 
   // Filter live TV sections with content preferences and date filtering for airingToday
   const today = useMemo(() => toIsoDay(dateAfterDays(0)), [now]);
   const filteredOnTheAir = useMemo(() => {
     return liveTV.onTheAir.filter((show) => {
+      if (!favoriteKeys.has(favoriteKey(show.id, "tmdb"))) return false;
       if (hideUnscripted && isUnscripted(show)) return false;
       if (language !== "all" && languageKey(show.language) !== language) return false;
       if (country !== "all" && (show.countryCode ?? "").toUpperCase() !== country) return false;
       return true;
     }).slice(0, 10);
-  }, [liveTV.onTheAir, hideUnscripted, language, country]);
+  }, [liveTV.onTheAir, favoriteKeys, hideUnscripted, language, country]);
 
   const filteredAiringToday = useMemo(() => {
     return liveTV.airingToday.filter((show) => {
+      if (!favoriteKeys.has(favoriteKey(show.id, "tmdb"))) return false;
       const next = show.nextEpisode;
       if (next?.airdate !== today) return false;
       if (hideUnscripted && isUnscripted(show)) return false;
@@ -295,7 +246,7 @@ export function RadarPage() {
       if (country !== "all" && (show.countryCode ?? "").toUpperCase() !== country) return false;
       return true;
     }).slice(0, 10);
-  }, [liveTV.airingToday, hideUnscripted, language, country, today]);
+  }, [liveTV.airingToday, favoriteKeys, hideUnscripted, language, country, today]);
 
   // Deduplicate between onTheAir and airingToday (prefer airingToday)
   const dedupedOnTheAir = useMemo(() => {
@@ -338,6 +289,16 @@ export function RadarPage() {
             ) : undefined}
           />
           </div>
+          <select
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value as RadarSort)}
+            aria-label="مرتب سازی"
+            className="h-10 shrink-0 rounded-control border border-edge/12 bg-black/20 px-2 text-caption text-ink-200 focus:border-brand/60 focus:outline-none"
+          >
+            {SORT_OPTIONS.map((item) => (
+              <option key={item.key} value={item.key}>{item.label}</option>
+            ))}
+          </select>
           <Button
             variant="secondary"
             size="icon"
@@ -446,45 +407,6 @@ export function RadarPage() {
           </div>
         )}
       </section>
-
-      {/* Tonight - a compact highlight built from both data sources */}
-      {tonight.length > 0 && !hasNarrowingFilters && (
-        <section className="rounded-card border border-edge/10 bg-panel/80 p-4">
-          <SectionHeader
-            className="mb-3"
-            eyebrow={todayLabel}
-            title="امشب به وقت تهران"
-            action={
-              <Link to="/calendar" className="sr-no-tap rounded-control border border-edge/12 bg-white/5 px-3 py-1.5 text-caption text-ink-200">
-                تقویم هفت روزه
-              </Link>
-            }
-          />
-          <div className="grid gap-2 sm:grid-cols-2">
-            {tonight.map((item) => (
-              <Link key={item.key} to={item.path} className="sr-no-tap flex items-center gap-3 rounded-control border border-edge/10 bg-black/15 p-2.5">
-                <Poster
-                  show={{
-                    id: Number(item.key.replace(/\D/g, "")) || 0,
-                    title: item.title,
-                    posterPath: item.posterPath,
-                    posterOriginal: item.posterOriginal,
-                    category: "returning",
-                    source: item.source,
-                  }}
-                  className="h-14 w-11 shrink-0 rounded-lg"
-                  rounded="rounded-lg"
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-1 text-title text-white" dir="auto">{item.title}</p>
-                  <p className="mt-0.5 line-clamp-1 text-caption text-muted">{item.subtitle}</p>
-                </div>
-                <span className="shrink-0 text-caption font-bold tabular-nums text-brand">{item.clock}</span>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
 
       {featured.length > 0 && !hasNarrowingFilters && (
         <section>

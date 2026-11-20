@@ -103,7 +103,7 @@ export async function fetchDownloads(
   keys: string[],
   refresh = false,
 ): Promise<Record<string, DownloadPayload>> {
-  const unique = Array.from(new Set(keys.filter(Boolean))).slice(0, 20);
+  const unique = Array.from(new Set(keys.filter(Boolean))).slice(0, 40);
   if (unique.length === 0) return {};
   const url = apiUrl(
     `/api/downloads/match?keys=${encodeURIComponent(unique.join(","))}${refresh ? "&refresh=1" : ""}`,

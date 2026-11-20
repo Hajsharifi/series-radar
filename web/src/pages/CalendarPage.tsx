@@ -50,7 +50,6 @@ export default function CalendarPage() {
   const movieFavorites = useMovieFavorites();
   const catalog = useMovieCatalog();
   const liveTV = useLiveTVSections();
-  const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [view, setView] = useState<"week" | "month">("week");
   const [notice, setNotice] = useState("");
 
@@ -107,6 +106,7 @@ export default function CalendarPage() {
 
     for (const show of schedule.shows) {
       if (!show.airstamp) continue;
+      if (!favoriteKeys.has(favoriteKey(show.id, show.source ?? "tvmaze"))) continue;
       const parts = tehranParts(show.airstamp);
       if (!parts) continue;
       const day = toIsoDay({ y: parts.y, m: parts.m, d: parts.d });
@@ -156,6 +156,7 @@ export default function CalendarPage() {
 
     const seen = new Set<number>();
     for (const show of [...liveTV.airingToday, ...liveTV.onTheAir]) {
+      if (!favoriteKeys.has(favoriteKey(show.id, "tmdb"))) continue;
       if (seen.has(show.id)) continue;
       seen.add(show.id);
       const next = show.nextEpisode;
@@ -181,6 +182,7 @@ export default function CalendarPage() {
     // Movie theatrical releases and digital-quality releases in the visible range.
     const today = tehranTodayISO();
     for (const movie of catalog.all) {
+      if (!movieFavorites.ids.has(movie.id)) continue;
       const stage = movieStage(movie);
       let day: string | null = null;
       let subtitle = "";
@@ -212,16 +214,15 @@ export default function CalendarPage() {
   const counts = useMemo(() => {
     const map = new Map<string, number>();
     for (const item of items) {
-      if (onlyFavorites && !item.favorite) continue;
       map.set(item.day, (map.get(item.day) ?? 0) + 1);
     }
     return map;
-  }, [items, onlyFavorites]);
+  }, [items]);
 
   const [activeDay, setActiveDay] = useState<string | null>(null);
   const selected = activeDay && counts.has(activeDay) ? activeDay : days.find((day) => counts.has(day.key))?.key ?? days[0].key;
   const visible = items
-    .filter((item) => item.day === selected && (!onlyFavorites || item.favorite))
+    .filter((item) => item.day === selected)
     .sort((a, b) => a.clock.localeCompare(b.clock) || a.title.localeCompare(b.title, "fa"));
 
   const monthLabel = useMemo(() => {
@@ -235,7 +236,7 @@ export default function CalendarPage() {
     : 0;
 
   function exportCalendar() {
-    const source = items.filter((item) => !onlyFavorites || item.favorite);
+    const source = items;
     if (source.length === 0) {
       setNotice("موردی برای خروجی وجود ندارد.");
       return;
@@ -269,7 +270,7 @@ export default function CalendarPage() {
           </p>
           <h1 className="mt-1 text-2xl font-extrabold text-white">تقویم سریال‌ها و فیلم‌ها</h1>
           <p className="mt-1.5 text-xs leading-relaxed text-ink-300">
-            قسمت‌های پیشرو، اکران سینمایی و انتشار دیجیتال فیلم‌ها در {view === "week" ? "هفت روز آینده" : "ماه جاری"} به وقت تهران — هم ستاره‌دارها و هم آن‌هایی که در رادارند.
+            قسمتهای پیشرو، اکران سینمایی و انتشار دیجیتال فقط برای سریالها و فیلمهای ستارهدار، در {view === "week" ? "هفت روز آینده" : "ماه جاری"} به وقت تهران.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -367,24 +368,17 @@ export default function CalendarPage() {
         <h2 className="text-sm font-bold text-white">
           {days.find((day) => day.key === selected)?.label} · {toPersianDigits(visible.length)} مورد
         </h2>
-        <button
-          type="button"
-          aria-pressed={onlyFavorites}
-          onClick={() => setOnlyFavorites((value) => !value)}
-          className={`sr-no-tap rounded-full px-3 py-1.5 text-caption font-semibold transition ${
-            onlyFavorites ? "bg-amber-400 text-ink-950" : "border border-white/10 bg-white/5 text-ink-300"
-          }`}
-        >
+        <span className="sr-no-tap flex items-center gap-1 rounded-full bg-amber-400/15 px-3 py-1.5 text-caption font-semibold text-amber-200">
           <Star className="h-3.5 w-3.5" fill="currentColor" strokeWidth={0} />
-          فقط ستاره‌ها
-        </button>
+          فقط ستارهها
+        </span>
       </div>
 
       {visible.length === 0 ? (
         <EmptyState
           icon={<CalendarDays className="h-5 w-5" strokeWidth={1.8} />}
           title="موردی برای این روز ثبت نشده"
-          description="روز دیگری را از بالا انتخاب کنید یا فیلتر ستاره‌ها را خاموش کنید."
+          description="روز دیگری را از بالا انتخاب کنید یا سریال/فیلمی را ستاره دار کنید."
           compact
         />
       ) : (
