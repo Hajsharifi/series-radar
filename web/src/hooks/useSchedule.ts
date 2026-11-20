@@ -30,6 +30,7 @@ export function useSchedule(): ScheduleState {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
+  const pendingManual = useRef(false);
   const lastFull = useRef(0);
 
   const apply = useCallback((next: ScheduleSnapshot) => {
@@ -39,7 +40,10 @@ export function useSchedule(): ScheduleState {
 
   const loadFull = useCallback(
     async (manual: boolean) => {
-      if (inFlight.current) return;
+      if (inFlight.current) {
+        if (manual) pendingManual.current = true;
+        return;
+      }
       inFlight.current = true;
       if (manual) setRefreshing(true);
       try {
@@ -52,6 +56,10 @@ export function useSchedule(): ScheduleState {
         inFlight.current = false;
         setRefreshing(false);
         setLoading(false);
+        if (pendingManual.current) {
+          pendingManual.current = false;
+          void loadFull(true);
+        }
       }
     },
     [apply],
@@ -71,6 +79,10 @@ export function useSchedule(): ScheduleState {
     if (cached) {
       apply(cached);
       setLoading(false);
+      if (cached.updatedAt) {
+        const cachedTime = new Date(cached.updatedAt).getTime();
+        if (!Number.isNaN(cachedTime)) lastFull.current = cachedTime;
+      }
     } else {
       apply(seedSnapshot());
     }

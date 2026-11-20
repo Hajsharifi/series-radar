@@ -600,8 +600,17 @@ export function RadarPage() {
         />
 
         {schedule.error && (
-          <div className="mb-4 rounded-control border border-danger/25 bg-danger/10 px-3 py-2 text-caption text-danger">
-            {schedule.error} — دادهٔ ذخیره‌شده نمایش داده می‌شود.
+          <div className="mb-4 rounded-control border border-danger/25 bg-danger/10 px-3 py-2 text-caption text-danger flex items-center justify-between gap-2">
+            <span>{schedule.error} — دادهٔ ذخیره‌شده نمایش داده می‌شود.</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={schedule.refresh}
+              disabled={schedule.refreshing}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${schedule.refreshing ? "animate-spin" : ""}`} strokeWidth={1.8} />
+              تلاش مجدد
+            </Button>
           </div>
         )}
 

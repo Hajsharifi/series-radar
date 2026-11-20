@@ -20,7 +20,9 @@ export interface LiveTVShow extends Show {
 }
 
 async function fetchLiveTVShows(endpoint: string) {
-  return cachedFetchJson<any>(`${API}${endpoint}`);
+  // Longer timeout for endpoints that may enrich with TMDB details (on_the_air, airing_today)
+  const timeoutMs = (endpoint === "/api/tv/on_the_air" || endpoint === "/api/tv/airing_today") ? 25000 : 10000;
+  return cachedFetchJson<any>(`${API}${endpoint}`, timeoutMs);
 }
 
 async function fetchShowEpisodes(showId: number) {

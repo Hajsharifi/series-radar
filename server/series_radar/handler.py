@@ -120,12 +120,12 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/tv/popular":
                 data = localized_collection("/tv/popular", {"page": 1}, cache_ttl=3600, cache_key_extra="tvpopular")
                 shows = [norm_tv_show(s) for s in (data.get("results") or [])[:50]]
-                shows = enrich_tv_meta(shows)
+                shows = enrich_tv_meta(shows, include_omdb=False)
                 return self.send_json({"results": shows})
             if path == "/api/tv/top_rated":
                 data = localized_collection("/tv/top_rated", {"page": 1}, cache_ttl=3600, cache_key_extra="tvtoprated")
                 shows = [norm_tv_show(s) for s in (data.get("results") or [])[:50]]
-                shows = enrich_tv_meta(shows)
+                shows = enrich_tv_meta(shows, include_omdb=False)
                 return self.send_json({"results": shows})
             if path.startswith("/api/tv/") and path.endswith("/similar"):
                 show_id = int(path.split("/")[-2])
@@ -166,12 +166,12 @@ class Handler(BaseHTTPRequestHandler):
                 # Fetch first 3 pages (≈60 items) to include popular shows beyond page 1
                 data = localized_collection("/tv/on_the_air", {}, cache_ttl=1800, cache_key_extra="ontheair", max_pages=3)
                 shows = [norm_tv_show(s) for s in (data.get("results") or [])[:60]]
-                shows = enrich_tv_meta(shows)
+                shows = enrich_tv_meta(shows, include_omdb=False)
                 return self.send_json({"results": shows})
             if path == "/api/tv/airing_today":
                 data = localized_collection("/tv/airing_today", {}, cache_ttl=900, cache_key_extra="airingtoday", max_pages=3)
                 shows = [norm_tv_show(s) for s in (data.get("results") or [])[:60]]
-                shows = enrich_tv_meta(shows)
+                shows = enrich_tv_meta(shows, include_omdb=False)
                 return self.send_json({"results": shows})
             if path == "/api/tv/search":
                 text = (query.get("q") or [""])[0].strip()
@@ -184,7 +184,7 @@ class Handler(BaseHTTPRequestHandler):
                     cache_key_extra="legacy_search_tv_" + normalize_fa(text),
                 )
                 shows = [norm_tv_show(item) for item in (data.get("results") or [])[:20]]
-                shows = enrich_tv_meta(shows)
+                shows = enrich_tv_meta(shows, include_omdb=False)
                 return self.send_json({"results": shows})
             if path == "/api/movies/discover":
                 params = dict(flat_query)
@@ -228,7 +228,7 @@ class Handler(BaseHTTPRequestHandler):
                 extra = "disc_tv_" + re.sub(r"[^a-zA-Z0-9_.-]", "_", urllib.parse.urlencode(sorted(params.items())))[:120]
                 data = localized_collection("/discover/tv", params, cache_ttl=1800, cache_key_extra=extra)
                 shows = [norm_tv_show(item) for item in (data.get("results") or [])[:50]]
-                shows = enrich_tv_meta(shows)
+                shows = enrich_tv_meta(shows, include_omdb=False)
                 return self.send_json({"results": shows, "total_pages": data.get("total_pages")})
             return self.send_json({"error": "not found"}, 404)
         except urllib.error.HTTPError as error:

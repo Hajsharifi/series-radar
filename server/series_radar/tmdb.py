@@ -372,7 +372,7 @@ def tv_meta(show_id):
     )
 
 
-def enrich_tv_meta(shows):
+def enrich_tv_meta(shows, include_omdb=True):
     """Fill fields TMDB list endpoints omit (next episode, seasons, network).
 
     TMDB list responses only carry a small subset of fields, so the client
@@ -412,10 +412,11 @@ def enrich_tv_meta(shows):
         imdb_id = show.get("imdbId") or (detail.get("external_ids") or {}).get("imdb_id")
         if imdb_id:
             show["imdbId"] = imdb_id
-            try:
-                show.update(omdb_fetch(imdb_id))
-            except Exception:
-                pass
+            if include_omdb:
+                try:
+                    show.update(omdb_fetch(imdb_id))
+                except Exception:
+                    pass
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         list(pool.map(one, shows))

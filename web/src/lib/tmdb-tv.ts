@@ -1,8 +1,9 @@
 import type { Show } from "../types";
 import { MOVIE_API } from "./movies";
 import { eventKindFromEpisode } from "./show-event";
+import { cachedFetchJson } from "./offline";
 
-const TMDB_TV_CACHE = "sr:tmdbtv:v2";
+const TMDB_TV_CACHE = "sr:tmdbtv:v3";
 const TMDB_TV_TTL = 24 * 60 * 60 * 1000;
 
 /** The API already normalizes TMDB fields into the Show shape. */
@@ -44,16 +45,8 @@ function toScheduleShow(item: BackendTVShow): Show {
 }
 
 async function fetchTMDBTV(path: string): Promise<BackendTVShow[]> {
-  const controller = new AbortController();
-  const timer = window.setTimeout(() => controller.abort(), 20000);
-  try {
-    const response = await fetch(MOVIE_API + path, { signal: controller.signal, cache: "no-store" });
-    if (!response.ok) throw new Error(`TV HTTP ${response.status}`);
-    const data = (await response.json()) as TMDBTVResponse;
-    return data.results ?? [];
-  } finally {
-    window.clearTimeout(timer);
-  }
+  const data = await cachedFetchJson<TMDBTVResponse>(MOVIE_API + path, 20000);
+  return data.results ?? [];
 }
 
 function readCache(): BackendTVShow[] | null {
@@ -76,25 +69,34 @@ function writeCache(items: BackendTVShow[]) {
   }
 }
 
+async function fetchWithCache(path: string): Promise<Show[]> {
+  try {
+    const results = await fetchTMDBTV(path);
+    return results.map(toScheduleShow);
+  } catch (error) {
+    // Fallback to stale localStorage cache on any error (network/timeout/HTTP)
+    const cached = readCache();
+    if (cached?.length) return cached.map(toScheduleShow);
+    throw error;
+  }
+}
+
 export async function fetchPopularTV(): Promise<Show[]> {
   const cached = readCache();
   if (cached?.length) return cached.map(toScheduleShow);
-  const results = await fetchTMDBTV("/api/tv/popular");
-  writeCache(results);
-  return results.map(toScheduleShow);
+  const results = await fetchWithCache("/api/tv/popular");
+  writeCache(results as BackendTVShow[]);
+  return results;
 }
 
 export async function fetchTopRatedTV(): Promise<Show[]> {
-  const results = await fetchTMDBTV("/api/tv/top_rated");
-  return results.map(toScheduleShow);
+  return fetchWithCache("/api/tv/top_rated");
 }
 
 export async function fetchOnTheAirTV(): Promise<Show[]> {
-  const results = await fetchTMDBTV("/api/tv/on_the_air");
-  return results.map(toScheduleShow);
+  return fetchWithCache("/api/tv/on_the_air");
 }
 
 export async function fetchAiringTodayTV(): Promise<Show[]> {
-  const results = await fetchTMDBTV("/api/tv/airing_today");
-  return results.map(toScheduleShow);
+  return fetchWithCache("/api/tv/airing_today");
 }
