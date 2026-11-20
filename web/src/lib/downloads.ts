@@ -116,19 +116,24 @@ export async function fetchDownloads(
   return result;
 }
 
-/** All direct links in a payload, regardless of movie/series shape. */
+/** All direct links in a payload, regardless of movie/series shape.
+ * Returns unique links based on stable fingerprint ID. */
 export function payloadLinks(payload: DownloadPayload | undefined): DownloadLink[] {
   if (!payload) return [];
-  const links: DownloadLink[] = [];
+  const linkMap = new Map<string, DownloadLink>();
   for (const group of payload.groups ?? []) {
-    for (const item of group.items ?? []) links.push(...item.links);
+    for (const item of group.items ?? []) {
+      for (const link of item.links) linkMap.set(link.id, link);
+    }
   }
   for (const season of payload.seasons ?? []) {
     for (const group of season.groups ?? []) {
-      for (const episode of group.episodes ?? []) links.push(...episode.links);
+      for (const episode of group.episodes ?? []) {
+        for (const link of episode.links) linkMap.set(link.id, link);
+      }
     }
   }
-  return links;
+  return Array.from(linkMap.values());
 }
 
 export function payloadLinkCount(payload: DownloadPayload | undefined): number {

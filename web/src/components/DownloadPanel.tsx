@@ -68,16 +68,67 @@ function groupEpisodesByNumber(episodes: DownloadEpisode[]): Map<number, { episo
   return map;
 }
 
-/** Merges seasons with same number (e.g., dubbled + hardsub for season 1) */
+/** Merges seasons with same number (e.g., dubbled + hardsub for season 1).
+ * Pure function: does NOT mutate input. Deduplicates groups/episodes/links by stable IDs. */
 function mergeSeasons(seasons: DownloadSeason[]): DownloadSeason[] {
   const map = new Map<number, DownloadSeason>();
   for (const season of seasons) {
     const existing = map.get(season.number);
     if (!existing) {
-      map.set(season.number, { ...season });
+      // Deep-ish copy to avoid mutating input
+      map.set(season.number, {
+        number: season.number,
+        label: season.label,
+        groups: season.groups.map(g => ({
+          ...g,
+          episodes: g.episodes?.map(e => ({
+            ...e,
+            links: [...e.links],
+          })) ?? [],
+        })),
+      });
     } else {
-      // Merge groups from same season number
-      existing.groups.push(...season.groups);
+      // Merge groups: dedupe by group.id, then dedupe episodes by (season,number,quality), then links by link.id
+      for (const group of season.groups) {
+        const existingGroupIdx = existing.groups.findIndex(g => g.id === group.id);
+        if (existingGroupIdx >= 0) {
+          const existingGroup = existing.groups[existingGroupIdx];
+          // Merge episodes into existing group
+          const epMap = new Map<string, DownloadEpisode>();
+          for (const ep of existingGroup.episodes ?? []) {
+            const key = `${ep.season}|${ep.number}|${ep.quality}`;
+            epMap.set(key, { ...ep, links: [...ep.links] });
+          }
+          for (const ep of group.episodes ?? []) {
+            const key = `${ep.season}|${ep.number}|${ep.quality}`;
+            const existingEp = epMap.get(key);
+            if (existingEp) {
+              // Merge links, dedupe by link.id
+              const linkIds = new Set(existingEp.links.map(l => l.id));
+              for (const link of ep.links) {
+                if (!linkIds.has(link.id)) {
+                  existingEp.links.push(link);
+                  linkIds.add(link.id);
+                }
+              }
+            } else {
+              epMap.set(key, { ...ep, links: [...ep.links] });
+            }
+          }
+          existingGroup.episodes = Array.from(epMap.values())
+            .sort((a, b) => (a.season - b.season) || (a.number - b.number) || a.quality.localeCompare(b.quality));
+          // Update group quality array
+          const qualities = new Set<string>();
+          for (const ep of existingGroup.episodes ?? []) qualities.add(ep.quality);
+          existingGroup.quality = Array.from(qualities).sort();
+        } else {
+          // New group
+          existing.groups.push({
+            ...group,
+            episodes: group.episodes?.map(e => ({ ...e, links: [...e.links] })) ?? [],
+          });
+        }
+      }
       existing.label = season.label || existing.label;
     }
   }

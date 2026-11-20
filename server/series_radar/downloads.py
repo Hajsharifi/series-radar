@@ -214,8 +214,11 @@ def _link_meta(links):
 # ---------------------------------------------------------------------------
 
 def parse_movie_page(page_html):
-    """Parse a movie page into quality/variant groups with direct links."""
+    """Parse a movie page into quality/variant groups with direct links.
+    Deduplicates groups/links and guards against nested structures.
+    Keeps all items (same quality with different encoders/notes are preserved)."""
     groups = []
+    processed_group_ids = set()
     for _, _, outer, block in elements(page_html, "div", "download-list"):
         title = _first_tag(block, "p", "title")
         label = _clean_text(title[3]) if title else "دانلود"
@@ -226,25 +229,40 @@ def parse_movie_page(page_html):
             if candidate in classes:
                 kind = candidate
                 break
+        group_id_key = group_id(kind, label, "movie")
+        if group_id_key in processed_group_ids:
+            continue
+        processed_group_ids.add(group_id_key)
+        
         items = []
         for _, _, _, li in elements(block, "li"):
             quality = _label_value(li, "کیفیت")
             if not quality:
                 continue
+            
             links = _links(li, "دانلود مستقیم")
             if not links:
                 continue
+            # Deduplicate links only
+            unique_links = []
+            seen_link_ids = set()
+            for link in links:
+                if link["id"] not in seen_link_ids:
+                    unique_links.append(link)
+                    seen_link_ids.add(link["id"])
+            
+            encoder = _label_value(li, "انکودر")
             items.append({
-                "id": group_id(kind, quality, "movie"),
+                "id": group_id(kind, quality, encoder or "unknown", "movie"),
                 "quality": quality,
-                "encoder": _label_value(li, "انکودر"),
+                "encoder": encoder,
                 "note": _label_value(li, "توضیحات"),
                 "size": _label_value(li, "میانگین حجم"),
-                "links": links,
+                "links": unique_links,
             })
         if items:
             groups.append({
-                "id": group_id(kind, label, "movie"),
+                "id": group_id_key,
                 "label": label,
                 "kind": kind,
                 "items": items,
@@ -270,8 +288,14 @@ def _season_from_label(label):
 
 
 def parse_series_page(page_html):
-    """Parse a series page into seasons, variants and per-episode links."""
+    """Parse a series page into seasons, variants and per-episode links.
+    Deduplicates groups/episodes/links and guards against nested structures.
+    Keeps separate variants (dubbled/hardsub/softsub) for the same season."""
     seasons = []
+    # Track processed season+variant combinations to avoid true duplicates
+    # while allowing different variants (dubbled vs hardsub) for same season
+    processed_season_variants = set()
+    
     for _, _, season_outer, season_inner in elements(page_html, "div", "download-season"):
         box = re.search(r'data-bs-target\s*=\s*["\']#(season-dlbox\d+)', season_outer)
         heading = ""
@@ -282,14 +306,30 @@ def parse_series_page(page_html):
             if heading_match:
                 heading = _clean_text(heading_match.group(1))
         season_fallback = _season_from_label(heading)
+        season_number = season_fallback or 0
+        
+        # We'll determine the variant kind from the first group
+        # For now, process all download-season blocks; dedupe at group level
+        
         groups = []
+        processed_group_ids = set()
+        
         for _, _, outer, block in elements(season_inner, "div", "download-list"):
             first_tag = re.search(r"<div\b[^>]*>", outer)
             classes = _attr(first_tag.group(0), "class").lower() if first_tag else ""
             kind = next((c for c in ("dubbled", "hardsub", "softsub") if c in classes), "")
             title = _first_tag(block, "p", "title")
             label = _clean_text(title[3]) if title else "دانلود"
+            group_id_key = group_id(kind, label, "series", season_fallback)
+            
+            # Skip duplicate groups (same kind+label+season)
+            if group_id_key in processed_group_ids:
+                continue
+            processed_group_ids.add(group_id_key)
+            
             episodes = {}
+            processed_ep_keys = set()
+            
             for _, _, _, li in elements(block, "li"):
                 quality = _label_value(li, "کیفیت")
                 if not quality:
@@ -297,9 +337,15 @@ def parse_series_page(page_html):
                 # A quality variant has one row per episode inside
                 # ``series-downloaditems``; a plain li holds its links directly.
                 rows = []
+                processed_row_starts = set()
                 for _, _, _, row in elements(li, "div", "d-flex"):
+                    # Guard against nested d-flex elements
+                    row_start = row[:100] if isinstance(row, str) else str(row)[:100]
+                    if row_start in processed_row_starts:
+                        continue
                     if _links(row):
                         rows.append(row)
+                        processed_row_starts.add(row_start)
                 if not rows:
                     rows = [li]
                 for row in rows:
@@ -315,6 +361,18 @@ def parse_series_page(page_html):
                     if season_no is None:
                         season_no = 0
                     key = (season_no, episode_no, quality)
+                    
+                    # Skip duplicate episodes
+                    if key in processed_ep_keys:
+                        # Still merge any new links
+                        entry = episodes.get(key)
+                        if entry:
+                            for link in links:
+                                if not any(old["id"] == link["id"] for old in entry["links"]):
+                                    entry["links"].append(link)
+                        continue
+                    processed_ep_keys.add(key)
+                    
                     entry = episodes.setdefault(key, {
                         "season": season_no,
                         "number": episode_no,
@@ -329,13 +387,14 @@ def parse_series_page(page_html):
                             entry["links"].append(link)
             if episodes:
                 groups.append({
-                    "id": group_id(kind, label, "series", season_fallback),
+                    "id": group_id_key,
                     "label": label,
                     "kind": kind,
                     "quality": sorted({ep["quality"] for ep in episodes.values()}),
                     "episodes": [episodes[key] for key in sorted(episodes)],
                 })
         if groups:
+            # Use the first group's season number, or fallback
             number = None
             for group in groups:
                 for episode in group["episodes"]:
@@ -346,6 +405,15 @@ def parse_series_page(page_html):
                     break
             if number is None:
                 number = season_fallback
+            
+            # Create a composite key for this season variant (season + variant kind)
+            # This allows multiple variants (dubbled/hardsub) for the same season
+            variant_key = (number or 0, tuple(sorted(g["kind"] for g in groups)))
+            if variant_key in processed_season_variants:
+                # This exact combination of variants for this season already processed
+                continue
+            processed_season_variants.add(variant_key)
+            
             seasons.append({
                 "number": number or 0,
                 "label": _clean_text(heading) or ("فصل " + str(number) if number else "فصل"),
