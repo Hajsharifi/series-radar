@@ -154,9 +154,13 @@ export function NativeReminders() {
       const show = future[0];
       if (!show?.airstamp) continue;
       const lead = favorite.reminderLeadHours || defaultLead;
+      // TMDB only carries a date, never an exact broadcast clock. Treat it as
+      // a date-only event (09:00 Tehran) instead of inventing a fake time.
+      const dateOnly = show.source === "tmdb";
+      const airDay = show.nextEpisode?.airdate ?? show.airDate ?? show.airstamp.slice(0, 10);
       const triggerAt = adjustForQuietHours(
-        reminderTimeMsWithLead(show.airstamp, lead),
-        new Date(show.airstamp).getTime(),
+        dateOnly ? reminderTimeForDayWithLead(airDay, lead) : reminderTimeMsWithLead(show.airstamp, lead),
+        dateOnly ? releaseMorningMs(airDay) : new Date(show.airstamp).getTime(),
       );
       if (triggerAt === null || triggerAt <= now) continue;
       const next = show.nextEpisode;

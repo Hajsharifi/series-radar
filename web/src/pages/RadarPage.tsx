@@ -708,8 +708,7 @@ export function RadarPage() {
           <div>
             <h3 className="text-title text-white">دربارهٔ رادار</h3>
             <p className="mt-1 text-caption leading-relaxed text-muted">
-              داده‌ها از TVMaze گرفته می‌شوند؛ برنامهٔ امروز و فردا هر دقیقه و فهرست کامل هر ۶ ساعت به‌روزرسانی
-              می‌شود. تاریخ‌ها به وقت تهران نمایش داده می‌شوند.
+              دادهها از TMDB گرفته میشوند و هر ۶ ساعت بهروزرسانی میشوند. TMDB ساعت دقیق پخش نمیدهد؛ بنابراین فقط تاریخ قسمت نمایش داده میشود و یادآورها ساعت ۹ صبح تهران در روز پخش تنظیم میشوند.
             </p>
           </div>
           <Link to="/settings" className="shrink-0 rounded-control border border-edge/10 bg-white/5 px-3 py-1.5 text-caption text-ink-200">

@@ -19,11 +19,14 @@ interface TMDBTVResponse {
   total_results?: number;
 }
 
-/** Map an API item into the radar schedule. Brand-new series use their first
- * air date; mid-season episodes stay in the dedicated live sections. */
+/** Map an API item into the radar schedule. A brand-new series uses its first
+ * air date; a returning series uses its next episode date. TMDB has no exact
+ * broadcast time, so the value is date-only (12:00Z) and the UI never shows a
+ * fabricated clock for `source: "tmdb"`. */
 function toScheduleShow(item: BackendTVShow): Show {
   const firstAir = item.firstAirDate ? item.firstAirDate.slice(0, 10) : null;
   const next = item.nextEpisode ?? null;
+  const airDate = next?.airdate || firstAir || null;
   const kind = eventKindFromEpisode(next, item.numberOfSeasons);
   return {
     ...item,
@@ -32,14 +35,14 @@ function toScheduleShow(item: BackendTVShow): Show {
     eventKind: kind,
     seasonNumber: next?.season ?? null,
     nextEpisode: next,
-    airDate: firstAir,
+    airDate,
     airtime: null,
-    airstamp: firstAir ? `${firstAir}T12:00:00Z` : null,
+    airstamp: airDate ? `${airDate}T12:00:00Z` : null,
     network: item.network ?? item.networkNames?.[0] ?? null,
     rating: typeof item.rating === "number" ? Math.round(item.rating * 10) / 10 : null,
     votes: item.votes ?? null,
     weight: Math.floor((item.popularity ?? 0) * 10),
-    isDateConfirmed: Boolean(firstAir),
+    isDateConfirmed: Boolean(airDate),
     updatedAt: item.updatedAt ?? new Date().toISOString(),
   };
 }
@@ -99,4 +102,27 @@ export async function fetchOnTheAirTV(): Promise<Show[]> {
 
 export async function fetchAiringTodayTV(): Promise<Show[]> {
   return fetchWithCache("/api/tv/airing_today");
+}
+
+/** The single TV schedule used by Radar, Calendar and reminders.
+ * All entries come from TMDB through our own API; no TVMaze requests are made. */
+export async function fetchTVSchedule(): Promise<Show[]> {
+  const settled = await Promise.allSettled([
+    fetchOnTheAirTV(),
+    fetchAiringTodayTV(),
+    fetchPopularTV(),
+    fetchTopRatedTV(),
+  ]);
+  const byKey = new Map<string, Show>();
+  for (const result of settled) {
+    if (result.status !== "fulfilled") continue;
+    for (const show of result.value) {
+      if (!show?.id || !show.airstamp) continue;
+      const key = `${show.source ?? "tmdb"}:${show.id}`;
+      if (!byKey.has(key)) byKey.set(key, show);
+    }
+  }
+  return Array.from(byKey.values()).sort((a, b) =>
+    (a.airstamp ?? "").localeCompare(b.airstamp ?? "") || (b.weight ?? 0) - (a.weight ?? 0),
+  );
 }
