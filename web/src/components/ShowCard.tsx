@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Star } from "lucide-react";
+import { memo, type MemoExoticComponent } from "react";
 import type { Show } from "../types";
 import { EVENT_CHIP, EVENT_LABEL } from "../lib/labels";
 import { showEventKind } from "../lib/show-event";
@@ -13,7 +14,7 @@ interface ShowCardProps {
   onToggleFavorite: (show: Show) => void;
 }
 
-export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
+function ShowCardInner({ show, favorite, onToggleFavorite }: ShowCardProps) {
   const countdown = countdownLabel(show.airstamp);
   const clock = show.airstamp && show.source !== "tmdb" ? tehranClock(show.airstamp) : "";
   const event = showEventKind(show);
@@ -32,7 +33,7 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
             {EVENT_LABEL[event]}
           </span>
           {countdown && (
-            <span className="rounded-full bg-black/55 px-2 py-0.5 text-micro font-medium text-ink-200 backdrop-blur">
+            <span className="rounded-full bg-black/65 px-2 py-0.5 text-micro font-medium text-ink-200">
               {countdown}
             </span>
           )}
@@ -40,7 +41,7 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
       </Link>
 
       {typeof show.rating === "number" && show.rating > 0 && (
-        <span className="pointer-events-none absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-lg bg-black/60 px-1.5 py-0.5 text-micro font-bold text-brand backdrop-blur">
+        <span className="pointer-events-none absolute right-2 top-2 z-10 inline-flex items-center gap-1 rounded-lg bg-black/70 px-1.5 py-0.5 text-micro font-bold text-brand">
           <Star className="h-3 w-3" fill="currentColor" strokeWidth={0} /> {toPersianDigits(show.rating.toFixed(1))}
         </span>
       )}
@@ -50,8 +51,8 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
         aria-label={favorite ? "حذف از ستاره‌ها" : "افزودن به ستاره‌ها"}
         aria-pressed={favorite}
         onClick={() => onToggleFavorite(show)}
-        className={`sr-no-tap absolute top-2 left-2 z-10 grid h-10 w-10 place-items-center rounded-full text-base shadow-lg backdrop-blur transition ${
-          favorite ? "bg-amber-400 text-ink-950" : "bg-black/45 text-white/85 hover:bg-black/65"
+        className={`sr-no-tap absolute top-2 left-2 z-10 grid h-10 w-10 place-items-center rounded-full text-base shadow-lg transition ${
+          favorite ? "bg-amber-400 text-ink-950" : "bg-black/55 text-white/85 hover:bg-black/70"
         }`}
       >
         <Star className="h-[18px] w-[18px]" fill={favorite ? "currentColor" : "none"} strokeWidth={1.8} />
@@ -103,7 +104,16 @@ export function ShowCard({ show, favorite, onToggleFavorite }: ShowCardProps) {
   );
 }
 
-export function ShowRow({ show, favorite, onToggleFavorite }: ShowCardProps) {
+export const ShowCard: MemoExoticComponent<typeof ShowCardInner> = memo(ShowCardInner, (prev, next) => {
+  return (
+    prev.show.id === next.show.id &&
+    prev.show.updatedAt === next.show.updatedAt &&
+    prev.favorite === next.favorite &&
+    prev.onToggleFavorite === next.onToggleFavorite
+  );
+});
+
+function ShowRowInner({ show, favorite, onToggleFavorite }: ShowCardProps) {
   const countdown = countdownLabel(show.airstamp);
   const detailPath = show.source === "tmdb" ? `/tv/${show.id}` : `/show/${show.id}`;
   const event = showEventKind(show);
@@ -156,3 +166,12 @@ export function ShowRow({ show, favorite, onToggleFavorite }: ShowCardProps) {
     </article>
   );
 }
+
+export const ShowRow: MemoExoticComponent<typeof ShowRowInner> = memo(ShowRowInner, (prev, next) => {
+  return (
+    prev.show.id === next.show.id &&
+    prev.show.updatedAt === next.show.updatedAt &&
+    prev.favorite === next.favorite &&
+    prev.onToggleFavorite === next.onToggleFavorite
+  );
+});

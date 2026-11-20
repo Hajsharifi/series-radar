@@ -182,7 +182,7 @@ export function Layout() {
         </ErrorBoundary>
       </main>
 
-      <nav className="sr-safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-edge/10 bg-ink-950/92 backdrop-blur-xl">
+      <nav className="sr-safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-edge/10 bg-ink-950/96">
         <div className="mx-auto flex max-w-6xl items-stretch justify-around px-1">
           {NAV.map((item) => {
             const active = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);

@@ -94,7 +94,7 @@ function languageKey(value?: string | null): string {
 
 export function RadarPage() {
   const schedule = useScheduleContext();
-  const now = useNowTicker(30_000);
+  const now = useNowTicker(60_000);
   const favorites = useFavorites();
   const favoriteKeys = useFavoriteKeys();
 
@@ -110,6 +110,7 @@ export function RadarPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [language, setLanguage] = useState<string>(() => readUiState("radar.language", "all"));
   const [country, setCountry] = useState<string>(() => readUiState("radar.country", "all"));
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => writeUiState("radar.category", filters.category), [filters.category]);
   useEffect(() => writeUiState("radar.onlyPopular", filters.onlyPopular), [filters.onlyPopular]);
@@ -630,66 +631,108 @@ export function RadarPage() {
           />
         ) : view === "grid" ? (
           <div className="space-y-6">
-            {groups.map((group) => (
-              <div key={group.key}>
-                <div className="mb-2.5 flex items-baseline gap-2">
-                  <h3 className="text-title font-bold text-white">{group.title}</h3>
-                  <span className="text-caption text-muted">{toPersianDigits(group.shows.length)} سریال</span>
+            {groups.map((group) => {
+              const isExpanded = expandedGroups.has(group.key);
+              const displayShows = isExpanded ? group.shows : group.shows.slice(0, 20);
+              const hasMore = group.shows.length > 20 && !isExpanded;
+              return (
+                <div key={group.key}>
+                  <div className="mb-2.5 flex items-baseline gap-2">
+                    <h3 className="text-title font-bold text-white">{group.title}</h3>
+                    <span className="text-caption text-muted">{toPersianDigits(group.shows.length)} سریال</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {displayShows.map((show) => (
+                      <ShowCard
+                        key={show.id}
+                        show={show}
+                        favorite={isFavorite(show)}
+                        onToggleFavorite={toggle}
+                      />
+                    ))}
+                  </div>
+                  {hasMore && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedGroups((prev) => new Set(prev).add(group.key))}
+                      className="mt-2 w-full rounded-control border border-edge/12 bg-white/4 px-3 py-1.5 text-caption text-ink-200 hover:bg-white/8"
+                    >
+                      نمایش {toPersianDigits(group.shows.length - 20)} مورد دیگر
+                    </button>
+                  )}
                 </div>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                  {group.shows.map((show) => (
-                    <ShowCard
-                      key={show.id}
-                      show={show}
-                      favorite={isFavorite(show)}
-                      onToggleFavorite={toggle}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : view === "compact" ? (
           <div className="space-y-6">
-            {groups.map((group) => (
-              <div key={group.key}>
-                <div className="mb-2 flex items-baseline gap-2">
-                  <h3 className="text-title font-bold text-white">{group.title}</h3>
-                  <span className="text-caption text-muted">{toPersianDigits(group.shows.length)} سریال</span>
+            {groups.map((group) => {
+              const isExpanded = expandedGroups.has(group.key);
+              const displayShows = isExpanded ? group.shows : group.shows.slice(0, 30);
+              const hasMore = group.shows.length > 30 && !isExpanded;
+              return (
+                <div key={group.key}>
+                  <div className="mb-2 flex items-baseline gap-2">
+                    <h3 className="text-title font-bold text-white">{group.title}</h3>
+                    <span className="text-caption text-muted">{toPersianDigits(group.shows.length)} سریال</span>
+                  </div>
+                  <div className="space-y-1">
+                    {displayShows.map((show) => (
+                      <CompactShowRow
+                        key={show.id}
+                        show={show}
+                        favorite={isFavorite(show)}
+                        onToggleFavorite={toggle}
+                      />
+                    ))}
+                  </div>
+                  {hasMore && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedGroups((prev) => new Set(prev).add(group.key))}
+                      className="mt-2 w-full rounded-control border border-edge/12 bg-white/4 px-3 py-1.5 text-caption text-ink-200 hover:bg-white/8"
+                    >
+                      نمایش {toPersianDigits(group.shows.length - 30)} مورد دیگر
+                    </button>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  {group.shows.map((show) => (
-                    <CompactShowRow
-                      key={show.id}
-                      show={show}
-                      favorite={isFavorite(show)}
-                      onToggleFavorite={toggle}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="space-y-6">
-            {groups.map((group) => (
-              <div key={group.key}>
-                <div className="mb-2.5 flex items-baseline gap-2">
-                  <h3 className="text-title font-bold text-white">{group.title}</h3>
-                  <span className="text-caption text-muted">{toPersianDigits(group.shows.length)} سریال</span>
+            {groups.map((group) => {
+              const isExpanded = expandedGroups.has(group.key);
+              const displayShows = isExpanded ? group.shows : group.shows.slice(0, 25);
+              const hasMore = group.shows.length > 25 && !isExpanded;
+              return (
+                <div key={group.key}>
+                  <div className="mb-2.5 flex items-baseline gap-2">
+                    <h3 className="text-title font-bold text-white">{group.title}</h3>
+                    <span className="text-caption text-muted">{toPersianDigits(group.shows.length)} سریال</span>
+                  </div>
+                  <div className="space-y-2">
+                    {displayShows.map((show) => (
+                      <ShowRow
+                        key={show.id}
+                        show={show}
+                        favorite={isFavorite(show)}
+                        onToggleFavorite={toggle}
+                      />
+                    ))}
+                  </div>
+                  {hasMore && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedGroups((prev) => new Set(prev).add(group.key))}
+                      className="mt-2 w-full rounded-control border border-edge/12 bg-white/4 px-3 py-1.5 text-caption text-ink-200 hover:bg-white/8"
+                    >
+                      نمایش {toPersianDigits(group.shows.length - 25)} مورد دیگر
+                    </button>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  {group.shows.map((show) => (
-                    <ShowRow
-                      key={show.id}
-                      show={show}
-                      favorite={isFavorite(show)}
-                      onToggleFavorite={toggle}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

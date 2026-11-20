@@ -122,8 +122,15 @@ async function tmdbNext(showId: number): Promise<FavoriteNextShow | null> {
 
 export function useFavoriteEpisodes() {
   const favorites = useFavorites();
+  // Limit concurrent queries to avoid overwhelming the network/main thread
+  const MAX_CONCURRENT = 8;
+  const priorityItems = [...favorites.items].sort((a) => {
+    // Prioritize tmdb (usually more complete data) and items with recent updates
+    return a.source === "tmdb" ? -1 : 1;
+  }).slice(0, MAX_CONCURRENT);
+
   const results = useQueries({
-    queries: favorites.items.map((item) => ({
+    queries: priorityItems.map((item) => ({
       queryKey: ["favoriteNext", item.source, item.showId],
       queryFn: () => (item.source === "tmdb" ? tmdbNext(item.showId) : tvmazeNext(item.showId)),
       enabled: item.showId > 0,

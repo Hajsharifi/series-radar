@@ -135,12 +135,24 @@ export interface ShowFilters {
   onlyPopular: boolean;
 }
 
+// Simple cache for parsed airstamp timestamps to avoid repeated Date parsing
+const airstampCache = new Map<string, number>();
+
+function getAirstampMs(airstamp: string): number {
+  const cached = airstampCache.get(airstamp);
+  if (cached !== undefined) return cached;
+  const ms = new Date(airstamp).getTime();
+  airstampCache.set(airstamp, ms);
+  return ms;
+}
+
 export function filterShows(shows: Show[], filters: ShowFilters, now = Date.now()): Show[] {
   const query = filters.search.trim().toLowerCase();
+  const cutoff = now - 6 * 3600_000;
   return shows
     .filter((show) => {
       if (!show.airstamp) return false;
-      if (new Date(show.airstamp).getTime() < now - 6 * 3600_000) return false;
+      if (getAirstampMs(show.airstamp) < cutoff) return false;
       if (filters.category !== "all" && show.category !== filters.category) return false;
       if (filters.onlyPopular && (show.weight ?? 0) < 90) return false;
       if (!query) return true;
@@ -151,8 +163,8 @@ export function filterShows(shows: Show[], filters: ShowFilters, now = Date.now(
       );
     })
     .sort((a, b) => {
-      const aStamp = new Date(a.airstamp!).getTime();
-      const bStamp = new Date(b.airstamp!).getTime();
+      const aStamp = a.airstamp ? getAirstampMs(a.airstamp) : 0;
+      const bStamp = b.airstamp ? getAirstampMs(b.airstamp) : 0;
       if (aStamp !== bStamp) return aStamp - bStamp;
       return (b.weight ?? 0) - (a.weight ?? 0);
     });
@@ -164,7 +176,7 @@ export function groupShows(shows: Show[], now = Date.now()): Array<{ key: string
   const buckets: Record<string, Show[]> = { week: [], month: [], later: [] };
   shows.forEach((show) => {
     if (!show.airstamp) return;
-    const diff = new Date(show.airstamp).getTime() - now;
+    const diff = getAirstampMs(show.airstamp) - now;
     if (diff <= week) buckets.week.push(show);
     else if (diff <= month) buckets.month.push(show);
     else buckets.later.push(show);
@@ -176,7 +188,7 @@ export function groupShows(shows: Show[], now = Date.now()): Array<{ key: string
   ].filter((group) => group.shows.length > 0);
 }
 
-export function useNowTicker(intervalMs = 30_000): number {
+export function useNowTicker(intervalMs = 60_000): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), intervalMs);

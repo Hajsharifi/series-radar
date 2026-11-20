@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Star } from "lucide-react";
+import { memo, type MemoExoticComponent } from "react";
 import type { Show } from "../types";
 import { jalaliDate, tehranClock, toPersianDigits } from "../lib/date";
 import { showEventKind } from "../lib/show-event";
@@ -10,7 +11,7 @@ interface CompactShowRowProps {
   onToggleFavorite: (show: Show) => void;
 }
 
-export function CompactShowRow({ show, favorite, onToggleFavorite }: CompactShowRowProps) {
+function CompactShowRowInner({ show, favorite, onToggleFavorite }: CompactShowRowProps) {
   const event = showEventKind(show);
   const nextSeason = show.nextEpisode?.season ?? show.seasonNumber;
   const nextNumber = show.nextEpisode?.number;
@@ -56,3 +57,12 @@ export function CompactShowRow({ show, favorite, onToggleFavorite }: CompactShow
     </div>
   );
 }
+
+export const CompactShowRow: MemoExoticComponent<typeof CompactShowRowInner> = memo(CompactShowRowInner, (prev, next) => {
+  return (
+    prev.show.id === next.show.id &&
+    prev.show.updatedAt === next.show.updatedAt &&
+    prev.favorite === next.favorite &&
+    prev.onToggleFavorite === next.onToggleFavorite
+  );
+});

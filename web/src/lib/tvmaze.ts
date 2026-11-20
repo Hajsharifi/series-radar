@@ -180,12 +180,36 @@ function readCache(): { items: Show[]; updatedAt: string | null } | null {
   }
 }
 
-function writeCache(items: Show[], updatedAt: string | null) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ items, updatedAt }));
-  } catch {
-    /* storage full or blocked — the app still works in memory */
+let writeCacheTimer: number | null = null;
+let pendingCacheWrite: { items: Show[]; updatedAt: string | null } | null = null;
+
+function flushCacheWrite() {
+  if (pendingCacheWrite) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(pendingCacheWrite));
+    } catch {
+      /* storage full or blocked — the app still works in memory */
+    }
+    pendingCacheWrite = null;
   }
+  writeCacheTimer = null;
+}
+
+function writeCache(items: Show[], updatedAt: string | null) {
+  pendingCacheWrite = { items, updatedAt };
+  if (writeCacheTimer === null && typeof window !== "undefined") {
+    // Use requestIdleCallback if available, fallback to setTimeout
+    if ("requestIdleCallback" in window) {
+      writeCacheTimer = window.requestIdleCallback(flushCacheWrite, { timeout: 2000 }) as unknown as number;
+    } else {
+      writeCacheTimer = globalThis.setTimeout(flushCacheWrite, 0) as unknown as number;
+    }
+  }
+}
+
+// Ensure pending writes are flushed on page unload
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeunload", flushCacheWrite);
 }
 
 function readMinute(): { day: string; at: number } | null {

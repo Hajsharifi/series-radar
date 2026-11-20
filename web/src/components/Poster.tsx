@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode, memo, type MemoExoticComponent } from "react";
 import { posterFallbackLabel, posterGradient, posterUrl } from "../lib/poster";
 import type { Show } from "../types";
 
@@ -9,7 +9,7 @@ interface PosterProps {
   sizesHint?: string;
 }
 
-export function Poster({ show, className = "", rounded = "rounded-card" }: PosterProps) {
+function PosterInner({ show, className = "", rounded = "rounded-card" }: PosterProps) {
   const [failed, setFailed] = useState(false);
   const url = posterUrl(show);
 
@@ -41,6 +41,16 @@ export function Poster({ show, className = "", rounded = "rounded-card" }: Poste
     />
   );
 }
+
+export const Poster: MemoExoticComponent<typeof PosterInner> = memo(PosterInner, (prev, next) => {
+  return (
+    prev.show.id === next.show.id &&
+    prev.show.posterPath === next.show.posterPath &&
+    prev.show.posterOriginal === next.show.posterOriginal &&
+    prev.className === next.className &&
+    prev.rounded === next.rounded
+  );
+});
 
 export function SkeletonPoster({ className = "" }: { className?: string }) {
   return <div className={`sr-skeleton rounded-card ${className}`} />;

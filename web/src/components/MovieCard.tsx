@@ -64,13 +64,13 @@ export function MovieCard({ movie, tab, favorite, onToggleFavorite }: MovieCardP
             {badge.label}
           </span>
           {caption && (
-            <span className="rounded-full bg-black/55 px-2 py-0.5 text-micro font-medium text-ink-200 backdrop-blur">
+            <span className="rounded-full bg-black/65 px-2 py-0.5 text-micro font-medium text-ink-200">
               {caption}
             </span>
           )}
         </div>
         {typeof movie.rating === "number" && movie.rating > 0 && (
-          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-lg bg-black/65 px-1.5 py-0.5 text-micro font-bold text-brand backdrop-blur">
+          <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-lg bg-black/70 px-1.5 py-0.5 text-micro font-bold text-brand">
             <Star className="h-3 w-3" fill="currentColor" strokeWidth={0} /> {toPersianDigits(movie.rating.toFixed(1))}
           </span>
         )}
@@ -78,17 +78,17 @@ export function MovieCard({ movie, tab, favorite, onToggleFavorite }: MovieCardP
         {(movie.imdbRating || movie.rottenTomatoesRating || movie.metacriticRating) && (
           <div className="absolute right-2 top-24 flex flex-col gap-1">
             {movie.imdbRating && (
-              <span className="rounded bg-black/75 px-1.5 py-0.5 text-micro font-bold text-amber-300 backdrop-blur">
+              <span className="rounded bg-black/80 px-1.5 py-0.5 text-micro font-bold text-amber-300">
                 IMDb {movie.imdbRating.split("/")[0]}
               </span>
             )}
             {movie.rottenTomatoesRating && (
-              <span className="rounded bg-black/75 px-1.5 py-0.5 text-micro font-bold text-red-400 backdrop-blur">
+              <span className="rounded bg-black/80 px-1.5 py-0.5 text-micro font-bold text-red-400">
                 RT {movie.rottenTomatoesRating.replace("%", "")}%
               </span>
             )}
             {movie.metacriticRating && (
-              <span className="rounded bg-black/75 px-1.5 py-0.5 text-micro font-bold text-green-400 backdrop-blur">
+              <span className="rounded bg-black/80 px-1.5 py-0.5 text-micro font-bold text-green-400">
                 MC {movie.metacriticRating.split("/")[0]}
               </span>
             )}
@@ -102,8 +102,8 @@ export function MovieCard({ movie, tab, favorite, onToggleFavorite }: MovieCardP
           aria-label={favorite ? "حذف از ستارهها" : "افزودن به ستارهها"}
           aria-pressed={favorite}
           onClick={() => onToggleFavorite(movie)}
-          className={`sr-no-tap absolute top-2 left-2 z-10 grid h-9 w-9 place-items-center rounded-full text-base shadow-lg backdrop-blur transition ${
-            favorite ? "bg-amber-400 text-ink-950" : "bg-black/45 text-white/85 hover:bg-black/65"
+          className={`sr-no-tap absolute top-2 left-2 z-10 grid h-9 w-9 place-items-center rounded-full text-base shadow-lg transition ${
+            favorite ? "bg-amber-400 text-ink-950" : "bg-black/55 text-white/85 hover:bg-black/70"
           }`}
         >
           <Star className="h-[18px] w-[18px]" fill={favorite ? "currentColor" : "none"} strokeWidth={1.8} />
