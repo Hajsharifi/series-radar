@@ -1,7 +1,7 @@
 {
   "name": "web",
   "private": true,
-  "version": "1.16.10",
+  "version": "1.16.11",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -21,7 +21,8 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.5",
-    "tailwindcss": "^4.3.5"
+    "tailwindcss": "^4.3.5",
+    "web-vitals": "^6.2.3"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
