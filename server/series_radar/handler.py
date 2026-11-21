@@ -23,7 +23,7 @@ from .catalog import (
 from .config import PORT, TMDB, TMDB_HEADERS, TMDB_TOKEN
 from .downloads import MAX_KEYS, match_downloads
 from .http import localized_collection, tmdb_get
-from .metrics import inc_error, inc_request, snapshot
+from .metrics import inc_error, inc_request, observe_latency, snapshot
 from .people import person_detail
 from .text import normalize_fa
 from .tmdb import (
@@ -66,7 +66,8 @@ class Handler(BaseHTTPRequestHandler):
         # parse_qs returns lists; TMDB expects scalar query values.
         flat_query = {k: v[0] for k, v in query.items() if v}
         force = query.get("refresh", ["0"])[0] == "1"
-        inc_request()
+        _started = time.time()
+        inc_request(path)
         try:
             if path == "/api/health":
                 return self.send_json({"ok": True, "time": dt.datetime.utcnow().isoformat() + "Z"})
@@ -235,11 +236,16 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_json({"results": shows, "total_pages": data.get("total_pages")})
             return self.send_json({"error": "not found"}, 404)
         except urllib.error.HTTPError as error:
-            inc_error()
+            inc_error(path)
             return self.send_json({"error": "upstream HTTP %s" % error.code}, 502)
         except Exception as error:
-            inc_error()
+            inc_error(path)
             return self.send_json({"error": str(error)}, 500)
+        finally:
+            try:
+                observe_latency(path, (time.time() - _started) * 1000.0)
+            except Exception:
+                pass
 
     def log_message(self, fmt, *args):
         stamp = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
