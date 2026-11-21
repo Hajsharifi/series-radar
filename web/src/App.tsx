@@ -4,7 +4,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ScheduleProvider } from "./hooks/ScheduleContext";
 import { NativeReminders } from "./components/NativeReminders";
 import { DownloadsWatchlist } from "./components/DownloadsWatchlist";
-import { FavoriteSourceMigration } from "./components/FavoriteSourceMigration";
 import { Layout } from "./components/Layout";
 import { queryClient } from "./lib/queryClient";
 import { Loader } from "./components/Loader";
@@ -36,7 +35,6 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ScheduleProvider>
-        <FavoriteSourceMigration />
         <NativeReminders />
         <DownloadsWatchlist />
         <HashRouter>
