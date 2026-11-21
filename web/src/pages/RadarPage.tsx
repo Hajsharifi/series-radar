@@ -18,6 +18,7 @@ import { CATEGORY_LABEL, genreLabel } from "../lib/labels";
 import { rankFeaturedSuggestions } from "../lib/featured";
 import { favoriteKey } from "../lib/favorites";
 import { RADAR_DEFAULTS, countNonDefaultFilters } from "../lib/radar-filters";
+import { radarGroupLimit, type RadarView } from "../lib/radar-group-limit";
 import { readUiState, writeUiState } from "../lib/ui-state";
 import {
   toPersianDigits,
@@ -112,7 +113,7 @@ export function RadarPage() {
     onlyPopular: readUiState("radar.onlyPopular.v2", RADAR_DEFAULTS.onlyPopular),
   }));
   const [genre, setGenre] = useState<string | null>(() => readUiState("radar.genre", null));
-  const [view, setView] = useState<"grid" | "list" | "compact">(() => readUiState("radar.view", "grid"));
+  const [view, setView] = useState<RadarView>(() => readUiState("radar.view", "grid"));
   const [hideUnscripted, setHideUnscripted] = useState<boolean>(() => readUiState("radar.hideUnscripted", true));
   const [sortBy, setSortBy] = useState<RadarSort>(() => readUiState("radar.sortBy", "date"));
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -168,6 +169,8 @@ export function RadarPage() {
 
   // Narrowing filters hide the featured sections; content preferences do not.
   const hasNarrowingFilters = filters.category !== "all" || !!genre || !!debouncedSearch;
+  const isAllView = filters.category === "all" && genre === null && !debouncedSearch;
+  const groupLimit = radarGroupLimit(view, isAllView);
   const activeFilterCount = countNonDefaultFilters({
     category: filters.category,
     onlyPopular: filters.onlyPopular,
@@ -605,8 +608,9 @@ export function RadarPage() {
           <div className="space-y-6">
             {groups.map((group) => {
               const isExpanded = expandedGroups.has(group.key);
-              const displayShows = isExpanded ? group.shows : group.shows.slice(0, 20);
-              const hasMore = group.shows.length > 20 && !isExpanded;
+              const displayShows = groupLimit === null || isExpanded ? group.shows : group.shows.slice(0, groupLimit);
+              const hiddenCount = groupLimit === null ? 0 : Math.max(0, group.shows.length - groupLimit);
+              const hasMore = hiddenCount > 0 && !isExpanded;
               return (
                 <div key={group.key}>
                   <div className="mb-2.5 flex items-baseline gap-2">
@@ -629,7 +633,7 @@ export function RadarPage() {
                       onClick={() => setExpandedGroups((prev) => new Set(prev).add(group.key))}
                       className="mt-2 w-full rounded-control border border-edge/12 bg-white/4 px-3 py-1.5 text-caption text-ink-200 hover:bg-white/8"
                     >
-                      نمایش {toPersianDigits(group.shows.length - 20)} مورد دیگر
+                      نمایش {toPersianDigits(hiddenCount)} مورد دیگر
                     </button>
                   )}
                 </div>
@@ -640,8 +644,9 @@ export function RadarPage() {
           <div className="space-y-6">
             {groups.map((group) => {
               const isExpanded = expandedGroups.has(group.key);
-              const displayShows = isExpanded ? group.shows : group.shows.slice(0, 30);
-              const hasMore = group.shows.length > 30 && !isExpanded;
+              const displayShows = groupLimit === null || isExpanded ? group.shows : group.shows.slice(0, groupLimit);
+              const hiddenCount = groupLimit === null ? 0 : Math.max(0, group.shows.length - groupLimit);
+              const hasMore = hiddenCount > 0 && !isExpanded;
               return (
                 <div key={group.key}>
                   <div className="mb-2 flex items-baseline gap-2">
@@ -664,7 +669,7 @@ export function RadarPage() {
                       onClick={() => setExpandedGroups((prev) => new Set(prev).add(group.key))}
                       className="mt-2 w-full rounded-control border border-edge/12 bg-white/4 px-3 py-1.5 text-caption text-ink-200 hover:bg-white/8"
                     >
-                      نمایش {toPersianDigits(group.shows.length - 30)} مورد دیگر
+                      نمایش {toPersianDigits(hiddenCount)} مورد دیگر
                     </button>
                   )}
                 </div>
@@ -675,8 +680,9 @@ export function RadarPage() {
           <div className="space-y-6">
             {groups.map((group) => {
               const isExpanded = expandedGroups.has(group.key);
-              const displayShows = isExpanded ? group.shows : group.shows.slice(0, 25);
-              const hasMore = group.shows.length > 25 && !isExpanded;
+              const displayShows = groupLimit === null || isExpanded ? group.shows : group.shows.slice(0, groupLimit);
+              const hiddenCount = groupLimit === null ? 0 : Math.max(0, group.shows.length - groupLimit);
+              const hasMore = hiddenCount > 0 && !isExpanded;
               return (
                 <div key={group.key}>
                   <div className="mb-2.5 flex items-baseline gap-2">
@@ -699,7 +705,7 @@ export function RadarPage() {
                       onClick={() => setExpandedGroups((prev) => new Set(prev).add(group.key))}
                       className="mt-2 w-full rounded-control border border-edge/12 bg-white/4 px-3 py-1.5 text-caption text-ink-200 hover:bg-white/8"
                     >
-                      نمایش {toPersianDigits(group.shows.length - 25)} مورد دیگر
+                      نمایش {toPersianDigits(hiddenCount)} مورد دیگر
                     </button>
                   )}
                 </div>
