@@ -6,6 +6,8 @@ import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useNowTicker } from "../hooks/useSchedule";
 import { useFavoriteEpisodes } from "../hooks/useFavoriteEpisodes";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
+import { cachedFetchJson } from "../lib/offline";
+import { API_BASE } from "../lib/api";
 import { toPersianDigits } from "../lib/date";
 import { readUiState, writeUiState } from "../lib/ui-state";
 import {
@@ -41,6 +43,7 @@ export function FavoritesPage() {
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<Tab>(() => readUiState("favorites.tab", "series"));
   const [detailMap, setDetailMap] = useState<Record<number, Movie>>({});
+  const [seriesDetailMap, setSeriesDetailMap] = useState<Record<number, Show>>({});
   const [removals, setRemovals] = useState<MovieRemoval[]>(() => getPendingMovieRemovals());
   // Last time we asked the server about a favorite that was absent from both
   // lists. Recheck after 30 minutes so a later digital release is still seen.
@@ -67,6 +70,48 @@ export function FavoritesPage() {
   // Group stored rows that describe the same real show. One row may carry a
   // localized title from TMDB detail while the other carries the original
   // title from the list/schedule, so the union (not a single title) is the key.
+  useEffect(() => {
+    for (const item of favorites.items) {
+      const key = favoriteKey(item.showId, item.source);
+      if (scheduledByKey.has(key)) continue;
+      if (favoriteEpisodes.byKey.has(key)) continue;
+      if (seriesDetailMap[item.showId]) continue;
+      void (async () => {
+        try {
+          const data = await cachedFetchJson<any>(`${API_BASE}/api/tv/${item.showId}`, 15000);
+          if (!data) return;
+          setSeriesDetailMap((prev) => ({
+            ...prev,
+            [item.showId]: {
+              id: data.id ?? item.showId,
+              title: data.title ?? `سریال ${item.showId}`,
+              originalTitle: data.originalTitle ?? data.title ?? "",
+              posterPath: data.posterPath ?? null,
+              posterOriginal: data.backdropPath ?? data.posterPath ?? null,
+              overview: data.overview ?? "",
+              genres: data.genres ?? [],
+              rating: data.rating ?? null,
+              votes: data.votes ?? null,
+              popularity: data.popularity ?? null,
+              weight: Math.round((data.popularity ?? 0) * 10),
+              status: data.status ?? null,
+              airstamp: data.nextEpisode?.airdate ? `${data.nextEpisode.airdate}T12:00:00Z` : null,
+              airDate: data.nextEpisode?.airdate ?? null,
+              countryCode: data.countryCode ?? null,
+              language: data.language ?? null,
+              network: data.networkNames?.[0] ?? null,
+              category: "returning" as const,
+              source: "tmdb" as const,
+              mediaType: "tv" as const,
+            } as Show,
+          }));
+        } catch {
+          /* ignore */
+        }
+      })();
+    }
+  }, [favorites.items, scheduledByKey, favoriteEpisodes.byKey, seriesDetailMap]);
+
   const seriesGroups = useMemo(() => {
     const entries = favorites.items.map((item) => {
       const key = favoriteKey(item.showId, item.source);
@@ -97,6 +142,10 @@ export function FavoritesPage() {
         const nextShow = favoriteEpisodes.byKey.get(entry.key);
         for (const show of [scheduledShow, nextShow]) if (show) candidates.push(show);
       }
+      if (candidates.length === 0) {
+        const detailShow = seriesDetailMap[group[0]?.item.showId ?? 0];
+        if (detailShow) candidates.push(detailShow);
+      }
       if (candidates.length === 0) continue;
       // A mid-season episode may be closer than the next season premiere.
       const future = candidates.filter(
@@ -123,7 +172,7 @@ export function FavoritesPage() {
         const bStamp = b.airstamp ? new Date(b.airstamp).getTime() : Number.MAX_SAFE_INTEGER;
         return aStamp - bStamp;
       });
-  }, [seriesGroups, scheduledByKey, favoriteEpisodes.byKey, query]);
+  }, [seriesGroups, scheduledByKey, favoriteEpisodes.byKey, seriesDetailMap, query]);
 
   const uniqueSeriesCount = seriesGroups.length;
 

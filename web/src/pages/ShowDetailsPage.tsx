@@ -23,6 +23,9 @@ import { CreditsSection } from "../components/CreditsSection";
 import { DownloadPanel } from "../components/DownloadPanel";
 import { seriesDownloadKey } from "../lib/downloads";
 import { useTvmazeCredits } from "../hooks/useTvmazeCredits";
+import { cachedFetchJson } from "../lib/offline";
+import { API_BASE } from "../lib/api";
+import { useQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
 import { Button } from "../components/ui";
 
@@ -33,7 +36,40 @@ export function ShowDetailsPage() {
   const favorites = useFavorites();
   const credits = useTvmazeCredits(Number.isFinite(showId) ? showId : null);
 
-  const show = useMemo(() => schedule.shows.find((item) => item.id === showId), [schedule.shows, showId]);
+  const { data: detail, isLoading: detailLoading } = useQuery({
+    queryKey: ["showDetailPage", showId],
+    queryFn: () => cachedFetchJson<any>(`${API_BASE}/api/tv/${showId}`, 15000),
+    enabled: Number.isFinite(showId),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const scheduledShow = useMemo(() => schedule.shows.find((item) => item.id === showId), [schedule.shows, showId]);
+  const show = useMemo(() => {
+    if (scheduledShow) return scheduledShow;
+    if (!detail) return undefined;
+    return {
+      id: detail.id ?? showId,
+      title: detail.title ?? `سریال ${showId}`,
+      originalTitle: detail.originalTitle ?? detail.title ?? "",
+      posterPath: detail.posterPath ?? null,
+      posterOriginal: detail.backdropPath ?? detail.posterPath ?? null,
+      overview: detail.overview ?? "",
+      genres: detail.genres ?? [],
+      rating: detail.rating ?? null,
+      votes: detail.votes ?? null,
+      popularity: detail.popularity ?? null,
+      weight: Math.round((detail.popularity ?? 0) * 10),
+      status: detail.status ?? null,
+      airstamp: detail.nextEpisode?.airdate ? `${detail.nextEpisode.airdate}T12:00:00Z` : null,
+      airDate: detail.nextEpisode?.airdate ?? null,
+      countryCode: detail.countryCode ?? null,
+      language: detail.language ?? null,
+      network: detail.networkNames?.[0] ?? null,
+      category: "returning" as const,
+      source: "tmdb" as const,
+      mediaType: "tv" as const,
+    } as any;
+  }, [scheduledShow, detail, showId]);
   const favorite = favorites.items.find(
     (item) => item.showId === showId && item.source === "tmdb",
   );
@@ -54,7 +90,7 @@ export function ShowDetailsPage() {
   if (!show) {
     return (
       <div className="rounded-card border border-edge/10 bg-panel/70 px-4 py-14 text-center">
-        {schedule.loading ? (
+        {schedule.loading || detailLoading ? (
           <>
             <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-white/10 border-t-amber-400" />
             <p className="mt-3 text-sm text-ink-300">در حال بارگذاری…</p>
@@ -233,7 +269,7 @@ export function ShowDetailsPage() {
 
           {!!show.genres?.length && (
             <div className="flex flex-wrap gap-1.5">
-              {show.genres.map((item) => (
+              {show.genres.map((item: string) => (
                 <span key={item} className="rounded-lg bg-white/5 px-2 py-1 text-caption text-ink-300">
                   {genreLabel(item)}
                 </span>
