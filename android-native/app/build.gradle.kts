@@ -10,8 +10,8 @@ android {
         applicationId = "com.serieradar.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 54
-        versionName = "1.16.6"
+        versionCode = 55
+        versionName = "1.16.7"
     }
 
     signingConfigs {
