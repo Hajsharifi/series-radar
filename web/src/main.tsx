@@ -15,3 +15,8 @@ createRoot(root).render(
     </ErrorBoundary>
   </StrictMode>,
 );
+
+import { onLCP, onINP, onCLS } from "web-vitals";
+onLCP((m) => console.debug("LCP", m.value));
+onINP((m) => console.debug("INP", m.value));
+onCLS((m) => console.debug("CLS", m.value));
