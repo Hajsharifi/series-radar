@@ -74,7 +74,7 @@ export function FavoriteSourceMigration() {
             pending = true; // no confident match — keep the original favorite
             continue;
           }
-          addFavorite(match.id, "tmdb", name);
+          addFavorite(match.id, "tmdb", [name, match.title, match.originalTitle]);
           removeFavorite(item.showId, "tvmaze");
         } catch {
           pending = true; /* keep the original favorite when the lookup fails */

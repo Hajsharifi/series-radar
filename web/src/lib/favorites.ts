@@ -14,6 +14,8 @@ export interface StoredFavorite {
   addedAt: string;
   /** Normalized title used to keep one card per real show across TVmaze/TMDB ids. */
   identity?: string;
+  /** Every normalized title seen for this show (localized and original). */
+  identities?: string[];
 }
 
 export function favoriteKey(showId: number, source: FavoriteSource = "tvmaze"): string {
@@ -38,6 +40,99 @@ export function favoriteSource(source?: string | null): FavoriteSource {
   return source === "tmdb" ? "tmdb" : "tvmaze";
 }
 
+/** Normalize one title or a list of titles (localized + original) to identities. */
+export function normalizeTitles(
+  value?: string | Array<string | null | undefined> | null,
+): string[] {
+  if (!value) return [];
+  const list = Array.isArray(value) ? value : [value];
+  return Array.from(new Set(list.map((title) => titleIdentity(title)).filter(Boolean)));
+}
+
+/** Union of the identities already stored for a favorite and live titles. */
+export function favoriteIdentities(
+  item: Pick<StoredFavorite, "identity" | "identities">,
+  ...titles: Array<string | string[] | null | undefined>
+): string[] {
+  const ids = new Set<string>();
+  if (item.identity) ids.add(titleIdentity(item.identity));
+  for (const id of item.identities ?? []) {
+    const normalized = titleIdentity(id);
+    if (normalized) ids.add(normalized);
+  }
+  for (const title of titles) {
+    for (const id of normalizeTitles(title)) ids.add(id);
+  }
+  return Array.from(ids);
+}
+
+export interface IdentityEntry<T> {
+  item: T;
+  identities: string[];
+}
+
+/**
+ * Group entries that share any normalized identity. Two rows of one show can
+ * carry a localized title in one place and the original title in another, so
+ * grouping on the union is what keeps them on a single card.
+ */
+export function groupByIdentity<T extends { identities: string[] }>(entries: T[]): T[][] {
+  const groups: Array<{ ids: Set<string>; entries: T[] }> = [];
+  for (const entry of entries) {
+    const ids = new Set(entry.identities.filter(Boolean));
+    const matches = groups.filter((group) => Array.from(ids).some((id) => group.ids.has(id)));
+    let target: (typeof groups)[number];
+    if (matches.length === 0) {
+      target = { ids: new Set(), entries: [] };
+      groups.push(target);
+    } else {
+      target = matches[0];
+      for (const extra of matches.slice(1)) {
+        for (const id of extra.ids) target.ids.add(id);
+        target.entries.push(...extra.entries);
+        groups.splice(groups.indexOf(extra), 1);
+      }
+    }
+    for (const id of ids) target.ids.add(id);
+    target.entries.push(entry);
+  }
+  return groups.map((group) => group.entries);
+}
+
+function unionIdentities(...lists: Array<Array<string | undefined> | undefined>): string[] {
+  const ids = new Set<string>();
+  for (const list of lists) {
+    for (const id of list ?? []) if (id) ids.add(id);
+  }
+  return Array.from(ids);
+}
+
+function mergeDuplicateRows(first: StoredFavorite, second: StoredFavorite): StoredFavorite {
+  const earliest = second.addedAt < first.addedAt ? second : first;
+  return {
+    ...earliest,
+    identity: first.identity || second.identity,
+    identities: unionIdentities(first.identities, second.identities, [first.identity, second.identity]),
+  };
+}
+
+/** Collapse rows that point at the exact same stored show (source + id). */
+function collapseDuplicateRows(items: StoredFavorite[]): StoredFavorite[] {
+  const seen = new Map<string, number>();
+  const unique: StoredFavorite[] = [];
+  for (const item of items) {
+    const key = favoriteKey(item.showId, item.source);
+    const index = seen.get(key);
+    if (index === undefined) {
+      seen.set(key, unique.length);
+      unique.push(item);
+    } else {
+      unique[index] = mergeDuplicateRows(unique[index], item);
+    }
+  }
+  return unique;
+}
+
 function normalize(item: Partial<StoredFavorite> & { showId: number }): StoredFavorite {
   return {
     showId: item.showId,
@@ -47,7 +142,10 @@ function normalize(item: Partial<StoredFavorite> & { showId: number }): StoredFa
       ? item.reminderLeadHours
       : getSettings().defaultLeadHours,
     addedAt: item.addedAt ?? new Date().toISOString(),
-    identity: item.identity || undefined,
+    identity: titleIdentity(item.identity) || undefined,
+    identities: Array.isArray(item.identities)
+      ? unionIdentities(item.identities)
+      : undefined,
   };
 }
 
@@ -73,14 +171,29 @@ function read(): StoredFavorite[] {
   } catch {
     hasCurrent = false;
   }
-  if (hasCurrent) return readRaw(STORAGE_KEY);
+  if (hasCurrent) {
+    const items = readRaw(STORAGE_KEY);
+    const unique = collapseDuplicateRows(items);
+    // Repair the stored list without dispatching during a render snapshot.
+    if (unique.length !== items.length) persist(unique);
+    return unique;
+  }
   // Migrate the pre-source list once. An existing empty v2 list is respected.
-  const legacy = readRaw(LEGACY_KEY);
+  const legacy = collapseDuplicateRows(readRaw(LEGACY_KEY));
   if (legacy.length > 0) {
     write(legacy);
     return legacy;
   }
   return [];
+}
+
+/** Write storage without notifying subscribers (safe inside getSnapshot). */
+function persist(items: StoredFavorite[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  } catch {
+    /* ignore */
+  }
 }
 
 function write(items: StoredFavorite[]) {
@@ -101,9 +214,11 @@ export function replaceFavorites(
   items: Array<Partial<StoredFavorite> & { showId: number }>,
 ): void {
   write(
-    items
-      .filter((item) => item && typeof item.showId === "number")
-      .map((item) => normalize(item)),
+    collapseDuplicateRows(
+      items
+        .filter((item) => item && typeof item.showId === "number")
+        .map((item) => normalize(item)),
+    ),
   );
 }
 
@@ -114,22 +229,31 @@ export function isFavorite(showId: number, source: FavoriteSource = "tvmaze"): b
 export function addFavorite(
   showId: number,
   source: FavoriteSource = "tvmaze",
-  title?: string | null,
+  title?: string | Array<string | null | undefined> | null,
 ): void {
-  const items = read();
+  let items = read();
   if (items.some((item) => item.showId === showId && item.source === source)) return;
-  const identity = titleIdentity(title);
-  // One card per real show: if the same title is already starred from the other
-  // source, migrate that entry to this one instead of adding a duplicate card.
-  if (identity) {
-    const duplicate = items.find((item) => (item.identity || "") === identity);
-    if (duplicate) {
-      duplicate.showId = showId;
-      duplicate.source = source;
-      duplicate.identity = identity;
-      write(items);
-      return;
-    }
+  const identities = normalizeTitles(title);
+  // One card per real show: if the same show is already starred from the other
+  // source under a different title (localized vs original), migrate that entry
+  // to this identity instead of adding a duplicate card.
+  const duplicate = identities.length
+    ? items.find((item) => {
+        const stored = favoriteIdentities(item);
+        return identities.some((identity) => stored.includes(identity));
+      })
+    : undefined;
+  if (duplicate) {
+    items = items.filter(
+      (item) =>
+        item === duplicate || !(item.showId === showId && item.source === source),
+    );
+    duplicate.showId = showId;
+    duplicate.source = source;
+    duplicate.identity = identities[0] || duplicate.identity;
+    duplicate.identities = unionIdentities(duplicate.identities, identities, [duplicate.identity]);
+    write(items);
+    return;
   }
   items.push({
     showId,
@@ -137,25 +261,44 @@ export function addFavorite(
     reminderEnabled: true,
     reminderLeadHours: getSettings().defaultLeadHours,
     addedAt: new Date().toISOString(),
-    identity: identity || undefined,
+    identity: identities[0] || undefined,
+    identities: identities.length ? identities : undefined,
   });
   write(items);
 }
 
-/** Repair legacy lists that already contain the same show from two sources.
- * Keeps the entry with the earlier addedAt so reminder settings stay stable. */
-export function dedupeFavorites(resolveTitle: (item: StoredFavorite) => string | null): void {
+/**
+ * Repair legacy lists that already contain the same show from two sources.
+ * Rows are merged when they share any identity (stored or resolved title).
+ * Settings come from the earliest row so reminders stay stable; the canonical
+ * row comes from TMDB when both sources are present.
+ */
+export function dedupeFavorites(
+  resolveTitles: (item: StoredFavorite) => string | string[] | null | undefined,
+): void {
   const items = read();
-  const seen = new Map<string, StoredFavorite>();
-  const kept: StoredFavorite[] = [];
-  for (const item of items) {
-    const identity = item.identity || titleIdentity(resolveTitle(item));
-    if (identity) item.identity = identity;
-    if (identity && seen.has(identity)) continue;
-    if (identity) seen.set(identity, item);
-    kept.push(item);
-  }
-  if (kept.length !== items.length) write(kept);
+  const entries = items.map((item) => ({
+    item,
+    identities: favoriteIdentities(item, resolveTitles(item)),
+  }));
+  const groups = groupByIdentity(entries);
+  const kept = groups.map((group) => {
+    const ids = unionIdentities(...group.map((entry) => entry.identities));
+    const sorted = group
+      .map((entry) => entry.item)
+      .sort((a, b) => a.addedAt.localeCompare(b.addedAt));
+    const earliest = sorted[0];
+    const canonical = sorted.find((item) => item.source === "tmdb") ?? earliest;
+    return {
+      ...canonical,
+      reminderEnabled: earliest.reminderEnabled,
+      reminderLeadHours: earliest.reminderLeadHours,
+      addedAt: earliest.addedAt,
+      identity: canonical.identity || earliest.identity || ids[0],
+      identities: ids.length ? ids : undefined,
+    };
+  });
+  if (JSON.stringify(kept) !== JSON.stringify(items)) write(kept);
 }
 
 export function removeFavorite(showId: number, source: FavoriteSource = "tvmaze"): void {
@@ -166,7 +309,7 @@ export function toggleFavorite(
   showId: number,
   source: FavoriteSource,
   enabled: boolean,
-  title?: string | null,
+  title?: string | Array<string | null | undefined> | null,
 ): void {
   if (enabled) addFavorite(showId, source, title);
   else removeFavorite(showId, source);

@@ -175,7 +175,7 @@ export default function TmdbSeriesPage() {
         <Button
           variant={favorite ? "primary" : "secondary"}
           size="sm"
-          onClick={() => favorites.toggle(showId, "tmdb")}
+          onClick={() => favorites.toggle(showId, "tmdb", [show.title, show.originalTitle ?? ""])}
         >
           <Star className="h-3.5 w-3.5" fill={favorite ? "currentColor" : "none"} strokeWidth={1.8} />
           {favorite ? "ستاره‌دار" : "ستاره"}
@@ -261,7 +261,7 @@ export default function TmdbSeriesPage() {
                 aria-pressed={reminderOn}
                 onClick={() => {
                   if (!favorite) {
-                    favorites.add(showId, "tmdb");
+                    favorites.add(showId, "tmdb", [show.title, show.originalTitle ?? ""]);
                     return;
                   }
                   favorites.setReminder(showId, "tmdb", favorite.reminderEnabled === false);

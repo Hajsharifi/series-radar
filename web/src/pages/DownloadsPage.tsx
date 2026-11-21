@@ -7,7 +7,7 @@ import { useScheduleContext } from "../hooks/ScheduleContext";
 import { useMovieCatalog, useMovieFavorites } from "../hooks/useMovies";
 import { useDownloads } from "../hooks/useDownloads";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
-import { favoriteKey } from "../lib/favorites";
+import { favoriteKey, favoriteIdentities, groupByIdentity, titleIdentity } from "../lib/favorites";
 import { relativeSyncLabel, toPersianDigits } from "../lib/date";
 import {
   detailRouteFor,
@@ -50,25 +50,42 @@ export default function DownloadsPage() {
 
   const entries = useMemo<Entry[]>(() => {
     const byKey = new Map<string, Entry>();
-    for (const favorite of favorites.items) {
+    const seriesRows = favorites.items.map((favorite) => {
       const source = favorite.source === "tmdb" ? "tmdb" : "tvmaze";
       const key = seriesDownloadKey(favorite.showId, source);
       const keyString = favoriteKey(favorite.showId, favorite.source);
       const show = schedule.shows.find((item) => favoriteKey(item.id, item.source ?? "tvmaze") === keyString)
         ?? episodes.byKey.get(keyString);
-      byKey.set(key, {
+      const entry: Entry = {
         key,
         title: show?.title ?? `سریال ${favorite.showId}`,
         kind: "series",
         archived: false,
         route: detailRouteFor(key),
-      });
+      };
+      return {
+        favorite,
+        entry,
+        identities: favoriteIdentities(favorite, show?.title, show?.originalTitle),
+      };
+    });
+    // One download card per real show. TMDB wins when both sources are starred.
+    for (const group of groupByIdentity(seriesRows)) {
+      const canonical = group.find((row) => row.favorite.source === "tmdb") ?? group[0];
+      byKey.set(canonical.entry.key, canonical.entry);
     }
+
+    const seenMovies = new Set<string>();
     for (const favorite of movieFavorites.items) {
+      const movie = catalog.byId.get(favorite.movieId);
+      const identity = movie ? titleIdentity(movie.title) : "";
+      const cardKey = identity || `id:${favorite.movieId}`;
+      if (seenMovies.has(cardKey)) continue;
+      seenMovies.add(cardKey);
       const key = movieDownloadKey(favorite.movieId);
       byKey.set(key, {
         key,
-        title: catalog.byId.get(favorite.movieId)?.title ?? `فیلم ${favorite.movieId}`,
+        title: movie?.title ?? `فیلم ${favorite.movieId}`,
         kind: "movie",
         archived: false,
         route: detailRouteFor(key),
@@ -76,6 +93,10 @@ export default function DownloadsPage() {
     }
     for (const removal of removals) {
       if (removal.reason !== "available") continue;
+      const identity = titleIdentity(removal.title);
+      const cardKey = identity || `id:${removal.movieId}`;
+      if (seenMovies.has(cardKey)) continue;
+      seenMovies.add(cardKey);
       const key = movieDownloadKey(removal.movieId);
       if (byKey.has(key)) continue;
       byKey.set(key, {

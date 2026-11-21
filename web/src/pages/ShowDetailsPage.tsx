@@ -85,7 +85,7 @@ export function ShowDetailsPage() {
         <Button
           variant={isFavorite ? "primary" : "secondary"}
           size="sm"
-          onClick={() => favorites.toggle(show.id, "tvmaze")}
+          onClick={() => favorites.toggle(show.id, "tvmaze", [show.title, show.originalTitle ?? ""])}
         >
           <Star className="h-3.5 w-3.5" fill={isFavorite ? "currentColor" : "none"} strokeWidth={1.8} />
           {isFavorite ? "ستاره‌دار" : "ستاره"}
@@ -180,7 +180,7 @@ export function ShowDetailsPage() {
                 type="button"
                 onClick={() => {
                   if (!favorite) {
-                    favorites.add(show.id, "tvmaze");
+                    favorites.add(show.id, "tvmaze", [show.title, show.originalTitle ?? ""]);
                     return;
                   }
                   favorites.setReminder(show.id, "tvmaze", favorite.reminderEnabled === false);
@@ -267,7 +267,7 @@ export function ShowDetailsPage() {
                 <ShowCard
                   show={item}
                   favorite={favorites.keys.has(`${item.source ?? "tvmaze"}:${item.id}`)}
-                  onToggleFavorite={() => favorites.toggle(item.id, item.source ?? "tvmaze")}
+                  onToggleFavorite={() => favorites.toggle(item.id, item.source ?? "tvmaze", [item.title, item.originalTitle ?? ""])}
                 />
               </div>
             ))}

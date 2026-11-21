@@ -22,7 +22,7 @@ import {
   type MovieRemoval,
 } from "../lib/movie-removals";
 import type { Movie, Show } from "../types";
-import { favoriteKey, titleIdentity } from "../lib/favorites";
+import { favoriteKey, favoriteIdentities, groupByIdentity, titleIdentity } from "../lib/favorites";
 import { ShowRow } from "../components/ShowCard";
 import { MovieRow } from "../components/MovieCard";
 import { MovieHistoryPageLink } from "../components/MovieHistoryLink";
@@ -56,17 +56,47 @@ export function FavoritesPage() {
     return subscribeMovieRemovals(sync);
   }, []);
 
+  const scheduledByKey = useMemo(
+    () =>
+      new Map(
+        schedule.shows.map((show) => [favoriteKey(show.id, show.source ?? "tvmaze"), show]),
+      ),
+    [schedule.shows],
+  );
+
+  // Group stored rows that describe the same real show. One row may carry a
+  // localized title from TMDB detail while the other carries the original
+  // title from the list/schedule, so the union (not a single title) is the key.
+  const seriesGroups = useMemo(() => {
+    const entries = favorites.items.map((item) => {
+      const key = favoriteKey(item.showId, item.source);
+      const scheduledShow = scheduledByKey.get(key);
+      const nextShow = favoriteEpisodes.byKey.get(key);
+      return {
+        item,
+        key,
+        identities: favoriteIdentities(
+          item,
+          scheduledShow?.title,
+          scheduledShow?.originalTitle,
+          nextShow?.title,
+          nextShow?.originalTitle,
+        ),
+      };
+    });
+    return groupByIdentity(entries);
+  }, [favorites.items, scheduledByKey, favoriteEpisodes.byKey]);
+
   const shows = useMemo(() => {
-    const scheduled = new Map(
-      schedule.shows.map((show) => [favoriteKey(show.id, show.source ?? "tvmaze"), show]),
-    );
     const now = Date.now();
     const merged: Show[] = [];
-    for (const item of favorites.items) {
-      const key = favoriteKey(item.showId, item.source);
-      const scheduledShow = scheduled.get(key);
-      const nextShow = favoriteEpisodes.byKey.get(key);
-      const candidates = [scheduledShow, nextShow].filter((show): show is Show => Boolean(show));
+    for (const group of seriesGroups) {
+      const candidates: Show[] = [];
+      for (const entry of group) {
+        const scheduledShow = scheduledByKey.get(entry.key);
+        const nextShow = favoriteEpisodes.byKey.get(entry.key);
+        for (const show of [scheduledShow, nextShow]) if (show) candidates.push(show);
+      }
       if (candidates.length === 0) continue;
       // A mid-season episode may be closer than the next season premiere.
       const future = candidates.filter(
@@ -77,10 +107,13 @@ export function FavoritesPage() {
       )[0];
       if (chosen) merged.push(chosen);
     }
-    // One card per real show even if the stored list still holds both sources.
+    // Last line of defence for rows whose stored identity never made it to disk.
     const unique = new Map<string, Show>();
     for (const show of merged) {
-      const id = titleIdentity(show.title) || favoriteKey(show.id, show.source ?? "tvmaze");
+      const id =
+        titleIdentity(show.title) ||
+        titleIdentity(show.originalTitle) ||
+        favoriteKey(show.id, show.source ?? "tvmaze");
       if (!unique.has(id)) unique.set(id, show);
     }
     return Array.from(unique.values())
@@ -90,7 +123,9 @@ export function FavoritesPage() {
         const bStamp = b.airstamp ? new Date(b.airstamp).getTime() : Number.MAX_SAFE_INTEGER;
         return aStamp - bStamp;
       });
-  }, [schedule.shows, favorites.items, favoriteEpisodes.byKey, query]);
+  }, [seriesGroups, scheduledByKey, favoriteEpisodes.byKey, query]);
+
+  const uniqueSeriesCount = seriesGroups.length;
 
   const availableKeys = useMemo(() => {
     const now = Date.now() - 6 * 3_600_000;
@@ -162,14 +197,30 @@ export function FavoritesPage() {
     };
   }, [movieFavorites, moviesById]);
 
-  const movies = useMemo(() => {
+  const resolvedMovies = useMemo(() => {
     const map = new Map(moviesById);
     for (const [key, movie] of Object.entries(detailMap)) map.set(Number(key), movie);
     return movieFavorites.items
       .map((item) => map.get(item.movieId))
       .filter((movie): movie is Movie => Boolean(movie))
-      .filter((movie) => !isMovieFinished(movie))
+      .filter((movie) => !isMovieFinished(movie));
+  }, [movieFavorites.items, moviesById, detailMap]);
+
+  const movies = useMemo(() => {
+    // Different TMDB ids can still describe one film; collapse them by title
+    // and release year so the list never shows the same movie twice.
+    const seen = new Set<string>();
+    return resolvedMovies
       .filter((movie) => movie.title.toLowerCase().includes(query.trim().toLowerCase()))
+      .filter((movie) => {
+        const identity = titleIdentity(movie.title);
+        if (!identity) return true;
+        const year = (movie.releaseDate ?? "").slice(0, 4);
+        const key = `${identity}|${year}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
       .sort((a, b) => {
         const aStage = movieStage(a);
         const bStage = movieStage(b);
@@ -178,16 +229,16 @@ export function FavoritesPage() {
         const bDate = moviePrimaryDate(b, bStage === "upcoming" ? "upcoming" : "quality") ?? "9999";
         return aDate.localeCompare(bDate);
       });
-  }, [movieFavorites.items, moviesById, detailMap, query]);
+  }, [resolvedMovies, query]);
 
   const upcomingMovies = movies.filter((movie) => movieStage(movie) === "upcoming");
   const qualityMovies = movies.filter((movie) => movieStage(movie) !== "upcoming");
 
-  const missingShows = favorites.items.filter(
-    (item) => !availableKeys.has(favoriteKey(item.showId, item.source)),
+  const missingShows = seriesGroups.filter(
+    (group) => !group.some((entry) => availableKeys.has(entry.key)),
   ).length;
-  const missingMovies = movieFavorites.items.length - movies.length;
-  const total = favorites.items.length + movieFavorites.items.length;
+  const missingMovies = Math.max(0, movieFavorites.items.length - resolvedMovies.length);
+  const total = uniqueSeriesCount + movieFavorites.items.length;
 
   function renderMovieRow(movie: Movie) {
     const stage = movieStage(movie);
@@ -209,7 +260,7 @@ export function FavoritesPage() {
         <div>
           <h1 className="text-xl font-extrabold text-white">ستاره‌های من</h1>
           <p className="mt-1 text-xs text-muted">
-            {toPersianDigits(total)} مورد · {toPersianDigits(favorites.items.length)} سریال،{" "}
+            {toPersianDigits(total)} مورد · {toPersianDigits(uniqueSeriesCount)} سریال،{" "}
             {toPersianDigits(movieFavorites.items.length)} فیلم · ذخیره‌شده روی همین گوشی
           </p>
         </div>
@@ -250,7 +301,7 @@ export function FavoritesPage() {
             tab === "series" ? "bg-amber-400 text-ink-950" : "border border-white/10 bg-white/5 text-ink-300"
           }`}
         >
-          سریال‌ها ({toPersianDigits(favorites.items.length)})
+          سریال‌ها ({toPersianDigits(uniqueSeriesCount)})
         </button>
         <button
           type="button"
@@ -301,7 +352,7 @@ export function FavoritesPage() {
       )}
 
       {tab === "series" ? (
-        favorites.items.length === 0 ? (
+        uniqueSeriesCount === 0 ? (
           <EmptySeries />
         ) : shows.length === 0 ? (
           <div className="rounded-card border border-edge/10 bg-panel/70 px-4 py-10 text-center">
@@ -321,7 +372,7 @@ export function FavoritesPage() {
                 key={favoriteKey(show.id, show.source ?? "tvmaze")}
                 show={show}
                 favorite
-                onToggleFavorite={() => favorites.toggle(show.id, show.source ?? "tvmaze", show.title)}
+                onToggleFavorite={() => favorites.toggle(show.id, show.source ?? "tvmaze", [show.title, show.originalTitle ?? ""])}
               />
             ))}
           </div>

@@ -1,5 +1,5 @@
 import { getFavorites, replaceFavorites } from "./favorites";
-import { getMovieFavorites } from "./movie-favorites";
+import { getMovieFavorites, replaceMovieFavorites } from "./movie-favorites";
 import { getTrackedMovies } from "./movie-track";
 
 export interface BackupData {
@@ -55,14 +55,13 @@ export function importBackup(jsonText: string): { ok: boolean; error?: string } 
     }
     replaceFavorites(data.favorites);
     localStorage.removeItem("sr:favorites:v1");
-    localStorage.setItem("sr:movie-favorites:v1", JSON.stringify(data.movieFavorites));
+    replaceMovieFavorites(data.movieFavorites);
     localStorage.setItem("sr:movie-track:v1", JSON.stringify(data.trackedMovies));
     if (data.episodeTracking) {
       localStorage.setItem(EPISODE_KEY, JSON.stringify(data.episodeTracking));
       window.dispatchEvent(new Event("sr-episode-tracking-changed"));
     }
     window.dispatchEvent(new Event("sr-favorites-changed"));
-    window.dispatchEvent(new Event("sr-movie-favorites-changed"));
     window.dispatchEvent(new Event("sr-movie-track-changed"));
     return { ok: true };
   } catch (e) {

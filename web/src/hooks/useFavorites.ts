@@ -32,7 +32,7 @@ export function useFavorites() {
   const ids = new Set(items.filter((item) => item.source === "tvmaze").map((item) => item.showId));
   const keys = new Set(items.map((item) => favoriteKey(item.showId, item.source)));
 
-  const toggle = useCallback((showId: number, source: FavoriteSource = "tvmaze", title?: string | null) => {
+  const toggle = useCallback((showId: number, source: FavoriteSource = "tvmaze", title?: string | Array<string | null | undefined> | null) => {
     const enabled = !isFavorite(showId, source);
     persistToggle(showId, source, enabled, title);
     if (enabled) requestNotificationPermission();
@@ -40,7 +40,7 @@ export function useFavorites() {
     return enabled;
   }, []);
 
-  const add = useCallback((showId: number, source: FavoriteSource = "tvmaze", title?: string | null) => {
+  const add = useCallback((showId: number, source: FavoriteSource = "tvmaze", title?: string | Array<string | null | undefined> | null) => {
     addFavorite(showId, source, title);
     requestNotificationPermission();
     setItems(getFavorites());

@@ -157,7 +157,7 @@ export function RadarPage() {
   const todayLabel = useMemo(() => jalaliFromStamp(new Date(now).toISOString()), [now]);
 
   const toggle = useCallback(
-    (show: Show) => favorites.toggle(show.id, show.source ?? "tvmaze", show.title),
+    (show: Show) => favorites.toggle(show.id, show.source ?? "tvmaze", [show.title, show.originalTitle ?? ""]),
     [favorites],
   );
   const isFavorite = useCallback(
