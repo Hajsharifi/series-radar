@@ -29,8 +29,8 @@ Root causes are therefore two separate ones: (a) defaults are too narrow, and
   the four standard lists appear in Radar (Blade Runner 2099 is the acceptance
   example).
 - No change to favorite identity, storage, reminders, calendar, downloads, or
-  the Persian/RTL UI beyond the filter defaults and a small hint when filters
-  are active.
+  the Persian/RTL UI beyond the filter defaults. The existing `SectionHeader`
+  description stays as-is; no new hint component is added.
 - No new external series source; no TVMaze schedule reintroduction.
 
 ## Non-goals / anti-goals
@@ -109,9 +109,24 @@ Root causes are therefore two separate ones: (a) defaults are too narrow, and
   header shows a substantially larger count; HTTPS and legacy HTTP APK URLs
   return 200.
 
+## Decisions from the builder check
+
+- **Shared schedule, not a Radar-only fetch.** `CalendarPage` already filters
+  `schedule.shows` by `favoriteKeys` (see `CalendarPage.tsx:107-160`), and
+  `NativeReminders`, `DownloadsWatchlist`, and `FavoritesPage` also work from
+  favorites. Adding the feed to `fetchTVSchedule()` therefore does not add
+  unstarred items to Calendar or add reminders; a separate Radar-only cache
+  would duplicate the existing snapshot and refresh logic for no benefit.
+- **Filter badge semantics.** With the new defaults, the existing
+  `activeFilterCount` would always show `2` and `hasFilters` would always be
+  true. Redefine both as *non-default* filters only: compare against the new
+  defaults instead of hard-coded `"all"`/`true` values. No new UI element.
+- **Testable API code.** Extract the discover-fetch/dedupe/cap/fail-soft logic
+  into a pure async helper (in `tmdb.py`, next to `enrich_tv_meta`), and have
+  the `handler.py` route call it. Tests monkeypatch the helper's dependencies
+  and call it directly; no fake HTTP request is needed.
+
 ## Open choices left to the builder
 
 - Exact cache TTLs and page counts are defaults above; adjust only if live
   latency or TMDB rate limits require it, and keep them documented here.
-- Whether to expose the new feed in the Calendar is out of scope for this
-  release; Radar and the schedule cache are the only consumers.
