@@ -17,6 +17,7 @@ import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { CATEGORY_LABEL, genreLabel } from "../lib/labels";
 import { rankFeaturedSuggestions } from "../lib/featured";
 import { favoriteKey } from "../lib/favorites";
+import { RADAR_DEFAULTS, countNonDefaultFilters } from "../lib/radar-filters";
 import { readUiState, writeUiState } from "../lib/ui-state";
 import {
   toPersianDigits,
@@ -107,26 +108,26 @@ export function RadarPage() {
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<ShowFilters>(() => ({
     search: "",
-    category: readUiState("radar.category", "all"),
-    onlyPopular: readUiState("radar.onlyPopular", true),
+    category: readUiState("radar.category.v2", RADAR_DEFAULTS.category),
+    onlyPopular: readUiState("radar.onlyPopular.v2", RADAR_DEFAULTS.onlyPopular),
   }));
   const [genre, setGenre] = useState<string | null>(() => readUiState("radar.genre", null));
   const [view, setView] = useState<"grid" | "list" | "compact">(() => readUiState("radar.view", "grid"));
   const [hideUnscripted, setHideUnscripted] = useState<boolean>(() => readUiState("radar.hideUnscripted", true));
   const [sortBy, setSortBy] = useState<RadarSort>(() => readUiState("radar.sortBy", "date"));
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [language, setLanguage] = useState<string>(() => readUiState("radar.language", "en"));
-  const [country, setCountry] = useState<string>(() => readUiState("radar.country", "US"));
+  const [language, setLanguage] = useState<string>(() => readUiState("radar.language.v2", RADAR_DEFAULTS.language));
+  const [country, setCountry] = useState<string>(() => readUiState("radar.country.v2", RADAR_DEFAULTS.country));
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
-  useEffect(() => writeUiState("radar.category", filters.category), [filters.category]);
-  useEffect(() => writeUiState("radar.onlyPopular", filters.onlyPopular), [filters.onlyPopular]);
+  useEffect(() => writeUiState("radar.category.v2", filters.category), [filters.category]);
+  useEffect(() => writeUiState("radar.onlyPopular.v2", filters.onlyPopular), [filters.onlyPopular]);
   useEffect(() => writeUiState("radar.genre", genre), [genre]);
   useEffect(() => writeUiState("radar.view", view), [view]);
   useEffect(() => writeUiState("radar.hideUnscripted", hideUnscripted), [hideUnscripted]);
   useEffect(() => writeUiState("radar.sortBy", sortBy), [sortBy]);
-  useEffect(() => writeUiState("radar.language", language), [language]);
-  useEffect(() => writeUiState("radar.country", country), [country]);
+  useEffect(() => writeUiState("radar.language.v2", language), [language]);
+  useEffect(() => writeUiState("radar.country.v2", country), [country]);
 
   usePullToRefresh(() => schedule.refresh(), { threshold: 80 });
 
@@ -167,22 +168,27 @@ export function RadarPage() {
 
   // Narrowing filters hide the featured sections; content preferences do not.
   const hasNarrowingFilters = filters.category !== "all" || !!genre || !!debouncedSearch;
-  const hasFilters = hasNarrowingFilters || hideUnscripted || language !== "all" || country !== "all";
-  const activeFilterCount =
-    (filters.category !== "all" ? 1 : 0) +
-    (genre ? 1 : 0) +
-    (!filters.onlyPopular ? 1 : 0) +
-    (hideUnscripted ? 1 : 0) +
-    (language !== "all" ? 1 : 0) +
-    (country !== "all" ? 1 : 0);
+  const activeFilterCount = countNonDefaultFilters({
+    category: filters.category,
+    onlyPopular: filters.onlyPopular,
+    genre,
+    hideUnscripted,
+    language,
+    country,
+  });
+  const hasFilters = activeFilterCount > 0;
 
   function clearFilters() {
     setSearch("");
-    setGenre(null);
-    setHideUnscripted(true);
-    setLanguage("en");
-    setCountry("US");
-    setFilters({ search: "", category: "all", onlyPopular: true });
+    setGenre(RADAR_DEFAULTS.genre);
+    setHideUnscripted(RADAR_DEFAULTS.hideUnscripted);
+    setLanguage(RADAR_DEFAULTS.language);
+    setCountry(RADAR_DEFAULTS.country);
+    setFilters({
+      search: "",
+      category: RADAR_DEFAULTS.category,
+      onlyPopular: RADAR_DEFAULTS.onlyPopular,
+    });
   }
 
   // Live TV hooks
