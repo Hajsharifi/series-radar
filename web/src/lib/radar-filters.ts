@@ -1,4 +1,6 @@
-import type { CategoryFilter } from "./tvmaze";
+import type { Show } from "../types";
+
+export type CategoryFilter = "all" | Show["category"];
 
 export interface RadarFilterState {
   category: CategoryFilter;
