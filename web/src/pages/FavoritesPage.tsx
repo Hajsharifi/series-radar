@@ -59,7 +59,7 @@ export function FavoritesPage() {
   const scheduledByKey = useMemo(
     () =>
       new Map(
-        schedule.shows.map((show) => [favoriteKey(show.id, show.source ?? "tvmaze"), show]),
+        schedule.shows.map((show) => [favoriteKey(show.id, show.source ?? "tmdb"), show]),
       ),
     [schedule.shows],
   );
@@ -113,7 +113,7 @@ export function FavoritesPage() {
       const id =
         titleIdentity(show.title) ||
         titleIdentity(show.originalTitle) ||
-        favoriteKey(show.id, show.source ?? "tvmaze");
+        favoriteKey(show.id, show.source ?? "tmdb");
       if (!unique.has(id)) unique.set(id, show);
     }
     return Array.from(unique.values())
@@ -132,7 +132,7 @@ export function FavoritesPage() {
     const keys = new Set(
       schedule.shows
         .filter((show) => show.airstamp && new Date(show.airstamp).getTime() >= now)
-        .map((show) => favoriteKey(show.id, show.source ?? "tvmaze")),
+        .map((show) => favoriteKey(show.id, show.source ?? "tmdb")),
     );
     favoriteEpisodes.items.forEach((show) => {
       if (show.airstamp && new Date(show.airstamp).getTime() >= now) {
@@ -369,10 +369,10 @@ export function FavoritesPage() {
           <div className="space-y-2">
             {shows.map((show) => (
               <ShowRow
-                key={favoriteKey(show.id, show.source ?? "tvmaze")}
+                key={favoriteKey(show.id, show.source ?? "tmdb")}
                 show={show}
                 favorite
-                onToggleFavorite={() => favorites.toggle(show.id, show.source ?? "tvmaze", [show.title, show.originalTitle ?? ""])}
+                onToggleFavorite={() => favorites.toggle(show.id, show.source ?? "tmdb", [show.title, show.originalTitle ?? ""])}
               />
             ))}
           </div>

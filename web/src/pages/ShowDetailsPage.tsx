@@ -35,7 +35,7 @@ export function ShowDetailsPage() {
 
   const show = useMemo(() => schedule.shows.find((item) => item.id === showId), [schedule.shows, showId]);
   const favorite = favorites.items.find(
-    (item) => item.showId === showId && item.source === "tvmaze",
+    (item) => item.showId === showId && item.source === "tmdb",
   );
   const reminderOn = Boolean(favorite) && favorite?.reminderEnabled !== false;
 
@@ -85,7 +85,7 @@ export function ShowDetailsPage() {
         <Button
           variant={isFavorite ? "primary" : "secondary"}
           size="sm"
-          onClick={() => favorites.toggle(show.id, "tvmaze", [show.title, show.originalTitle ?? ""])}
+          onClick={() => favorites.toggle(show.id, "tmdb", [show.title, show.originalTitle ?? ""])}
         >
           <Star className="h-3.5 w-3.5" fill={isFavorite ? "currentColor" : "none"} strokeWidth={1.8} />
           {isFavorite ? "ستاره‌دار" : "ستاره"}
@@ -180,10 +180,10 @@ export function ShowDetailsPage() {
                 type="button"
                 onClick={() => {
                   if (!favorite) {
-                    favorites.add(show.id, "tvmaze", [show.title, show.originalTitle ?? ""]);
+                    favorites.add(show.id, "tmdb", [show.title, show.originalTitle ?? ""]);
                     return;
                   }
-                  favorites.setReminder(show.id, "tvmaze", favorite.reminderEnabled === false);
+                  favorites.setReminder(show.id, "tmdb", favorite.reminderEnabled === false);
                 }}
                 className={`relative h-6 w-11 shrink-0 rounded-full transition ${
                   reminderOn ? "bg-amber-400" : "bg-white/15"
@@ -206,7 +206,7 @@ export function ShowDetailsPage() {
                     <button
                       key={option.hours}
                       type="button"
-                      onClick={() => favorites.setLead(show.id, "tvmaze", option.hours)}
+                      onClick={() => favorites.setLead(show.id, "tmdb", option.hours)}
                       className={`sr-no-tap rounded-lg px-2.5 py-1 text-caption ${
                         lead === option.hours ? "bg-amber-400 font-semibold text-ink-950" : "bg-white/6 text-ink-300"
                       }`}
@@ -256,7 +256,7 @@ export function ShowDetailsPage() {
         </div>
       </article>
 
-      <DownloadPanel keyName={seriesDownloadKey(showId, "tvmaze")} enabled={isFavorite} />
+      <DownloadPanel keyName={seriesDownloadKey(showId, "tmdb")} enabled={isFavorite} />
 
       {related.length > 0 && (
         <section>
@@ -266,8 +266,8 @@ export function ShowDetailsPage() {
               <div key={item.id} className="w-[136px] shrink-0">
                 <ShowCard
                   show={item}
-                  favorite={favorites.keys.has(`${item.source ?? "tvmaze"}:${item.id}`)}
-                  onToggleFavorite={() => favorites.toggle(item.id, item.source ?? "tvmaze", [item.title, item.originalTitle ?? ""])}
+                  favorite={favorites.keys.has(`${item.source ?? "tmdb"}:${item.id}`)}
+                  onToggleFavorite={() => favorites.toggle(item.id, item.source ?? "tmdb", [item.title, item.originalTitle ?? ""])}
                 />
               </div>
             ))}

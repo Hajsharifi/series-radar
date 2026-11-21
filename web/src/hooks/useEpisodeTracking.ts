@@ -4,7 +4,7 @@ const STORAGE_KEY = "sr:episode-tracking:v2";
 const LEGACY_KEY = "sr:episode-tracking:v1";
 
 /** TVMaze and TMDB show ids can collide, so watched episodes are namespaced. */
-export type TrackSource = "tmdb" | "tvmaze";
+export type TrackSource = "tmdb";
 
 export interface EpisodeTrackingState {
   [showKey: string]: number[]; // episode ids
@@ -19,7 +19,24 @@ function load(): EpisodeTrackingState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object") return parsed as EpisodeTrackingState;
+      if (parsed && typeof parsed === "object") {
+        const state = parsed as EpisodeTrackingState;
+        // Migrate any legacy tvmaze: keys to tmdb: keys (one-time, in memory).
+        const migrated: EpisodeTrackingState = { ...state };
+        let changed = false;
+        for (const [key, eps] of Object.entries(state)) {
+          if (key.startsWith("tvmaze:")) {
+            const tmdbKey = "tmdb:" + key.slice("tvmaze:".length);
+            if (!migrated[tmdbKey]) migrated[tmdbKey] = eps;
+            delete migrated[key];
+            changed = true;
+          }
+        }
+        if (changed) {
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated)); } catch { /* ignore */ }
+        }
+        return migrated;
+      }
     }
     // One-time migration from the old, non-namespaced store.
     const legacy = localStorage.getItem(LEGACY_KEY);
@@ -27,7 +44,7 @@ function load(): EpisodeTrackingState {
       const parsed = JSON.parse(legacy) as Record<string, number[]>;
       const migrated: EpisodeTrackingState = {};
       for (const [showId, episodes] of Object.entries(parsed || {})) {
-        if (Array.isArray(episodes)) migrated[keyOf("tvmaze", Number(showId))] = episodes;
+        if (Array.isArray(episodes)) migrated[keyOf("tmdb", Number(showId))] = episodes;
       }
       return migrated;
     }

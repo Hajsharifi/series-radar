@@ -8,7 +8,7 @@ export function movieDownloadKey(movieId: number): string {
 
 export function seriesDownloadKey(
   id: number,
-  source: "tmdb" | "tvmaze" = "tvmaze",
+  source: "tmdb" | "tvmaze" = "tmdb",
 ): string {
   return `series:${source}:${id}`;
 }

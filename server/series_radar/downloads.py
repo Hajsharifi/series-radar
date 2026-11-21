@@ -598,18 +598,7 @@ def metadata(spec, refresh=False):
             "original": data.get("original_name") or "",
             "year": (data.get("first_air_date") or "")[:4],
         }
-    key = "tvmaze:show:%d" % spec["id"]
-    cached = cache_get(key, 86400)
-    if cached is not None and not refresh:
-        return cached
-    try:
-        data = fetch_json("https://api.tvmaze.com/shows/%d" % spec["id"], timeout=12)
-    except Exception as error:
-        raise SourceError("metadata unavailable") from error
-    result = {"title": data.get("name") or "", "original": data.get("name") or "",
-              "year": (data.get("premiered") or "")[:4]}
-    cache_put(key, result)
-    return result
+    raise SourceError("tvmaze source is no longer supported; migrate to tmdb")
 
 
 def _matches_movie(candidate, names, year):

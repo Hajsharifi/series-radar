@@ -29,10 +29,10 @@ export function useFavorites() {
     return unsubscribe;
   }, []);
 
-  const ids = new Set(items.filter((item) => item.source === "tvmaze").map((item) => item.showId));
+  const ids = new Set(items.filter((item) => item.source === "tmdb").map((item) => item.showId));
   const keys = new Set(items.map((item) => favoriteKey(item.showId, item.source)));
 
-  const toggle = useCallback((showId: number, source: FavoriteSource = "tvmaze", title?: string | Array<string | null | undefined> | null) => {
+  const toggle = useCallback((showId: number, source: FavoriteSource = "tmdb", title?: string | Array<string | null | undefined> | null) => {
     const enabled = !isFavorite(showId, source);
     persistToggle(showId, source, enabled, title);
     if (enabled) requestNotificationPermission();
@@ -40,13 +40,13 @@ export function useFavorites() {
     return enabled;
   }, []);
 
-  const add = useCallback((showId: number, source: FavoriteSource = "tvmaze", title?: string | Array<string | null | undefined> | null) => {
+  const add = useCallback((showId: number, source: FavoriteSource = "tmdb", title?: string | Array<string | null | undefined> | null) => {
     addFavorite(showId, source, title);
     requestNotificationPermission();
     setItems(getFavorites());
   }, []);
 
-  const remove = useCallback((showId: number, source: FavoriteSource = "tvmaze") => {
+  const remove = useCallback((showId: number, source: FavoriteSource = "tmdb") => {
     removeFavorite(showId, source);
     setItems(getFavorites());
   }, []);
@@ -62,7 +62,7 @@ export function useFavorites() {
   }, []);
 
   const find = useCallback(
-    (showId: number, source: FavoriteSource = "tvmaze") =>
+    (showId: number, source: FavoriteSource = "tmdb") =>
       items.find((item) => item.showId === showId && item.source === favoriteSource(source)),
     [items],
   );
@@ -78,6 +78,6 @@ export function useFavorites() {
     setReminder,
     setLead,
     find,
-    isFavorite: (id: number, source: FavoriteSource = "tvmaze") => keys.has(favoriteKey(id, source)),
+    isFavorite: (id: number, source: FavoriteSource = "tmdb") => keys.has(favoriteKey(id, source)),
   };
 }

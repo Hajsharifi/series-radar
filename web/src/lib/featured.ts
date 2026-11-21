@@ -45,7 +45,7 @@ export function canonicalGenre(value?: string | null): string {
 }
 
 function showKey(show: Show): string {
-  return `${show.source ?? "tvmaze"}:${show.id}`;
+  return `${show.source ?? "tmdb"}:${show.id}`;
 }
 
 /** Lower confidence bound for a rating, so a lone 9.0 from a handful of

@@ -51,10 +51,10 @@ export default function DownloadsPage() {
   const entries = useMemo<Entry[]>(() => {
     const byKey = new Map<string, Entry>();
     const seriesRows = favorites.items.map((favorite) => {
-      const source = favorite.source === "tmdb" ? "tmdb" : "tvmaze";
+      const source = favorite.source === "tmdb" ? "tmdb" : "tmdb";
       const key = seriesDownloadKey(favorite.showId, source);
       const keyString = favoriteKey(favorite.showId, favorite.source);
-      const show = schedule.shows.find((item) => favoriteKey(item.id, item.source ?? "tvmaze") === keyString)
+      const show = schedule.shows.find((item) => favoriteKey(item.id, item.source ?? "tmdb") === keyString)
         ?? episodes.byKey.get(keyString);
       const entry: Entry = {
         key,

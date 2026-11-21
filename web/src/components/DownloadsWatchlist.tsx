@@ -35,7 +35,7 @@ export function DownloadsWatchlist() {
     if (schedule.shows.length === 0 && episodes.byKey.size === 0 && catalog.byId.size === 0) return;
     dedupeFavorites((item) => {
       const key = favoriteKey(item.showId, item.source);
-      const show = schedule.shows.find((s) => favoriteKey(s.id, s.source ?? "tvmaze") === key)
+      const show = schedule.shows.find((s) => favoriteKey(s.id, s.source ?? "tmdb") === key)
         ?? episodes.byKey.get(key);
       if (show) {
         // A localized detail title and the original list title are two names
@@ -72,10 +72,10 @@ export function DownloadsWatchlist() {
     const byKey = new Map<string, WatchEntry>();
 
     const seriesRows = favorites.items.map((favorite) => {
-      const source = favorite.source === "tmdb" ? "tmdb" : "tvmaze";
+      const source = favorite.source === "tmdb" ? "tmdb" : "tmdb";
       const key = seriesDownloadKey(favorite.showId, source);
       const keyString = favoriteKey(favorite.showId, favorite.source);
-      const show = schedule.shows.find((item) => favoriteKey(item.id, item.source ?? "tvmaze") === keyString)
+      const show = schedule.shows.find((item) => favoriteKey(item.id, item.source ?? "tmdb") === keyString)
         ?? episodes.byKey.get(keyString);
       const entry: WatchEntry = {
         key,

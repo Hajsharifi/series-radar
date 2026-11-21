@@ -29,7 +29,7 @@ describe("download link helpers", () => {
     const dl = await import("../downloads");
     expect(dl.movieDownloadKey(603692)).toBe("movie:603692");
     expect(dl.seriesDownloadKey(95396, "tmdb")).toBe("series:tmdb:95396");
-    expect(dl.seriesDownloadKey(82)).toBe("series:tvmaze:82");
+    expect(dl.seriesDownloadKey(82)).toBe("series:tmdb:82");
     expect(dl.parseDownloadKey("series:tvmaze:82")).toEqual({
       kind: "series",
       source: "tvmaze",

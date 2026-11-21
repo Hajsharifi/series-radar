@@ -134,7 +134,7 @@ export function NativeReminders() {
   useEffect(() => {
     if (!isNativeApp()) return;
     const byShowKey = new Map(
-      shows.map((show) => [favoriteKey(show.id, show.source ?? "tvmaze"), show]),
+      shows.map((show) => [favoriteKey(show.id, show.source ?? "tmdb"), show]),
     );
     const now = Date.now();
     const defaultLead = getSettings().defaultLeadHours;
@@ -168,7 +168,7 @@ export function NativeReminders() {
         ? `فصل ${next.season} · قسمت ${next.number}`
         : null;
       items.push({
-        id: nativeShowId(show.id, show.source ?? "tvmaze"),
+        id: nativeShowId(show.id, show.source ?? "tmdb"),
         kind: "show",
         route: show.source === "tmdb" ? `/tv/${show.id}` : `/show/${show.id}`,
         title: `${EVENT_LABEL[showEventKind(show)]} «${show.title}»`,
@@ -264,7 +264,7 @@ export function NativeReminders() {
       const dayLabel = new Date(at).toLocaleDateString("fa-IR", {
         weekday: "short", day: "numeric", month: "short",
       });
-      widgetKeys.add(favoriteKey(show.id, show.source ?? "tvmaze"));
+      widgetKeys.add(favoriteKey(show.id, show.source ?? "tmdb"));
       widgetItems.push({
         id: show.id,
         title: show.title,
@@ -276,7 +276,7 @@ export function NativeReminders() {
     }
 
     for (const show of favoriteEpisodes.items) {
-      const key = favoriteKey(show.id, show.source ?? "tvmaze");
+      const key = favoriteKey(show.id, show.source ?? "tmdb");
       if (widgetKeys.has(key) || !show.airstamp) continue;
       const at = new Date(show.airstamp).getTime();
       if (!Number.isFinite(at) || at <= now) continue;
@@ -285,7 +285,7 @@ export function NativeReminders() {
       });
       widgetKeys.add(key);
       widgetItems.push({
-        id: nativeShowId(show.id, show.source ?? "tvmaze"),
+        id: nativeShowId(show.id, show.source ?? "tmdb"),
         title: show.title,
         subtitle: `${dayLabel} • ${EVENT_LABEL[showEventKind(show)]}`,
         type: "series",

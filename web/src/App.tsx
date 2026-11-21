@@ -10,6 +10,8 @@ import { queryClient } from "./lib/queryClient";
 import { Loader } from "./components/Loader";
 import TmdbSeriesPage from "./pages/TmdbSeriesPage";
 import { initTheme } from "./lib/theme";
+import { useEffect } from "react";
+import { migrateFavoritesToTmdb } from "./lib/favorite-migration";
 
 initTheme();
 
@@ -28,6 +30,9 @@ const DownloadsPage = lazy(() => import("./pages/DownloadsPage"));
 const PersonPage = lazy(() => import("./pages/PersonPage"));
 
 export default function App() {
+  useEffect(() => {
+    void migrateFavoritesToTmdb();
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <ScheduleProvider>

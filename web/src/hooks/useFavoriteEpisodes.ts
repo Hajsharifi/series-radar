@@ -6,8 +6,6 @@ import { categoryFromEvent, eventKindFromEpisode } from "../lib/show-event";
 import { favoriteKey, type FavoriteSource } from "../lib/favorites";
 import type { Show } from "../types";
 
-const TVMAZE_API = "https://api.tvmaze.com";
-
 export interface FavoriteNextShow extends Show {
   favoriteKey: string;
 }
@@ -69,31 +67,6 @@ function buildShow(
   };
 }
 
-async function tvmazeNext(showId: number): Promise<FavoriteNextShow | null> {
-  const data = await cachedFetchJson<any>(
-    `${TVMAZE_API}/shows/${showId}?embed[]=nextepisode`,
-    15000,
-  );
-  const next: NextEpisode | null = data?._embedded?.nextepisode ?? null;
-  return buildShow(
-    {
-      id: showId,
-      title: data?.name ?? `سریال ${showId}`,
-      source: "tvmaze",
-      posterPath: data?.image?.medium ?? null,
-      posterOriginal: data?.image?.original ?? null,
-      network: data?.network?.name ?? data?.webChannel?.name ?? null,
-      countryCode: data?.network?.country?.code ?? null,
-      genres: data?.genres ?? [],
-      language: data?.language ?? null,
-      rating: data?.rating?.average ?? null,
-      weight: data?.weight ?? 0,
-      status: data?.status ?? null,
-    },
-    next,
-  );
-}
-
 async function tmdbNext(showId: number): Promise<FavoriteNextShow | null> {
   const data = await cachedFetchJson<any>(`${API_BASE}/api/tv/${showId}`, 15000);
   const next: NextEpisode | null = data?.nextEpisode ?? null;
@@ -128,7 +101,7 @@ export function useFavoriteEpisodes() {
   const results = useQueries({
     queries: favorites.items.map((item) => ({
       queryKey: ["favoriteNext", item.source, item.showId],
-      queryFn: () => (item.source === "tmdb" ? tmdbNext(item.showId) : tvmazeNext(item.showId)),
+      queryFn: () => tmdbNext(item.showId),
       enabled: item.showId > 0,
       staleTime: 6 * 60 * 60 * 1000,
       gcTime: 24 * 60 * 60 * 1000,

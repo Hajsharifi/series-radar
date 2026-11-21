@@ -18,7 +18,7 @@ export interface StoredFavorite {
   identities?: string[];
 }
 
-export function favoriteKey(showId: number, source: FavoriteSource = "tvmaze"): string {
+export function favoriteKey(showId: number, source: FavoriteSource = "tmdb"): string {
   return `${source}:${showId}`;
 }
 
@@ -222,13 +222,13 @@ export function replaceFavorites(
   );
 }
 
-export function isFavorite(showId: number, source: FavoriteSource = "tvmaze"): boolean {
+export function isFavorite(showId: number, source: FavoriteSource = "tmdb"): boolean {
   return read().some((item) => item.showId === showId && item.source === source);
 }
 
 export function addFavorite(
   showId: number,
-  source: FavoriteSource = "tvmaze",
+  source: FavoriteSource = "tmdb",
   title?: string | Array<string | null | undefined> | null,
 ): void {
   let items = read();
@@ -301,7 +301,7 @@ export function dedupeFavorites(
   if (JSON.stringify(kept) !== JSON.stringify(items)) write(kept);
 }
 
-export function removeFavorite(showId: number, source: FavoriteSource = "tvmaze"): void {
+export function removeFavorite(showId: number, source: FavoriteSource = "tmdb"): void {
   write(read().filter((item) => !(item.showId === showId && item.source === source)));
 }
 
@@ -338,7 +338,7 @@ export function favoriteKeys(): Set<string> {
 }
 
 /** Stable numeric id for Android alarm slots (show range stays below movies). */
-export function nativeShowId(showId: number, source: FavoriteSource = "tvmaze"): number {
+export function nativeShowId(showId: number, source: FavoriteSource = "tmdb"): number {
   return source === "tmdb" ? showId + 1_000_000 : showId;
 }
 

@@ -159,11 +159,11 @@ export function RadarPage() {
   const todayLabel = useMemo(() => jalaliFromStamp(new Date(now).toISOString()), [now]);
 
   const toggle = useCallback(
-    (show: Show) => favorites.toggle(show.id, show.source ?? "tvmaze", [show.title, show.originalTitle ?? ""]),
+    (show: Show) => favorites.toggle(show.id, show.source ?? "tmdb", [show.title, show.originalTitle ?? ""]),
     [favorites],
   );
   const isFavorite = useCallback(
-    (show: Show) => favoriteKeys.has(favoriteKey(show.id, show.source ?? "tvmaze")),
+    (show: Show) => favoriteKeys.has(favoriteKey(show.id, show.source ?? "tmdb")),
     [favoriteKeys],
   );
 
@@ -216,7 +216,7 @@ export function RadarPage() {
 
   const featured = useMemo(() => {
     const byKey = new Map(
-      schedule.shows.map((show) => [favoriteKey(show.id, show.source ?? "tvmaze"), show]),
+      schedule.shows.map((show) => [favoriteKey(show.id, show.source ?? "tmdb"), show]),
     );
     const favoriteGenres = favorites.items.flatMap(
       (item) => byKey.get(favoriteKey(item.showId, item.source))?.genres ?? [],
@@ -427,7 +427,7 @@ export function RadarPage() {
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {featured.map((suggestion) => {
               const show = suggestion.show;
-              const key = favoriteKey(show.id, show.source ?? "tvmaze");
+              const key = favoriteKey(show.id, show.source ?? "tmdb");
               return (
                 <div key={key} className="relative w-[148px] shrink-0">
                   <button

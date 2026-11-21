@@ -106,12 +106,12 @@ export default function CalendarPage() {
 
     for (const show of schedule.shows) {
       if (!show.airstamp) continue;
-      if (!favoriteKeys.has(favoriteKey(show.id, show.source ?? "tvmaze"))) continue;
+      if (!favoriteKeys.has(favoriteKey(show.id, show.source ?? "tmdb"))) continue;
       const parts = tehranParts(show.airstamp);
       if (!parts) continue;
       const day = toIsoDay({ y: parts.y, m: parts.m, d: parts.d });
       if (!validDays.has(day)) continue;
-      const source = show.source === "tmdb" ? "tmdb" : "tvmaze";
+      const source = show.source === "tmdb" ? "tmdb" : "tmdb";
       result.push({
         key: `show-${source}-${show.id}-${day}`,
         day,
@@ -123,9 +123,9 @@ export default function CalendarPage() {
         kind: "series",
         posterPath: show.posterPath,
         posterOriginal: show.posterOriginal,
-        favorite: favoriteKeys.has(favoriteKey(show.id, show.source ?? "tvmaze")),
+        favorite: favoriteKeys.has(favoriteKey(show.id, show.source ?? "tmdb")),
       });
-      seenSeries.add(favoriteKey(show.id, show.source ?? "tvmaze"));
+      seenSeries.add(favoriteKey(show.id, show.source ?? "tmdb"));
     }
 
     for (const show of favoriteEpisodes.items) {
@@ -134,7 +134,7 @@ export default function CalendarPage() {
       if (!parts) continue;
       const day = toIsoDay({ y: parts.y, m: parts.m, d: parts.d });
       if (!validDays.has(day)) continue;
-      const key = favoriteKey(show.id, show.source ?? "tvmaze");
+      const key = favoriteKey(show.id, show.source ?? "tmdb");
       if (seenSeries.has(key)) continue;
       seenSeries.add(key);
       const next = show.nextEpisode;
@@ -147,7 +147,7 @@ export default function CalendarPage() {
           : show.network ?? "سریال",
         clock: show.source === "tmdb" ? "زمان اعلام نشده" : tehranClock(show.airstamp),
         path: show.source === "tmdb" ? `/tv/${show.id}` : `/series/${show.id}`,
-        source: show.source ?? "tvmaze",
+        source: show.source ?? "tmdb",
         kind: "series",
         posterPath: show.posterPath,
         posterOriginal: show.posterOriginal,
@@ -427,7 +427,7 @@ export default function CalendarPage() {
       )}
 
       <p className="text-caption leading-relaxed text-ink-300">
-        دادهها از TVMaze و TMDB میآیند. ساعت دقیق پخش تنها برای سریالهای رادار موجود است؛ برای فیلمها و سریالهای روی آنتن فقط تاریخ اعلام شده است.
+        دادهها از TMDB میآیند. ساعت دقیق پخش تنها برای سریالهای رادار موجود است؛ برای فیلمها و سریالهای روی آنتن فقط تاریخ اعلام شده است.
       </p>
     </div>
   );
