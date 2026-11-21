@@ -27,6 +27,9 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Build native download parser
+        run: ./server/build-native.sh
+
       - name: Test API
         run: |
           python -m pip install -q pytest
@@ -36,7 +39,7 @@ jobs:
         run: |
           echo "$DEPLOY_SSH_KEY" > deploy_key
           chmod 600 deploy_key
-          tar -czf series_radar.tar.gz -C server series_radar
+          tar -czf series_radar.tar.gz -C server series_radar series_radar_downloads_rs
           scp -o StrictHostKeyChecking=no -P "$DEPLOY_PORT" -i deploy_key \
             server/server.py "$DEPLOY_USER@$DEPLOY_HOST:/opt/series-radar-api/server.py"
           scp -o StrictHostKeyChecking=no -P "$DEPLOY_PORT" -i deploy_key \

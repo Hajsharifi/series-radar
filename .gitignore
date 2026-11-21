@@ -56,3 +56,12 @@ coverage/
 
 # Misc
 *.pem
+
+# Native download parser (built by server/build-native.sh on deploy)
+server/series_radar_downloads_rs/
+server/rust/downloads-parser-rs/target/
+server/rust/downloads-parser-rs/python/series_radar_downloads_rs/_native*.so
+
+# Python caches
+__pycache__/
+*.pyc

@@ -17,6 +17,15 @@ rm -rf "$DEST/series_radar"
 cp -a "$ROOT/server/series_radar" "$DEST/series_radar"
 find "$DEST/series_radar" -name '__pycache__' -type d -prune -exec rm -rf {} +
 
+# Optional compiled parser; the API falls back to Python when it is absent.
+if [[ "${SERIES_RADAR_BUILD_NATIVE:-1}" == "1" ]] && command -v cargo >/dev/null 2>&1; then
+  "$ROOT/server/build-native.sh"
+fi
+if [[ -d "$ROOT/server/series_radar_downloads_rs" ]]; then
+  rm -rf "$DEST/series_radar_downloads_rs"
+  cp -a "$ROOT/server/series_radar_downloads_rs" "$DEST/series_radar_downloads_rs"
+fi
+
 if [[ "${INSTALL_UNIT:-0}" == "1" ]]; then
   install -m 0644 "$ROOT/server/series-radar-api.service" /etc/systemd/system/series-radar-api.service
   systemctl daemon-reload

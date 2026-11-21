@@ -13,12 +13,14 @@ import hashlib
 import html as htmlmod
 import json
 import re
+import sys
 import threading
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
 
+from . import fastparse
 from .cache import cache_get, cache_put
 from .config import UA
 from .http import fetch_json, tmdb_get
@@ -421,6 +423,45 @@ def parse_series_page(page_html):
             })
     seasons.sort(key=lambda season: season["number"] or 0)
     return seasons
+
+
+# ---------------------------------------------------------------------------
+# Optional Rust parser (identical output, faster on large pages)
+# ---------------------------------------------------------------------------
+
+_parse_series_page_python = parse_series_page
+_parse_movie_page_python = parse_movie_page
+native_parser = fastparse.load()
+
+
+_GLOBAL_NATIVE = object()
+
+
+def _native_call(native_name, python_fn, native_module=_GLOBAL_NATIVE):
+    module = native_parser if native_module is _GLOBAL_NATIVE else native_module
+    native = getattr(module, native_name, None) if module else None
+    if native is None:
+        return python_fn
+
+    def call(*args, **kwargs):
+        try:
+            return native(*args, **kwargs)
+        except Exception as error:  # noqa: BLE001 - never lose a parse to the fast path
+            print(
+                "[series-radar] native %s failed (%s); using the Python parser"
+                % (native_name, error),
+                file=sys.stderr,
+            )
+            return python_fn(*args, **kwargs)
+
+    call.__name__ = python_fn.__name__
+    call.__doc__ = python_fn.__doc__
+    return call
+
+
+parse_series_page = _native_call("parse_series_page", _parse_series_page_python)
+parse_movie_page = _native_call("parse_movie_page", _parse_movie_page_python)
+print("[series-radar] download parser: %s" % fastparse.origin(), file=sys.stderr)
 
 
 # ---------------------------------------------------------------------------

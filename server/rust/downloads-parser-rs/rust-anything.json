@@ -1,0 +1,542 @@
+{
+  "schema": "rust-anything/bridge@1",
+  "root": ".",
+  "unit": "series_radar/",
+  "language": "python",
+  "kind": "pyo3",
+  "crate_name": "series-radar-downloads-rs",
+  "exports": [
+    {
+      "name": "fingerprint",
+      "file": "series_radar/downloads.py",
+      "line": 67,
+      "params": [
+        {
+          "name": "url",
+          "ts_type": "unknown",
+          "optional": false,
+          "rest": false
+        }
+      ],
+      "returns": "unknown",
+      "is_async": false,
+      "is_generator": false,
+      "type_params": [],
+      "uses_instanceof": false
+    },
+    {
+      "name": "elements",
+      "file": "series_radar/downloads.py",
+      "line": 137,
+      "params": [
+        {
+          "name": "html",
+          "ts_type": "unknown",
+          "optional": false,
+          "rest": false
+        },
+        {
+          "name": "tag",
+          "ts_type": "unknown",
+          "optional": false,
+          "rest": false
+        },
+        {
+          "name": "class_name",
+          "ts_type": "unknown",
+          "optional": true,
+          "rest": false,
+          "default": "None"
+        }
+      ],
+      "returns": "unknown",
+      "is_async": false,
+      "is_generator": false,
+      "type_params": [],
+      "uses_instanceof": false
+    },
+    {
+      "name": "parse_movie_page",
+      "file": "series_radar/downloads.py",
+      "line": 216,
+      "params": [
+        {
+          "name": "page_html",
+          "ts_type": "unknown",
+          "optional": false,
+          "rest": false
+        }
+      ],
+      "returns": "unknown",
+      "is_async": false,
+      "is_generator": false,
+      "type_params": [],
+      "uses_instanceof": false
+    },
+    {
+      "name": "parse_series_page",
+      "file": "series_radar/downloads.py",
+      "line": 290,
+      "params": [
+        {
+          "name": "page_html",
+          "ts_type": "unknown",
+          "optional": false,
+          "rest": false
+        }
+      ],
+      "returns": "unknown",
+      "is_async": false,
+      "is_generator": false,
+      "type_params": [],
+      "uses_instanceof": false
+    }
+  ],
+  "classes": [],
+  "js_only": [
+    {
+      "name": "bom_rows",
+      "file": "series_radar/boxoffice.py",
+      "line": 14,
+      "reason": "kept on request"
+    },
+    {
+      "name": "bom_latest_weekend",
+      "file": "series_radar/boxoffice.py",
+      "line": 23,
+      "reason": "kept on request"
+    },
+    {
+      "name": "bom_weekend_table",
+      "file": "series_radar/boxoffice.py",
+      "line": 37,
+      "reason": "kept on request"
+    },
+    {
+      "name": "bom_year_world",
+      "file": "series_radar/boxoffice.py",
+      "line": 64,
+      "reason": "kept on request"
+    },
+    {
+      "name": "bom_alltime_world",
+      "file": "series_radar/boxoffice.py",
+      "line": 91,
+      "reason": "kept on request"
+    },
+    {
+      "name": "box_office",
+      "file": "series_radar/boxoffice.py",
+      "line": 115,
+      "reason": "kept on request"
+    },
+    {
+      "name": "cache_path",
+      "file": "series_radar/cache.py",
+      "line": 13,
+      "reason": "kept on request"
+    },
+    {
+      "name": "cache_get",
+      "file": "series_radar/cache.py",
+      "line": 18,
+      "reason": "kept on request"
+    },
+    {
+      "name": "cache_put",
+      "file": "series_radar/cache.py",
+      "line": 29,
+      "reason": "kept on request"
+    },
+    {
+      "name": "cache_stats",
+      "file": "series_radar/cache.py",
+      "line": 38,
+      "reason": "kept on request"
+    },
+    {
+      "name": "prune_cache",
+      "file": "series_radar/cache.py",
+      "line": 54,
+      "reason": "kept on request"
+    },
+    {
+      "name": "is_archived_movie",
+      "file": "series_radar/catalog.py",
+      "line": 25,
+      "reason": "kept on request"
+    },
+    {
+      "name": "drop_archived",
+      "file": "series_radar/catalog.py",
+      "line": 42,
+      "reason": "kept on request"
+    },
+    {
+      "name": "enrich_with_omdb",
+      "file": "series_radar/catalog.py",
+      "line": 46,
+      "reason": "kept on request"
+    },
+    {
+      "name": "slim_search_dates",
+      "file": "series_radar/catalog.py",
+      "line": 58,
+      "reason": "kept on request"
+    },
+    {
+      "name": "build_search_dates_index",
+      "file": "series_radar/catalog.py",
+      "line": 73,
+      "reason": "kept on request"
+    },
+    {
+      "name": "enrich_search_dates",
+      "file": "series_radar/catalog.py",
+      "line": 84,
+      "reason": "kept on request"
+    },
+    {
+      "name": "popular_title_index",
+      "file": "series_radar/catalog.py",
+      "line": 132,
+      "reason": "kept on request"
+    },
+    {
+      "name": "search_multi",
+      "file": "series_radar/catalog.py",
+      "line": 174,
+      "reason": "kept on request"
+    },
+    {
+      "name": "now_playing",
+      "file": "series_radar/catalog.py",
+      "line": 243,
+      "reason": "kept on request"
+    },
+    {
+      "name": "upcoming",
+      "file": "series_radar/catalog.py",
+      "line": 279,
+      "reason": "kept on request"
+    },
+    {
+      "name": "online_releases",
+      "file": "series_radar/catalog.py",
+      "line": 309,
+      "reason": "kept on request"
+    },
+    {
+      "name": "quality_waiting",
+      "file": "series_radar/catalog.py",
+      "line": 371,
+      "reason": "kept on request"
+    },
+    {
+      "name": "load_tmdb_token",
+      "file": "series_radar/config.py",
+      "line": 22,
+      "reason": "kept on request"
+    },
+    {
+      "name": "today_tehran",
+      "file": "series_radar/config.py",
+      "line": 40,
+      "reason": "kept on request"
+    },
+    {
+      "name": "parse_key",
+      "file": "series_radar/downloads.py",
+      "line": 54,
+      "reason": "kept on request"
+    },
+    {
+      "name": "group_id",
+      "file": "series_radar/downloads.py",
+      "line": 74,
+      "reason": "takes `*args`"
+    },
+    {
+      "name": "fetch_page",
+      "file": "series_radar/downloads.py",
+      "line": 453,
+      "reason": "kept on request"
+    },
+    {
+      "name": "metadata",
+      "file": "series_radar/downloads.py",
+      "line": 543,
+      "reason": "kept on request"
+    },
+    {
+      "name": "resolve_key",
+      "file": "series_radar/downloads.py",
+      "line": 614,
+      "reason": "kept on request"
+    },
+    {
+      "name": "match_downloads",
+      "file": "series_radar/downloads.py",
+      "line": 679,
+      "reason": "kept on request"
+    },
+    {
+      "name": "SourceError",
+      "file": "series_radar/downloads.py",
+      "line": 46,
+      "reason": "class: inherits from Exception"
+    },
+    {
+      "name": "main",
+      "file": "series_radar/handler.py",
+      "line": 246,
+      "reason": "a command-line entry point: it stays in Python, and `app front-door` takes the command line over when the whole app moves"
+    },
+    {
+      "name": "Handler",
+      "file": "series_radar/handler.py",
+      "line": 40,
+      "reason": "class: inherits from BaseHTTPRequestHandler, public class attribute `server_version`"
+    },
+    {
+      "name": "fetch_json",
+      "file": "series_radar/http.py",
+      "line": 12,
+      "reason": "kept on request"
+    },
+    {
+      "name": "fetch_text",
+      "file": "series_radar/http.py",
+      "line": 18,
+      "reason": "kept on request"
+    },
+    {
+      "name": "tmdb_get",
+      "file": "series_radar/http.py",
+      "line": 24,
+      "reason": "kept on request"
+    },
+    {
+      "name": "localized_collection",
+      "file": "series_radar/http.py",
+      "line": 40,
+      "reason": "kept on request"
+    },
+    {
+      "name": "inc_request",
+      "file": "series_radar/metrics.py",
+      "line": 12,
+      "reason": "kept on request"
+    },
+    {
+      "name": "inc_error",
+      "file": "series_radar/metrics.py",
+      "line": 18,
+      "reason": "kept on request"
+    },
+    {
+      "name": "snapshot",
+      "file": "series_radar/metrics.py",
+      "line": 24,
+      "reason": "kept on request"
+    },
+    {
+      "name": "omdb_fetch",
+      "file": "series_radar/omdb.py",
+      "line": 7,
+      "reason": "kept on request"
+    },
+    {
+      "name": "norm_person",
+      "file": "series_radar/people.py",
+      "line": 29,
+      "reason": "kept on request"
+    },
+    {
+      "name": "person_detail",
+      "file": "series_radar/people.py",
+      "line": 69,
+      "reason": "kept on request"
+    },
+    {
+      "name": "strip_tags",
+      "file": "series_radar/text.py",
+      "line": 13,
+      "reason": "kept on request"
+    },
+    {
+      "name": "parse_money",
+      "file": "series_radar/text.py",
+      "line": 19,
+      "reason": "kept on request"
+    },
+    {
+      "name": "normalize_title",
+      "file": "series_radar/text.py",
+      "line": 31,
+      "reason": "kept on request"
+    },
+    {
+      "name": "normalize_fa",
+      "file": "series_radar/text.py",
+      "line": 37,
+      "reason": "kept on request"
+    },
+    {
+      "name": "fuzzy_score",
+      "file": "series_radar/text.py",
+      "line": 49,
+      "reason": "takes `*args`"
+    },
+    {
+      "name": "translate_fa_to_en",
+      "file": "series_radar/text.py",
+      "line": 72,
+      "reason": "kept on request"
+    },
+    {
+      "name": "load_translation_cache",
+      "file": "series_radar/text.py",
+      "line": 92,
+      "reason": "kept on request"
+    },
+    {
+      "name": "save_translation_cache",
+      "file": "series_radar/text.py",
+      "line": 102,
+      "reason": "kept on request"
+    },
+    {
+      "name": "translate_to_persian",
+      "file": "series_radar/text.py",
+      "line": 111,
+      "reason": "kept on request"
+    },
+    {
+      "name": "enrich_with_persian",
+      "file": "series_radar/text.py",
+      "line": 133,
+      "reason": "kept on request"
+    },
+    {
+      "name": "image_path",
+      "file": "series_radar/tmdb.py",
+      "line": 12,
+      "reason": "kept on request"
+    },
+    {
+      "name": "norm_movie",
+      "file": "series_radar/tmdb.py",
+      "line": 16,
+      "reason": "kept on request"
+    },
+    {
+      "name": "norm_tv_show",
+      "file": "series_radar/tmdb.py",
+      "line": 38,
+      "reason": "kept on request"
+    },
+    {
+      "name": "us_release_dates",
+      "file": "series_radar/tmdb.py",
+      "line": 77,
+      "reason": "kept on request"
+    },
+    {
+      "name": "pick_release_dates",
+      "file": "series_radar/tmdb.py",
+      "line": 85,
+      "reason": "kept on request"
+    },
+    {
+      "name": "cast_from_credits",
+      "file": "series_radar/tmdb.py",
+      "line": 118,
+      "reason": "kept on request"
+    },
+    {
+      "name": "directors_from_credits",
+      "file": "series_radar/tmdb.py",
+      "line": 136,
+      "reason": "kept on request"
+    },
+    {
+      "name": "director_ids_from_credits",
+      "file": "series_radar/tmdb.py",
+      "line": 146,
+      "reason": "kept on request"
+    },
+    {
+      "name": "norm_detail",
+      "file": "series_radar/tmdb.py",
+      "line": 155,
+      "reason": "kept on request"
+    },
+    {
+      "name": "localized_detail",
+      "file": "series_radar/tmdb.py",
+      "line": 202,
+      "reason": "kept on request"
+    },
+    {
+      "name": "trailer_key",
+      "file": "series_radar/tmdb.py",
+      "line": 220,
+      "reason": "kept on request"
+    },
+    {
+      "name": "norm_tv_detail",
+      "file": "series_radar/tmdb.py",
+      "line": 228,
+      "reason": "kept on request"
+    },
+    {
+      "name": "tv_detail",
+      "file": "series_radar/tmdb.py",
+      "line": 269,
+      "reason": "kept on request"
+    },
+    {
+      "name": "similar_items",
+      "file": "series_radar/tmdb.py",
+      "line": 281,
+      "reason": "kept on request"
+    },
+    {
+      "name": "localized_season",
+      "file": "series_radar/tmdb.py",
+      "line": 293,
+      "reason": "kept on request"
+    },
+    {
+      "name": "movie_detail",
+      "file": "series_radar/tmdb.py",
+      "line": 313,
+      "reason": "kept on request"
+    },
+    {
+      "name": "tmdb_search",
+      "file": "series_radar/tmdb.py",
+      "line": 325,
+      "reason": "kept on request"
+    },
+    {
+      "name": "enrich_tmdb_details",
+      "file": "series_radar/tmdb.py",
+      "line": 351,
+      "reason": "kept on request"
+    },
+    {
+      "name": "tv_meta",
+      "file": "series_radar/tmdb.py",
+      "line": 369,
+      "reason": "kept on request"
+    },
+    {
+      "name": "enrich_tv_meta",
+      "file": "series_radar/tmdb.py",
+      "line": 379,
+      "reason": "kept on request"
+    }
+  ]
+}
