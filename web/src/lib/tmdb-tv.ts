@@ -3,7 +3,7 @@ import { MOVIE_API } from "./movies";
 import { eventKindFromEpisode } from "./show-event";
 import { cachedFetchJson } from "./offline";
 
-const TMDB_TV_CACHE = "sr:tmdbtv:v3";
+const TMDB_TV_CACHE = "sr:tmdbtv:v4";
 const TMDB_TV_TTL = 24 * 60 * 60 * 1000;
 
 /** The API already normalizes TMDB fields into the Show shape. */
@@ -104,6 +104,11 @@ export async function fetchAiringTodayTV(): Promise<Show[]> {
   return fetchWithCache("/api/tv/airing_today");
 }
 
+/** Announced shows with a future episode or first-air date, from TMDB discover. */
+export async function fetchUpcomingTV(): Promise<Show[]> {
+  return fetchWithCache("/api/tv/upcoming");
+}
+
 /** The single TV schedule used by Radar, Calendar and reminders.
  * All entries come from TMDB through our own API; no TVMaze requests are made. */
 export async function fetchTVSchedule(): Promise<Show[]> {
@@ -112,6 +117,7 @@ export async function fetchTVSchedule(): Promise<Show[]> {
     fetchAiringTodayTV(),
     fetchPopularTV(),
     fetchTopRatedTV(),
+    fetchUpcomingTV(),
   ]);
   const byKey = new Map<string, Show>();
   for (const result of settled) {
