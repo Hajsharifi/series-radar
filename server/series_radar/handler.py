@@ -87,10 +87,10 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith("/api/person/") and path.rsplit("/", 1)[-1].isdigit():
                 person_id = int(path.rsplit("/", 1)[-1])
                 return self.send_json(person_detail(person_id, force))
-            if path.startswith("/api/movie/") and path.endswith("/similar"):
+            if path.startswith("/api/movie/") and path.endswith("/similar") and path.split("/")[-2].isdigit():
                 movie_id = int(path.split("/")[-2])
                 return self.send_json({"items": similar_items("movie", movie_id)})
-            if path.startswith("/api/movie/"):
+            if path.startswith("/api/movie/") and path.rsplit("/", 1)[-1].isdigit():
                 movie_id = int(path.rsplit("/", 1)[-1])
                 return self.send_json(movie_detail(movie_id, force))
             if path == "/api/search/multi":
@@ -128,7 +128,7 @@ class Handler(BaseHTTPRequestHandler):
                 shows = [norm_tv_show(s) for s in (data.get("results") or [])[:50]]
                 shows = enrich_tv_meta(shows, include_omdb=False)
                 return self.send_json({"results": shows})
-            if path.startswith("/api/tv/") and path.endswith("/similar"):
+            if path.startswith("/api/tv/") and path.endswith("/similar") and path.split("/")[-2].isdigit():
                 show_id = int(path.split("/")[-2])
                 return self.send_json({"results": similar_items("tv", show_id)})
             if path == "/api/tv/upcoming":
@@ -136,7 +136,7 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith("/api/tv/") and path.count("/") == 3 and path.split("/")[-1].isdigit():
                 show_id = int(path.split("/")[-1])
                 return self.send_json(tv_detail(show_id, force))
-            if path.startswith("/api/tv/") and path.endswith("/episodes"):
+            if path.startswith("/api/tv/") and path.endswith("/episodes") and path.split("/")[-2].isdigit():
                 show_id = int(path.split("/")[-2])
                 # First get show details to know number of seasons
                 show_detail = tmdb_get(f"/tv/{show_id}", {"language": "en-US"}, cache_ttl=3600)
