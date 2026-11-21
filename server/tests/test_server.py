@@ -170,3 +170,75 @@ def test_norm_person_dedupes_and_sorts_credits():
     assert len(person["credits"]) == 2
     assert person["credits"][0]["id"] == 11
     assert person["credits"][1]["id"] == 10
+
+
+def _stub_upcoming_cache(monkeypatch):
+    from series_radar import tmdb as tmdb_module
+
+    monkeypatch.setattr(tmdb_module, "cache_get", lambda key, ttl: None)
+    monkeypatch.setattr(tmdb_module, "cache_put", lambda key, data: None)
+    monkeypatch.setattr(tmdb_module, "enrich_tv_meta", lambda shows, include_omdb=True: shows)
+    return tmdb_module
+
+
+def test_upcoming_tv_merges_both_discover_queries_and_dedupes(monkeypatch):
+    import datetime as dt
+
+    tmdb_module = _stub_upcoming_cache(monkeypatch)
+    captured = []
+
+    def fake_collection(path, base_params, cache_ttl=1800, cache_key_extra="", max_pages=1):
+        captured.append(dict(base_params))
+        if "air_date.gte" in base_params:
+            return {"results": [{"id": 171802, "name": "Blade Runner 2099", "first_air_date": "2026-11-25"}]}
+        if "first_air_date.gte" in base_params:
+            return {"results": [
+                {"id": 171802, "name": "Blade Runner 2099", "first_air_date": "2026-11-25"},
+                {"id": 42, "name": "Other Show", "first_air_date": "2026-12-01"},
+            ]}
+        return {"results": []}
+
+    monkeypatch.setattr(tmdb_module, "localized_collection", fake_collection)
+
+    result = tmdb_module.fetch_upcoming_tv(today=dt.date(2026, 11, 21))
+
+    assert [item["id"] for item in result] == [171802, 42]
+    assert len(captured) == 2
+    assert captured[0]["air_date.gte"] == "2026-11-21"
+    assert captured[0]["air_date.lte"] == "2027-02-19"
+    assert captured[1]["first_air_date.gte"] == "2026-11-21"
+    assert captured[1]["first_air_date.lte"] == "2027-05-20"
+    assert all(params["sort_by"] == "popularity.desc" for params in captured)
+
+
+def test_upcoming_tv_survives_one_failed_query(monkeypatch):
+    import datetime as dt
+
+    tmdb_module = _stub_upcoming_cache(monkeypatch)
+
+    def fail_one(path, base_params, **kwargs):
+        if "air_date.gte" in base_params:
+            raise RuntimeError("upstream down")
+        return {"results": [{"id": 7, "name": "Survivor", "first_air_date": "2026-12-01"}]}
+
+    monkeypatch.setattr(tmdb_module, "localized_collection", fail_one)
+    assert [item["id"] for item in tmdb_module.fetch_upcoming_tv(today=dt.date(2026, 11, 21))] == [7]
+
+    def fail_both(path, base_params, **kwargs):
+        raise RuntimeError("upstream down")
+
+    monkeypatch.setattr(tmdb_module, "localized_collection", fail_both)
+    assert tmdb_module.fetch_upcoming_tv(today=dt.date(2026, 11, 21)) == []
+
+
+def test_upcoming_tv_caps_at_80(monkeypatch):
+    import datetime as dt
+
+    tmdb_module = _stub_upcoming_cache(monkeypatch)
+    many = [{"id": i, "name": "Show %d" % i, "first_air_date": "2026-12-01"} for i in range(100)]
+
+    def fake_collection(path, base_params, **kwargs):
+        return {"results": many if "air_date.gte" in base_params else []}
+
+    monkeypatch.setattr(tmdb_module, "localized_collection", fake_collection)
+    assert len(tmdb_module.fetch_upcoming_tv(today=dt.date(2026, 11, 21))) == 80

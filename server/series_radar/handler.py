@@ -28,6 +28,7 @@ from .people import person_detail
 from .text import normalize_fa
 from .tmdb import (
     enrich_tv_meta,
+    fetch_upcoming_tv,
     localized_season,
     movie_detail,
     norm_movie,
@@ -130,6 +131,8 @@ class Handler(BaseHTTPRequestHandler):
             if path.startswith("/api/tv/") and path.endswith("/similar"):
                 show_id = int(path.split("/")[-2])
                 return self.send_json({"results": similar_items("tv", show_id)})
+            if path == "/api/tv/upcoming":
+                return self.send_json({"results": fetch_upcoming_tv()})
             if path.startswith("/api/tv/") and path.count("/") == 3 and path.split("/")[-1].isdigit():
                 show_id = int(path.split("/")[-1])
                 return self.send_json(tv_detail(show_id, force))

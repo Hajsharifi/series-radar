@@ -1,9 +1,10 @@
 """TMDB normalization and detail endpoints."""
 
 import concurrent.futures
+import datetime as dt
 
 from .cache import cache_get, cache_put
-from .config import TMDB, TMDB_HEADERS, TMDB_TOKEN
+from .config import TMDB, TMDB_HEADERS, TMDB_TOKEN, today_tehran
 from .http import fetch_json, localized_collection, tmdb_get
 from .omdb import omdb_fetch
 from .text import normalize_title
@@ -427,4 +428,67 @@ def enrich_tv_meta(shows, include_omdb=True):
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         list(pool.map(one, shows))
+    return shows
+
+
+def fetch_upcoming_tv(today=None, max_pages=2):
+    """TMDB discover feed for shows with a future episode or first-air date.
+
+    The four standard list endpoints miss announced shows such as Blade Runner
+    2099. Two discover queries cover upcoming episodes and future premieres;
+    each query is independent so one upstream failure cannot hide the other.
+    Source: https://developer.themoviedb.org/reference/discover-tv
+    """
+    day = today or today_tehran()
+    cache_key = "upcoming_tv_v1_%s_%d" % (day.isoformat(), max_pages)
+    cached = cache_get(cache_key, 3600)
+    if cached is not None:
+        return cached
+
+    base = {"sort_by": "popularity.desc", "include_adult": "false"}
+    queries = [
+        (
+            dict(base, **{
+                "air_date.gte": day.isoformat(),
+                "air_date.lte": (day + dt.timedelta(days=90)).isoformat(),
+            }),
+            "upcoming_air",
+        ),
+        (
+            dict(base, **{
+                "first_air_date.gte": day.isoformat(),
+                "first_air_date.lte": (day + dt.timedelta(days=180)).isoformat(),
+            }),
+            "upcoming_first",
+        ),
+    ]
+
+    collected = []
+    succeeded = False
+    for params, cache_extra in queries:
+        try:
+            data = localized_collection(
+                "/discover/tv",
+                params,
+                cache_ttl=1800,
+                cache_key_extra=cache_extra,
+                max_pages=max_pages,
+            )
+        except Exception:
+            continue
+        succeeded = True
+        for item in (data.get("results") or []):
+            collected.append(norm_tv_show(item))
+
+    if not succeeded:
+        return []
+
+    by_id = {}
+    for show in collected:
+        show_id = show.get("id")
+        if show_id is not None and show_id not in by_id:
+            by_id[show_id] = show
+    shows = list(by_id.values())[:80]
+    shows = enrich_tv_meta(shows, include_omdb=False)
+    cache_put(cache_key, shows)
     return shows
