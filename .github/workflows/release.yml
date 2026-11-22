@@ -190,7 +190,7 @@ jobs:
           echo "sha=$SHA" >> $GITHUB_OUTPUT
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Series Radar ${{ steps.version.outputs.tag }}
