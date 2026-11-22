@@ -365,7 +365,7 @@ def verify_show(tmdb_id):
         tmdb_id = int(tmdb_id)
     except (TypeError, ValueError):
         return None
-    key = "airdate_override_%s" % tmdb_id
+    key = "airdate_override_v2_%s" % tmdb_id
     cached = cache_get(key, OVERRIDE_TTL)
     if cached is not None and cached.get("data"):
         data = cached["data"]
@@ -405,7 +405,7 @@ def get_override(tmdb_id):
         tmdb_id = int(tmdb_id)
     except (TypeError, ValueError):
         return None
-    cached = cache_get("airdate_override_%s" % tmdb_id, OVERRIDE_TTL)
+    cached = cache_get("airdate_override_v2_%s" % tmdb_id, OVERRIDE_TTL)
     if cached is not None and cached.get("data"):
         return cached["data"]
     return None
