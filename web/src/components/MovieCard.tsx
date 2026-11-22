@@ -92,6 +92,11 @@ export function MovieCard({ movie, tab, favorite, onToggleFavorite }: MovieCardP
                 MC {movie.metacriticRating.split("/")[0]}
               </span>
             )}
+            {movie.cinemaScore && (
+              <span className="rounded bg-black/80 px-1.5 py-0.5 text-micro font-bold text-sky-300">
+                CS {movie.cinemaScore}
+              </span>
+            )}
           </div>
         )}
       </Link>

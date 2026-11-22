@@ -26,9 +26,11 @@ import {
   dateAfterDays,
   toIsoDay,
 } from "../lib/date";
-import type { Show } from "../types";
+import type { Movie, Show } from "../types";
 import { ShowCard, ShowRow } from "../components/ShowCard";
 import { CompactShowRow } from "../components/CompactShowRow";
+import { MovieCard } from "../components/MovieCard";
+import { fetchBoxOffice } from "../lib/boxoffice";
 import { EmptyState, SkeletonCards } from "../components/StateViews";
 import { LayoutGrid, List, Radar, RefreshCw, Rows3, Search, SlidersHorizontal, X } from "lucide-react";
 import { Button, Chip, Input, SectionHeader } from "../components/ui";
@@ -196,6 +198,51 @@ export function RadarPage() {
   // Live TV hooks
   const liveTV = useLiveTVSections();
   const favoriteEpisodes = useFavoriteEpisodes();
+  const [radarMovies, setRadarMovies] = useState<Movie[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchBoxOffice(false)
+      .then((res) => {
+        if (cancelled) return;
+        const entries = [...(res.payload.weekend ?? []), ...(res.payload.yearly ?? [])];
+        const seen = new Set<number>();
+        const movies: Movie[] = [];
+        for (const e of entries) {
+          if (!e.id || seen.has(e.id)) continue;
+          const eAny = e as any;
+          if ((e.rating ?? 0) < 7 && !(e.cinemaScore && e.cinemaScore.startsWith("A"))) continue;
+          // Only recommend films with a good box-office showing OR already-available quality.
+          const goodBox = (e.weekendGross ?? 0) > 0 || (e.worldwide ?? 0) > 20_000_000;
+          if (!goodBox && !eAny.digitalDate) continue;
+          seen.add(e.id);
+          movies.push({
+            id: e.id,
+            title: e.title,
+            originalTitle: e.title,
+            overview: (e as any).tmdbOverview ?? "",
+            posterPath: e.posterPath ?? null,
+            backdropPath: null,
+            releaseDate: e.releaseDate ?? null,
+            theatricalDate: e.releaseDate ?? null,
+            rating: e.rating ?? null,
+            votes: null,
+            popularity: null,
+            language: null,
+            genreIds: [],
+            genres: e.genres ?? [],
+            digitalDate: null,
+            cinemaScore: e.cinemaScore ?? null,
+            mediaType: "movie",
+            source: "tmdb",
+            category: "announced" as any,
+          } as Movie);
+        }
+        movies.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+        setRadarMovies(movies.slice(0, 4));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   const dismissedFeatured = useFeaturedDismissed();
   const thisWeek = useMemo(() => {
     const weekLater = now + 7 * 86_400_000;
@@ -445,6 +492,27 @@ export function RadarPage() {
                 </div>
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {radarMovies.length > 0 && !hasNarrowingFilters && (
+        <section>
+          <SectionHeader
+            className="mb-3"
+            title="فیلمهای پیشنهادی"
+            description="گیشهٔ خوب یا کیفیت دیجیتال آمده، با امتیاز بالا"
+          />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {radarMovies.map((movie) => (
+              <MovieCard
+                key={movie.id}
+                movie={movie}
+                tab="quality"
+                favorite={false}
+                onToggleFavorite={() => {}}
+              />
+            ))}
           </div>
         </section>
       )}

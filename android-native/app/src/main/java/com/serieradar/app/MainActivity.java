@@ -20,7 +20,9 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebChromeClient.FileChooserParams;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebResourceRequest;
@@ -49,6 +51,8 @@ public class MainActivity extends Activity {
     private WebView webView;
     private String pendingRoute = null;
     private boolean pageLoaded = false;
+    private ValueCallback<Uri[]> fileChooserCallback = null;
+    private static final int FILE_CHOOSER_REQUEST = 9001;
 
     // In-app APK update state.
     private BroadcastReceiver downloadReceiver;
@@ -123,7 +127,23 @@ public class MainActivity extends Activity {
                 openPendingRoute();
             }
         });
-        webView.setWebChromeClient(new WebChromeClient());
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                fileChooserCallback = callback;
+                Intent intent = params.createIntent();
+                try {
+                    startActivityForResult(intent, FILE_CHOOSER_REQUEST);
+                    return true;
+                } catch (Exception ignored) {
+                    if (fileChooserCallback != null) {
+                        fileChooserCallback.onReceiveValue(null);
+                        fileChooserCallback = null;
+                    }
+                    return false;
+                }
+            }
+        });
 
         webView.loadUrl("https://appassets.androidplatform.net/assets/web/index.html");
 
@@ -153,6 +173,27 @@ public class MainActivity extends Activity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == NOTIFICATION_PERMISSION_REQUEST) {
             openExactAlarmSettingsInternal();
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == FILE_CHOOSER_REQUEST && fileChooserCallback != null) {
+            Uri[] results = null;
+            if (resultCode == RESULT_OK && data != null) {
+                if (data.getData() != null) {
+                    results = new Uri[] { data.getData() };
+                } else if (data.getClipData() != null) {
+                    int count = data.getClipData().getItemCount();
+                    results = new Uri[count];
+                    for (int i = 0; i < count; i++) {
+                        results[i] = data.getClipData().getItemAt(i).getUri();
+                    }
+                }
+            }
+            fileChooserCallback.onReceiveValue(results);
+            fileChooserCallback = null;
         }
     }
 
@@ -454,16 +495,25 @@ public class MainActivity extends Activity {
         public boolean saveCalendarFile(String filename, String content) {
             return saveCalendar(filename, content);
         }
+
+        public boolean saveBackupFile(String filename, String content) {
+            return saveFile(filename, content, "application/json", "فایل پشتیبان در Downloads ذخیره شد");
+        }
     }
 
     /** Saves an .ics file where the user can find it without extra permissions. */
     private boolean saveCalendar(String filename, String content) {
+        return saveFile(filename, content, "text/calendar", "فایل تقویم در Downloads ذخیره شد");
+    }
+
+    /** Generic file saver used by calendar, backup export, etc. */
+    private boolean saveFile(String filename, String content, String mime, String toastMessage) {
         try {
             byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.Downloads.DISPLAY_NAME, filename);
-                values.put(MediaStore.Downloads.MIME_TYPE, "text/calendar");
+                values.put(MediaStore.Downloads.MIME_TYPE, mime);
                 values.put(MediaStore.Downloads.IS_PENDING, 1);
                 Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
                 if (uri == null) return false;
@@ -474,7 +524,7 @@ public class MainActivity extends Activity {
                 values.clear();
                 values.put(MediaStore.Downloads.IS_PENDING, 0);
                 getContentResolver().update(uri, values, null, null);
-                runOnUiThread(() -> Toast.makeText(this, "فایل تقویم در Downloads ذخیره شد", Toast.LENGTH_LONG).show());
+                runOnUiThread(() -> Toast.makeText(this, toastMessage, Toast.LENGTH_LONG).show());
                 return true;
             }
             File dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
@@ -485,10 +535,10 @@ public class MainActivity extends Activity {
                 out.write(bytes);
             }
             final String path = target.getAbsolutePath();
-            runOnUiThread(() -> Toast.makeText(this, "فایل تقویم ذخیره شد: " + path, Toast.LENGTH_LONG).show());
+            runOnUiThread(() -> Toast.makeText(this, toastMessage + ": " + path, Toast.LENGTH_LONG).show());
             return true;
         } catch (Exception error) {
-            runOnUiThread(() -> Toast.makeText(this, "ذخیرهٔ فایل تقویم ممکن نشد", Toast.LENGTH_SHORT).show());
+            runOnUiThread(() -> Toast.makeText(this, "ذخیرهٔ فایل ممکن نشد", Toast.LENGTH_SHORT).show());
             return false;
         }
     }

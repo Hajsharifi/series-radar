@@ -6,6 +6,11 @@ export function movieDownloadKey(movieId: number): string {
   return `movie:${movieId}`;
 }
 
+function isCinemaRipQuality(q?: string | null): boolean {
+  const s = (q || "").toLowerCase();
+  return s.includes("hdts") || s.includes("camrip") || s.includes("telesync") || s.trim() === "cam" || s.trim() === "ts";
+}
+
 export function seriesDownloadKey(
   id: number,
   source: "tmdb" | "tvmaze" = "tmdb",
@@ -111,7 +116,23 @@ export async function fetchDownloads(
   const data = await cachedFetchJson<DownloadsResponse>(url, 25000);
   const result: Record<string, DownloadPayload> = {};
   for (const item of data.items ?? []) {
-    if (item?.key) result[item.key] = item;
+    if (!item?.key) continue;
+    // Defense-in-depth: drop cinema-screen (HDTS) links even if the server
+    // payload predates the filter.
+    for (const group of item.groups ?? []) {
+      if (group.items) group.items = group.items.filter((it) => !isCinemaRipQuality(it.quality));
+    }
+    for (const season of item.seasons ?? []) {
+      for (const group of season.groups ?? []) {
+        if (group.items) group.items = group.items.filter((it) => !isCinemaRipQuality(it.quality));
+        if (group.episodes) {
+          for (const ep of group.episodes) {
+            if (ep.quality && isCinemaRipQuality(ep.quality)) ep.links = [];
+          }
+        }
+      }
+    }
+    result[item.key] = item;
   }
   return result;
 }

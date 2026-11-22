@@ -518,6 +518,25 @@ export function SettingsPage() {
         >
           مشاهدهٔ لاگ خطاها
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              const logs = (localStorage.getItem("sr:error-log:v1") || "").slice(0, 900);
+              const body = encodeURIComponent(
+                `نسخه: ${__APP_VERSION__}\\nپلتفرم: ${isNativeApp() ? "اندروید (WebView)" : "وب"}\\n\\nشرح مشکل:\\n\\n\\n---\\nلاگ:\\n${logs}`,
+              );
+              openExternalUrl(
+                `https://github.com/Hajsharifi/series-radar/issues/new?title=${encodeURIComponent("گزارش مشکل")}&body=${body}`,
+              );
+            } catch {
+              openExternalUrl("https://github.com/Hajsharifi/series-radar/issues/new");
+            }
+          }}
+          className="mt-2 w-full rounded-lg border border-sky-400/30 bg-sky-400/10 px-3.5 py-2 text-xs font-semibold text-sky-200 active:bg-sky-400/20"
+        >
+          پشتیبانی / گزارش مشکل
+        </button>
       </section>
 
       {message && (

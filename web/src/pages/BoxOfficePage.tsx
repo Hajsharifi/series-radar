@@ -82,6 +82,12 @@ function WeekendCard({ entry }: { entry: BoxOfficeEntry }) {
         <span className="text-micro text-muted">بودجه</span>
         <span className="text-caption font-medium text-ink-200">{usdShort(entry.budget)}</span>
       </div>
+      {entry.cinemaScore && (
+        <div className="mt-1.5 flex items-center justify-between gap-2 rounded-xl bg-sky-400/10 px-2.5 py-1.5">
+          <span className="text-micro text-sky-200">CinemaScore</span>
+          <span className="text-caption font-bold text-sky-300">{entry.cinemaScore}</span>
+        </div>
+      )}
     </article>
   );
 }
@@ -96,6 +102,7 @@ function YearRow({ entry }: { entry: BoxOfficeEntry }) {
       <div className="shrink-0 text-left">
         <p className="text-[12px] font-bold text-amber-300">{usdShort(entry.worldwide)}</p>
         <p className="text-micro text-muted">داخلی {usdShort(entry.domestic)}</p>
+        {entry.cinemaScore && <p className="text-micro font-bold text-sky-300">CS {entry.cinemaScore}</p>}
       </div>
     </article>
   );

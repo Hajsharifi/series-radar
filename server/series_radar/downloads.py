@@ -79,6 +79,15 @@ def group_id(*parts):
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:12]
 
 
+def is_cinema_rip_quality(quality):
+    """Low-quality cinema-screen rips (HDTS / پرده سینما) the user does not want."""
+    if not quality:
+        return False
+    q = str(quality).lower()
+    return ("hdts" in q or "پرده" in q or "camrip" in q
+            or q.strip() in ("cam", "ts", "telesync"))
+
+
 def _now():
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
@@ -242,6 +251,8 @@ def parse_movie_page(page_html):
             quality = _label_value(li, "کیفیت")
             if not quality:
                 continue
+            if is_cinema_rip_quality(quality):
+                continue
             
             links = _links(li, "دانلود مستقیم")
             if not links:
@@ -336,6 +347,8 @@ def parse_series_page(page_html):
             for _, _, _, li in elements(block, "li"):
                 quality = _label_value(li, "کیفیت")
                 if not quality:
+                    continue
+                if is_cinema_rip_quality(quality):
                     continue
                 # A quality variant has one row per episode inside
                 # ``series-downloaditems``; a plain li holds its links directly.

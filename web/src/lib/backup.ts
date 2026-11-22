@@ -1,4 +1,5 @@
 import { getFavorites, replaceFavorites } from "./favorites";
+import { isNativeApp, saveBackupFile } from "./native";
 import { getMovieFavorites, replaceMovieFavorites } from "./movie-favorites";
 import { getTrackedMovies } from "./movie-track";
 
@@ -36,11 +37,20 @@ function readEpisodeTracking(): Record<string, number[]> {
 
 export function downloadBackup(): void {
   const data = exportBackup();
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const text = JSON.stringify(data, null, 2);
+  const filename = `radar-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  if (isNativeApp()) {
+    try {
+      if (saveBackupFile(filename, text)) return;
+    } catch {
+      /* fall through to browser download */
+    }
+  }
+  const blob = new Blob([text], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `radar-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

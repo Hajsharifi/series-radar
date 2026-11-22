@@ -24,6 +24,7 @@ interface AndroidReminderBridge {
   openExternal?(url: string): void;
   downloadAndInstall?(url: string, version: string): void;
   saveCalendarFile?(filename: string, content: string): boolean;
+  saveBackupFile?(filename: string, content: string): boolean;
   setSystemBarsColor?(color: string): void;
 }
 
@@ -87,6 +88,18 @@ export function openExternalUrl(url: string): void {
 export function saveCalendarFile(filename: string, content: string): boolean {
   if (!isNativeApp()) return false;
   try {
+    return window.AndroidReminders?.saveCalendarFile?.(filename, content) === true;
+  } catch {
+    return false;
+  }
+}
+
+export function saveBackupFile(filename: string, content: string): boolean {
+  if (!isNativeApp()) return false;
+  try {
+    if (window.AndroidReminders?.saveBackupFile) {
+      return window.AndroidReminders.saveBackupFile(filename, content) === true;
+    }
     return window.AndroidReminders?.saveCalendarFile?.(filename, content) === true;
   } catch {
     return false;

@@ -113,6 +113,7 @@ export interface Movie {
   imdbRating?: string | null;        // e.g. "8.5/10"
   rottenTomatoesRating?: string | null; // e.g. "92%"
   metacriticRating?: string | null;    // e.g. "78/100"
+  cinemaScore?: string | null;         // e.g. "A"
   omdbAwards?: string | null;
   omdbGenre?: string | null;
   omdbDirector?: string | null;
@@ -145,6 +146,7 @@ export interface BoxOfficeEntry {
   posterPath?: string | null;
   rating?: number | null;
   releaseDate?: string | null;
+  cinemaScore?: string | null;
   genres?: string[];
   budget?: number | null;
   revenue?: number | null;

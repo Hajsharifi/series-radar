@@ -8,6 +8,7 @@ from .cache import cache_get, cache_put
 from .config import BOM
 from .http import fetch_text
 from .text import normalize_title, parse_money, strip_tags
+from .cinemascore import enrich_box_office
 from .tmdb import movie_detail, tmdb_search
 
 
@@ -182,5 +183,9 @@ def box_office(year=None, force=False):
         "weekend": cheap,
         "yearly": yearly_out,
     }
+    try:
+        enrich_box_office(payload)
+    except Exception:
+        pass
     cache_put(key, payload)
     return payload
