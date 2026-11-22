@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",
-    "@tanstack/react-query": "^5.107.1",
+    "@tanstack/react-query": "^5.108.0",
     "date-fns": "^4.4.0",
     "lucide-react": "^0.468.0",
     "react": "^19.3.1",
