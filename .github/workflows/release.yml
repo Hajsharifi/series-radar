@@ -134,7 +134,7 @@ jobs:
             echo "::error::Wrong signing certificate ($CERT) - in-place updates would fail!"; exit 1
           fi
           # 3. Code-split chunks must be present inside the APK
-          for CHUNK in index- SearchPage- SeriesDetailPage-; do
+          for CHUNK in index- SearchPage- SettingsPage-; do
             if ! unzip -l "$APK" | grep -q "assets/web/assets/$CHUNK"; then
               echo "::error::Missing JS chunk $CHUNK in APK!"; exit 1
             fi
