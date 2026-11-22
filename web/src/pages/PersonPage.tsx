@@ -7,13 +7,12 @@ import { EmptyState, LoadingState } from "../components/StateViews";
 import { Star, UserRound } from "lucide-react";
 import { cachedFetchJson } from "../lib/offline";
 import { API_BASE } from "../lib/api";
-import { jalaliDate, toPersianDigits } from "../lib/date";
+import { jalaliFromDay, toPersianDigits } from "../lib/date";
 import type { PersonCredit, PersonDetail } from "../types";
 
 function creditDate(day?: string | null): string {
   if (!day) return "—";
-  const date = new Date(`${day}T12:00:00`);
-  return Number.isNaN(date.getTime()) ? "—" : jalaliDate(date);
+  return jalaliFromDay(day);
 }
 
 function CreditCard({ credit }: { credit: PersonCredit }) {

@@ -60,6 +60,9 @@ export function ShowDetailsPage() {
       status: detail.status ?? null,
       airstamp: detail.nextEpisode?.airdate ? `${detail.nextEpisode.airdate}T12:00:00Z` : null,
       airDate: detail.nextEpisode?.airdate ?? null,
+      dateSource: (detail as any)?.dateSource ?? detail?.nextEpisode?.dateSource ?? null,
+      dateConfidence: (detail as any)?.dateConfidence ?? null,
+      tmdbAirdate: detail?.nextEpisode?.tmdbAirdate ?? null,
       countryCode: detail.countryCode ?? null,
       language: detail.language ?? null,
       network: detail.networkNames?.[0] ?? null,
@@ -160,8 +163,21 @@ export function ShowDetailsPage() {
               </span>
             )}
             <span className="rounded-lg bg-white/6 px-2 py-1 text-ink-300">
-              {show.isDateConfirmed ? "تاریخ قطعی" : "زمان تقریبی"}
+              {show.dateSource === "tvmaze"
+                ? "تأییدشده با TVMaze"
+                : show.dateSource === "pattern"
+                ? "تخمینی (الگوی فصل)"
+                : show.dateSource === "pending"
+                ? "در حال بررسی"
+                : show.isDateConfirmed
+                ? "تاریخ قطعی"
+                : "زمان تقریبی"}
             </span>
+            {show.tmdbAirdate && show.tmdbAirdate !== show.airDate && (
+              <span className="rounded-lg bg-white/6 px-2 py-1 text-ink-400" title="تاریخ TMDB">
+                TMDB: {show.tmdbAirdate}
+              </span>
+            )}
           </div>
 
           <div className="rounded-card border border-edge/10 bg-black/25 p-4">

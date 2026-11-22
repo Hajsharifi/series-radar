@@ -20,6 +20,12 @@ All notable changes to Series Radar are documented here.
 - `strict: true` در tsconfig + Dependabot config
 - صفحه‌بندی جستجو/کشف (بارگذاری بیشتر)
 - بروزرسانی plan: نقشه راه جامع
+- تاریخ قسمت‌ها بر مبنای TVMaze: TMDB فراداده می‌ماند، TVMaze منبع تاریخ می‌شود؛ سریال دکستر ۲ روز زودتر (۲۹ آبان به‌جای ۱ آذر) نمایش داده می‌شود
+- تطبیق TMDB↔TVMaze از طریق tvdb_id/imdb_id؛ الگوی اختلاف فصل (≥۳ قسمت) به‌عنوان fallback؛ برچسب «تأییدشده/اصلاح‌شده/تخمینی/فقط TMDB»
+- ادغام تاریخ TVMaze در `/api/tv/{id}/episodes` + گزارش `failedSeasons`
+- endpoint `/api/tv/verify` + warmer پس‌زمینه هر ۶ ساعت
+- اصلاح نمایش تاریخ‌های date-only وابسته به منطقهٔ زمانی دستگاه (RadarPage، CompactShowRow، ...)
+- به‌روزرسانی attribution: TMDB · TVMaze · Box Office Mojo
 
 ## [v1.16.1] - 2026-11-21
 

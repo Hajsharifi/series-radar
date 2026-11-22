@@ -22,7 +22,6 @@ import { radarGroupLimit, type RadarView } from "../lib/radar-group-limit";
 import { readUiState, writeUiState } from "../lib/ui-state";
 import {
   toPersianDigits,
-  jalaliDate,
   jalaliFromStamp,
   dateAfterDays,
   toIsoDay,
@@ -514,7 +513,7 @@ export function RadarPage() {
                           )}
                           {show.airstamp && (
                             <span className="text-caption text-brand">
-                              {jalaliDate(new Date(show.airstamp))}
+                              {jalaliFromStamp(show.airstamp)}
                             </span>
                           )}
                         </div>

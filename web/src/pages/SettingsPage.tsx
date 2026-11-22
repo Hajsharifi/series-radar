@@ -458,13 +458,13 @@ export function SettingsPage() {
       <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
         <h2 className="mb-2 text-sm font-bold text-white">درباره</h2>
         <Row label="نسخه" value={toPersianDigits(__APP_VERSION__)} />
-        <Row label="منبع داده" value="TMDB · Box Office Mojo" />
+        <Row label="منبع داده" value="TMDB · TVMaze · Box Office Mojo" />
         <Row label="تقویم" value="شمسی + میلادی" />
         <Row label="یادآوری" value="آلارم اندروید" />
         <Row label="وضعیت ورود" value="محلی، بدون حساب" />
         <p className="mt-2 text-caption leading-relaxed text-muted">
-          سریال‌ها و فیلم‌ها (همراه با تاریخ‌های انتشار) از TMDB و اعداد گیشه از Box Office Mojo
-          گرفته می‌شوند. همهٔ داده‌های تو محلی است و نیازی به ورود یا حساب ابری نیست.
+          سریال‌ها و فیلم‌ها (فراداده) و تاریخ‌های انتشار از TMDB و TVMaze، و اعداد گیشه
+          از Box Office Mojo گرفته می‌شوند. همهٔ داده‌های تو محلی است و نیازی به ورود یا حساب ابری نیست.
         </p>
         <p className="mt-2 text-caption leading-relaxed text-muted">
           This product uses the TMDB API but is not endorsed or certified by TMDB.
@@ -476,6 +476,10 @@ export function SettingsPage() {
 
           <button type="button" onClick={() => openExternalUrl("https://www.boxofficemojo.com/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-caption text-ink-200">
             Box Office Mojo
+          </button>
+
+          <button type="button" onClick={() => openExternalUrl("https://www.tvmaze.com/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-caption text-ink-200">
+            TVMaze
           </button>
         </div>
         {isNativeApp() && (

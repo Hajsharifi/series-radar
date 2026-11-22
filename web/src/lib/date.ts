@@ -87,6 +87,24 @@ export function jalaliDate(date: Date): string {
   return `${p.day} ${p.month} ${p.year}`;
 }
 
+/** Format a plain YYYY-MM-DD day (date-only, no time, no timezone) as Jalali.
+ *  Use this for TMDB/TVMaze release dates instead of `jalaliDate(new Date(day))`,
+ *  which depends on the device time zone and can shift the day. */
+export function jalaliFromDay(day?: string | null): string {
+  if (!day) return "نامشخص";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(day);
+  if (!m) return "نامشخص";
+  const [jy, jm, jd] = toJalali(Number(m[1]), Number(m[2]), Number(m[3]));
+  return `${toPersianDigits(jd)} ${PERSIAN_MONTHS[jm - 1]} ${toPersianDigits(jy)}`;
+}
+
+export function gregorianFromDay(day?: string | null): string {
+  if (!day) return "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(day);
+  if (!m) return "";
+  return `${Number(m[3])} ${["January","February","March","April","May","June","July","August","September","October","November","December"][Number(m[2]) - 1]} ${Number(m[1])}`;
+}
+
 export function gregorianDate(date: Date): string {
   return `${date.getDate()} ${
     ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][

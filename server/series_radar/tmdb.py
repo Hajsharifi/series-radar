@@ -3,6 +3,7 @@
 import concurrent.futures
 import datetime as dt
 
+from .airdates import apply_override, get_override, request_verify, verify_show
 from .cache import cache_get, cache_put
 from .config import TMDB, TMDB_HEADERS, TMDB_TOKEN, today_tehran
 from .http import fetch_json, localized_collection, tmdb_get
@@ -241,6 +242,7 @@ def norm_tv_detail(detail):
         "spokenLanguages": [l.get("name") for l in (detail.get("spoken_languages") or []) if l.get("name")],
         "trailerKey": trailer_key(detail),
         "imdbId": (detail.get("external_ids") or {}).get("imdb_id"),
+        "tvdbId": (detail.get("external_ids") or {}).get("tvdb_id"),
         "createdBy": [p.get("name") for p in (detail.get("created_by") or []) if p.get("name")],
         "createdByIds": [p.get("id") for p in (detail.get("created_by") or []) if p.get("id")],
         "directors": directors_from_credits(detail.get("credits")),
@@ -272,9 +274,18 @@ def tv_detail(show_id, force=False):
     if not force:
         cached = cache_get(key, 86400)
         if cached is not None:
+            # Apply a fresh override even on cached payloads.
+            apply_override(cached)
             return cached
     payload = norm_tv_detail(localized_detail("tv", show_id, "external_ids,videos,content_ratings,credits"))
     payload["overview_fa"] = payload.get("overview")
+    # On-demand verification (TVMaze as date basis).
+    try:
+        override = verify_show(show_id)
+        if override:
+            apply_override(payload)
+    except Exception:
+        pass
     cache_put(key, payload)
     return payload
 
@@ -450,6 +461,14 @@ def enrich_tv_meta(shows, include_omdb=True):
                     show.update(omdb_fetch(imdb_id))
                 except Exception:
                     pass
+        # Air-date verification (TVMaze as basis) — cache lookup only here,
+        # never blocks the request. Missing shows are queued for the warmer.
+        try:
+            apply_override(show)
+            if not get_override(show.get("id")):
+                request_verify(show.get("id"))
+        except Exception:
+            pass
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
         list(pool.map(one, shows))
@@ -515,5 +534,17 @@ def fetch_upcoming_tv(today=None, max_pages=2):
             by_id[show_id] = show
     shows = list(by_id.values())[:80]
     shows = enrich_tv_meta(shows, include_omdb=False)
-    cache_put(cache_key, shows)
-    return shows
+    # Apply cached overrides (TVMaze as date basis) and drop shows whose
+    # corrected date is already in the past.
+    day = today or today_tehran()
+    today_iso = day.isoformat()
+    filtered = []
+    for show in shows:
+        ne = (show.get("nextEpisode") or {})
+        air = ne.get("airdate") or show.get("firstAirDate")
+        if air and air < today_iso:
+            # Already aired; skip unless it's a brand-new premiere today.
+            continue
+        filtered.append(show)
+    cache_put(cache_key, filtered)
+    return filtered

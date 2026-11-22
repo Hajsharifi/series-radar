@@ -9,6 +9,7 @@ CACHE_DIR = os.environ.get("SERIES_RADAR_CACHE", os.path.join(BASE_DIR, "cache")
 TEHRAN_TZ = dt.timezone(dt.timedelta(hours=3, minutes=30))
 TOKEN_FILE = os.environ.get("TMDB_TOKEN_FILE", os.path.join(BASE_DIR, "token"))
 TMDB = "https://api.themoviedb.org/3"
+TVMaze = "https://api.tvmaze.com"
 BOM = "https://www.boxofficemojo.com"
 OMDB = "http://www.omdbapi.com"
 UA = (

@@ -11,6 +11,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from series_radar.cache import *  # noqa: F401,F403
+from series_radar.airdates import *  # noqa: F401,F403
 from series_radar.boxoffice import *  # noqa: F401,F403
 from series_radar.catalog import *  # noqa: F401,F403
 from series_radar.config import *  # noqa: F401,F403

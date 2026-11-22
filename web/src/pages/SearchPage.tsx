@@ -13,7 +13,7 @@ import {
 import { Poster } from "../components/Poster";
 import { EmptyState, SkeletonCards } from "../components/StateViews";
 import { SearchX, SlidersHorizontal, Star } from "lucide-react";
-import { toPersianDigits, jalaliDate } from "../lib/date";
+import { toPersianDigits, jalaliFromDay } from "../lib/date";
 import { useSearchHistory } from "../lib/searchHistory";
 import { useMovieCatalog } from "../hooks/useMovies";
 import { movieStage, movieStageLabel, tehranTodayISO } from "../lib/movies";
@@ -372,7 +372,7 @@ function SearchResultCard({ item, byId }: { item: SearchResult; byId: Map<number
           )}
           <div className="mt-auto flex items-center justify-between gap-1 pt-1 text-micro text-muted">
             <span className="truncate">{genreNames || "—"}</span>
-            {date && <span className="shrink-0 tabular-nums">{jalaliDate(new Date(date + "T12:00:00"))}</span>}
+            {date && <span className="shrink-0 tabular-nums">{jalaliFromDay(date)}</span>}
           </div>
         </div>
       </article>

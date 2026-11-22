@@ -4,7 +4,7 @@ import { BackButton } from "../components/BackButton";
 import { useQuery } from "@tanstack/react-query";
 import { cachedFetchJson } from "../lib/offline";
 import { openExternalUrl } from "../lib/native";
-import { gregorianDate, jalaliDate, leadHoursLabel, toPersianDigits } from "../lib/date";
+import { gregorianFromDay, jalaliFromDay, leadHoursLabel, toPersianDigits } from "../lib/date";
 import { GENRE_MAP } from "../hooks/useSearch";
 import { useEpisodeTracking } from "../hooks/useEpisodeTracking";
 import { Poster } from "../components/Poster";
@@ -79,8 +79,7 @@ function backdrop(path?: string | null): string | null {
 
 function formatDay(value?: string | null) {
   if (!value) return "—";
-  const date = new Date(`${value}T12:00:00`);
-  return `${jalaliDate(date)} (${gregorianDate(date)})`;
+  return `${jalaliFromDay(value)} (${gregorianFromDay(value)})`;
 }
 
 function Info({ label, value }: { label: string; value: ReactNode }) {

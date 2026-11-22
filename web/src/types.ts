@@ -50,7 +50,15 @@ export interface Show {
     name?: string;
     airdate?: string;
     overview?: string;
+    dateSource?: "tvmaze" | "pattern" | "tmdb" | "pending" | "unknown";
+    tmdbAirdate?: string | null;
+    deltaDays?: number | null;
   } | null;
+  dateSource?: "tvmaze" | "pattern" | "tmdb" | "pending" | "unknown";
+  dateConfidence?: "confirmed" | "estimated" | "single-source" | "pending";
+  dateCheckedAt?: string | null;
+  dateDeltaDays?: number | null;
+  tmdbAirdate?: string | null;
   numberOfSeasons?: number | null;
   networkNames?: string[];
 }

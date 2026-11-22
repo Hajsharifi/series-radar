@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Star } from "lucide-react";
 import { memo, type MemoExoticComponent } from "react";
 import type { Show } from "../types";
-import { jalaliDate, tehranClock, toPersianDigits } from "../lib/date";
+import { jalaliFromStamp, tehranClock, toPersianDigits } from "../lib/date";
 import { showEventKind } from "../lib/show-event";
 
 interface CompactShowRowProps {
@@ -34,7 +34,7 @@ function CompactShowRowInner({ show, favorite, onToggleFavorite }: CompactShowRo
         <p className="mt-0.5 truncate text-caption text-muted" dir="rtl">
           {[
             show.network ?? show.networkNames?.[0] ?? "—",
-            show.airstamp ? jalaliDate(new Date(show.airstamp)) : null,
+            show.airstamp ? jalaliFromStamp(show.airstamp) : null,
             clock,
             episode,
             typeof show.rating === "number" && show.rating > 0 ? `امتیاز ${toPersianDigits(show.rating.toFixed(1))}` : null,

@@ -10,6 +10,15 @@ import urllib.error
 import urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+from .airdates import (
+    apply_override,
+    apply_tvmaze_to_episodes,
+    get_override,
+    request_verify,
+    start_warmer,
+    verify_batch,
+    verify_show,
+)
 from .boxoffice import box_office
 from .cache import cache_get, cache_put, cache_stats, prune_cache
 from .catalog import (
@@ -146,9 +155,11 @@ class Handler(BaseHTTPRequestHandler):
                 seasons = show_detail.get("seasons") or []
                 season_numbers = [s.get("season_number") for s in seasons if s.get("season_number") and s.get("season_number") > 0]
                 all_episodes = []
+                failed_seasons = []
                 with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
                     futures = {pool.submit(localized_season, show_id, sn): sn for sn in season_numbers}
                     for future in concurrent.futures.as_completed(futures):
+                        sn = futures[future]
                         try:
                             season_data = future.result()
                             for ep in (season_data.get("episodes") or []):
@@ -166,8 +177,56 @@ class Handler(BaseHTTPRequestHandler):
                                     "rating": {"average": ep.get("vote_average")} if ep.get("vote_average") else None,
                                 })
                         except Exception:
+                            failed_seasons.append(sn)
+                # Apply TVMaze as date basis (fills missing seasons via offset).
+                try:
+                    apply_tvmaze_to_episodes(show_id, all_episodes)
+                except Exception:
+                    pass
+                # Retry failed seasons once.
+                if failed_seasons:
+                    retry_failed = []
+                    for sn in list(failed_seasons):
+                        try:
+                            season_data = localized_season(show_id, sn)
+                            for ep in (season_data.get("episodes") or []):
+                                still = ep.get("still_path")
+                                all_episodes.append({
+                                    "id": ep.get("id"),
+                                    "season": ep.get("season_number"),
+                                    "number": ep.get("episode_number"),
+                                    "name": ep.get("name"),
+                                    "airdate": ep.get("air_date"),
+                                    "airtime": None,
+                                    "airstamp": (ep.get("air_date") + "T12:00:00") if ep.get("air_date") else None,
+                                    "summary": ep.get("overview"),
+                                    "image": {"medium": "https://image.tmdb.org/t/p/w300" + still, "original": "https://image.tmdb.org/t/p/original" + still} if still else None,
+                                    "rating": {"average": ep.get("vote_average")} if ep.get("vote_average") else None,
+                                })
+                            failed_seasons.remove(sn)
+                        except Exception:
                             pass
-                return self.send_json({"episodes": all_episodes})
+                    try:
+                        apply_tvmaze_to_episodes(show_id, all_episodes)
+                    except Exception:
+                        pass
+                payload = {"episodes": all_episodes}
+                if failed_seasons:
+                    payload["failedSeasons"] = failed_seasons
+                    payload["partial"] = True
+                # Normalize airstamp to ISO with Z for client consistency.
+                for ep in all_episodes:
+                    if ep.get("airdate") and not (ep.get("airstamp") or "").endswith("Z"):
+                        ep["airstamp"] = ep["airdate"] + "T12:00:00Z"
+                return self.send_json(payload)
+            if path == "/api/tv/verify":
+                raw = (query.get("ids") or [""])[0]
+                ids = [x.strip() for x in raw.split(",") if x.strip().isdigit()]
+                try:
+                    overrides = verify_batch([int(x) for x in ids[:50]])
+                except Exception:
+                    overrides = []
+                return self.send_json({"items": overrides})
             if path == "/api/tv/on_the_air":
                 # Fetch first 3 pages (≈60 items) to include popular shows beyond page 1
                 data = localized_collection("/tv/on_the_air", {}, cache_ttl=1800, cache_key_extra="ontheair", max_pages=3)
@@ -260,6 +319,11 @@ def main():
     removed = prune_cache(force=True)
     if removed:
         print("Pruned %d stale cache files" % removed, flush=True)
+    try:
+        start_warmer()
+        print("Airdate warmer started", flush=True)
+    except Exception as exc:
+        print("Airdate warmer failed to start: %s" % exc, flush=True)
     server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print("Series Radar API on :%d" % PORT, flush=True)
     server.serve_forever()

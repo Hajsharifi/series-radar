@@ -10,6 +10,8 @@ import {
   reminderTimeForDayWithLead,
   reminderTimeMsWithLead,
   tehranClock,
+  jalaliFromDay,
+  weekdayName,
 } from "../lib/date";
 import { applyQuietHours } from "../lib/quiet-hours";
 import { getSettings } from "../lib/settings";
@@ -261,9 +263,7 @@ export function NativeReminders() {
       if (!show.airstamp) continue;
       const at = new Date(show.airstamp).getTime();
       if (!Number.isFinite(at) || at <= now) continue;
-      const dayLabel = new Date(at).toLocaleDateString("fa-IR", {
-        weekday: "short", day: "numeric", month: "short",
-      });
+      const dayLabel = `${weekdayName(show.airstamp)} ${jalaliFromDay(show.airDate ?? show.airstamp.slice(0, 10))}`;
       widgetKeys.add(favoriteKey(show.id, show.source ?? "tmdb"));
       widgetItems.push({
         id: show.id,
@@ -280,9 +280,7 @@ export function NativeReminders() {
       if (widgetKeys.has(key) || !show.airstamp) continue;
       const at = new Date(show.airstamp).getTime();
       if (!Number.isFinite(at) || at <= now) continue;
-      const dayLabel = new Date(at).toLocaleDateString("fa-IR", {
-        weekday: "short", day: "numeric", month: "short",
-      });
+      const dayLabel = `${weekdayName(show.airstamp)} ${jalaliFromDay(show.airDate ?? show.airstamp.slice(0, 10))}`;
       widgetKeys.add(key);
       widgetItems.push({
         id: nativeShowId(show.id, show.source ?? "tmdb"),
@@ -309,9 +307,7 @@ export function NativeReminders() {
       if (!day || day <= today) continue;
       const at = Date.parse(`${day}T00:00:00Z`);
       if (!Number.isFinite(at)) continue;
-      const dayLabel = new Date(at).toLocaleDateString("fa-IR", {
-        weekday: "short", day: "numeric", month: "short",
-      });
+      const dayLabel = `${weekdayName(`${day}T12:00:00Z`)} ${jalaliFromDay(day)}`;
       widgetItems.push({
         id: movie.id,
         title: movie.title,

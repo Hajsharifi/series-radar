@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useParams } from "react-router-dom";
 import { BackButton } from "../components/BackButton";
 import { useSeriesDetail } from "../hooks/useSeriesDetail";
-import { toPersianDigits, jalaliDate, tehranClock } from "../lib/date";
+import { toPersianDigits, jalaliFromDay, tehranClock } from "../lib/date";
 import { EpisodeList } from "../components/EpisodeList";
 import { Poster } from "../components/Poster";
 import { CreditsSection } from "../components/CreditsSection";
@@ -10,10 +10,11 @@ import { Star } from "lucide-react";
 
 function formatDate(date?: string | null) {
   if (!date) return { jalali: "—", gregorian: "—" };
-  const d = new Date(date + "T12:00:00");
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(date);
+  const gregorian = m ? `${m[3]}/${m[2]}/${m[1]}` : date;
   return {
-    jalali: jalaliDate(d),
-    gregorian: d.toLocaleDateString("en-GB"),
+    jalali: jalaliFromDay(date),
+    gregorian,
   };
 }
 

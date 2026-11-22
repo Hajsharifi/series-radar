@@ -26,7 +26,10 @@ interface TMDBTVResponse {
 function toScheduleShow(item: BackendTVShow): Show {
   const firstAir = item.firstAirDate ? item.firstAirDate.slice(0, 10) : null;
   const next = item.nextEpisode ?? null;
-  const airDate = next?.airdate || firstAir || null;
+  // A returning show with no known next episode must not reuse its series
+  // premiere date as "next air date" (it would resurrect years-old entries).
+  const isPremiere = !next && (item.numberOfSeasons ?? 0) <= 1;
+  const airDate = next?.airdate || (isPremiere ? firstAir : null);
   const kind = eventKindFromEpisode(next, item.numberOfSeasons);
   return {
     ...item,
@@ -125,7 +128,15 @@ export async function fetchTVSchedule(): Promise<Show[]> {
     for (const show of result.value) {
       if (!show?.id || !show.airstamp) continue;
       const key = `${show.source ?? "tmdb"}:${show.id}`;
-      if (!byKey.has(key)) byKey.set(key, show);
+      const existing = byKey.get(key);
+      if (!existing) { byKey.set(key, show); continue; }
+      const a = new Date(show.airstamp!).getTime();
+      const b = new Date(existing.airstamp!).getTime();
+      const showHasEp = Boolean(show.nextEpisode?.season && show.nextEpisode?.number);
+      const existingHasEp = Boolean(existing.nextEpisode?.season && existing.nextEpisode?.number);
+      if (showHasEp && !existingHasEp) { byKey.set(key, show); continue; }
+      if (!showHasEp && existingHasEp) continue;
+      if (a < b) byKey.set(key, show);
     }
   }
   return Array.from(byKey.values()).sort((a, b) =>
