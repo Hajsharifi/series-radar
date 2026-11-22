@@ -48,6 +48,11 @@ interface TmdbSeries {
   backdropPath?: string | null;
   firstAirDate?: string | null;
   lastAirDate?: string | null;
+  dateSource?: "tvmaze" | "pattern" | "tmdb" | "pending" | "unknown";
+  dateConfidence?: "confirmed" | "estimated" | "single-source" | "pending";
+  dateCheckedAt?: string | null;
+  dateDeltaDays?: number | null;
+  tmdbAirdate?: string | null;
   rating?: number | null;
   votes?: number | null;
   status?: string | null;
@@ -70,7 +75,7 @@ interface TmdbSeries {
   omdbDirector?: string | null;
   omdbActors?: string | null;
   seasons?: TmdbSeason[];
-  nextEpisode?: { season?: number; number?: number; name?: string; airdate?: string } | null;
+  nextEpisode?: { season?: number; number?: number; name?: string; airdate?: string; dateSource?: "tvmaze" | "pattern" | "tmdb" | "pending" | "unknown"; tmdbAirdate?: string | null; deltaDays?: number | null } | null;
 }
 
 function backdrop(path?: string | null): string | null {
@@ -230,6 +235,20 @@ export default function TmdbSeriesPage() {
               <Info
                 label="قسمت بعدی"
                 value={`فصل ${toPersianDigits(show.nextEpisode.season ?? 0)} · قسمت ${toPersianDigits(show.nextEpisode.number ?? 0)} — ${formatDay(show.nextEpisode.airdate)}`}
+              />
+            )}
+            {(show.dateSource || show.nextEpisode?.dateSource) && (
+              <Info
+                label="منبع تاریخ"
+                value={
+                  (show.dateSource || show.nextEpisode?.dateSource) === "tvmaze"
+                    ? "تأییدشده با TVMaze" + (show.nextEpisode?.tmdbAirdate && show.nextEpisode?.tmdbAirdate !== show.nextEpisode?.airdate ? ` (TMDB: ${show.nextEpisode.tmdbAirdate})` : "")
+                    : (show.dateSource || show.nextEpisode?.dateSource) === "pattern"
+                    ? "تخمینی (الگوی فصل)"
+                    : (show.dateSource || show.nextEpisode?.dateSource) === "pending"
+                    ? "در حال بررسی"
+                    : "فقط TMDB"
+                }
               />
             )}
             {nextUnwatched && (

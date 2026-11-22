@@ -3,7 +3,7 @@ import { MOVIE_API } from "./movies";
 import { eventKindFromEpisode } from "./show-event";
 import { cachedFetchJson } from "./offline";
 
-const TMDB_TV_CACHE = "sr:tmdbtv:v4";
+const TMDB_TV_CACHE = "sr:tmdbtv:v5";
 const TMDB_TV_TTL = 24 * 60 * 60 * 1000;
 
 /** The API already normalizes TMDB fields into the Show shape. */
@@ -130,6 +130,10 @@ export async function fetchTVSchedule(): Promise<Show[]> {
       const key = `${show.source ?? "tmdb"}:${show.id}`;
       const existing = byKey.get(key);
       if (!existing) { byKey.set(key, show); continue; }
+      const showTvmaze = show.dateSource === "tvmaze" || show.nextEpisode?.dateSource === "tvmaze";
+      const existingTvmaze = existing.dateSource === "tvmaze" || existing.nextEpisode?.dateSource === "tvmaze";
+      if (showTvmaze && !existingTvmaze) { byKey.set(key, show); continue; }
+      if (!showTvmaze && existingTvmaze) continue;
       const a = new Date(show.airstamp!).getTime();
       const b = new Date(existing.airstamp!).getTime();
       const showHasEp = Boolean(show.nextEpisode?.season && show.nextEpisode?.number);

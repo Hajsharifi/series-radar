@@ -41,7 +41,7 @@ def norm_tv_show(show):
     next_ep = show.get("next_episode_to_air") or None
     origin_countries = show.get("origin_country") or []
     country_code = origin_countries[0] if origin_countries else None
-    return {
+    result = {
         "mediaType": "tv",
         "source": "tmdb",
         "id": show.get("id"),
@@ -74,6 +74,15 @@ def norm_tv_show(show):
             "overview": next_ep.get("overview"),
         } if next_ep else None),
     }
+    # Centralised air-date correction (TVMaze as basis) — cache lookup only.
+    # Missing shows are queued for the background warmer (no network here).
+    try:
+        apply_override(result)
+        if not get_override(result.get("id")):
+            request_verify(result.get("id"))
+    except Exception:
+        pass
+    return result
 
 
 def us_release_dates(detail):
@@ -266,6 +275,13 @@ def norm_tv_detail(detail):
                 {"name": x.strip(), "character": None, "profilePath": None}
                 for x in omdb_data["omdbActors"].split(",") if x.strip()
             ]
+    # Centralised air-date correction (TVMaze as basis) for detail payload.
+    try:
+        apply_override(payload)
+        if not get_override(payload.get("id")):
+            request_verify(payload.get("id"))
+    except Exception:
+        pass
     return payload
 
 
@@ -487,6 +503,11 @@ def fetch_upcoming_tv(today=None, max_pages=2):
     cache_key = "upcoming_tv_v1_%s_%d" % (day.isoformat(), max_pages)
     cached = cache_get(cache_key, 3600)
     if cached is not None:
+        try:
+            for show in cached:
+                apply_override(show)
+        except Exception:
+            pass
         return cached
 
     base = {"sort_by": "popularity.desc", "include_adult": "false"}

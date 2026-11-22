@@ -233,6 +233,7 @@ def build_override(tmdb_id, tmdb_detail, tvmaze_show, tvmaze_episodes):
         "tvmazeMatched": bool(tvmaze_show),
         "firstAirDate": tmdb_detail.get("first_air_date"),
         "lastAirDate": tmdb_detail.get("last_air_date"),
+        "seasonDates": {},
         "nextEpisode": None,
         "dateSource": "tmdb",
         "confidence": "single-source",
@@ -244,6 +245,33 @@ def build_override(tmdb_id, tmdb_detail, tvmaze_show, tvmaze_episodes):
     premiered = (tvmaze_show or {}).get("premiered")
     if _valid_date(premiered):
         override["firstAirDate"] = premiered
+
+    # seasonDates: season -> first episode airdate from TVMaze.
+    by_season = {}
+    for ep in (tvmaze_episodes or []):
+        by_season.setdefault(ep.get("season"), []).append(ep)
+    season_dates = {}
+    for sn, eps in by_season.items():
+        if not eps:
+            continue
+        eps_sorted = sorted(eps, key=lambda e: (e.get("number") or 0))
+        if _valid_date(eps_sorted[0].get("airdate")):
+            season_dates[sn] = eps_sorted[0].get("airdate")
+    override["seasonDates"] = season_dates
+
+    # lastAirDate: max TVMaze episode date that has already aired.
+    today = dt.date.today()
+    aired = []
+    for ep in (tvmaze_episodes or []):
+        d = _parse_date(ep.get("airdate"))
+        if d and d <= today:
+            aired.append(d)
+    if aired:
+        override["lastAirDate"] = max(aired).isoformat()
+    elif offset is not None and _valid_date(tmdb_detail.get("last_air_date")):
+        d = _parse_date(tmdb_detail.get("last_air_date"))
+        if d:
+            override["lastAirDate"] = (d + dt.timedelta(days=offset)).isoformat()
 
     # lastAirDate: TVMaze doesn't expose a single last_air_date; keep TMDB.
 
@@ -405,6 +433,22 @@ def apply_override(show):
         return show
     if override.get("firstAirDate"):
         show["firstAirDate"] = override["firstAirDate"]
+    if override.get("lastAirDate"):
+        show["lastAirDate"] = override["lastAirDate"]
+    # Correct season premiere dates in detail payloads.
+    season_dates = override.get("seasonDates") or {}
+    if isinstance(show.get("seasons"), list) and season_dates:
+        for s in show["seasons"]:
+            sn = s.get("seasonNumber") if isinstance(s, dict) else None
+            if sn is None:
+                sn = s.get("season_number") if isinstance(s, dict) else None
+            if sn in season_dates:
+                if isinstance(s, dict):
+                    s["airDate"] = season_dates[sn]
+            elif isinstance(s, dict) and s.get("airDate") and override.get("deltaDays") is not None:
+                d = _parse_date(s.get("airDate"))
+                if d:
+                    s["airDate"] = (d + dt.timedelta(days=override["deltaDays"])).isoformat()
     ne = override.get("nextEpisode")
     if ne:
         existing = show.get("nextEpisode") if isinstance(show.get("nextEpisode"), dict) else {}

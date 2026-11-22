@@ -8,7 +8,7 @@
 import type { Show } from "../types";
 import { fetchTVSchedule } from "./tmdb-tv";
 
-const CACHE_KEY = "sr:schedule:v2";
+const CACHE_KEY = "sr:schedule:v3";
 const FULL_TTL_MS = 6 * 60 * 60 * 1000;
 const MINUTE_KEY = "sr:minute:v2";
 
@@ -134,6 +134,12 @@ export function cachedSnapshot(): ScheduleSnapshot | null {
 
 export function shouldRefreshFull(snapshot: ScheduleSnapshot | null): boolean {
   if (!snapshot || snapshot.source === "seed") return true;
+  if (!snapshot.items || snapshot.items.length === 0) return true;
+  // Force a refresh if any entry still carries unverified (TMDB-only) dates,
+  // so stale pre-fix snapshots are discarded even while still "fresh".
+  if (snapshot.items.some((s) => !s.dateSource || s.dateSource !== "tvmaze" || s.nextEpisode?.dateSource !== "tvmaze")) {
+    return true;
+  }
   if (snapshot.source !== "network" || !snapshot.updatedAt) return true;
   return Date.now() - new Date(snapshot.updatedAt).getTime() > FULL_TTL_MS;
 }

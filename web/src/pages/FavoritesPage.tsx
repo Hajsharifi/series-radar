@@ -151,9 +151,12 @@ export function FavoritesPage() {
       const future = candidates.filter(
         (show) => show.airstamp && new Date(show.airstamp).getTime() >= now - 6 * 3_600_000,
       );
-      const chosen = future.sort((a, b) =>
-        (a.airstamp ?? "9999").localeCompare(b.airstamp ?? "9999"),
-      )[0];
+      const chosen = future.sort((a, b) => {
+        const aTvmaze = a.dateSource === "tvmaze" || a.nextEpisode?.dateSource === "tvmaze";
+        const bTvmaze = b.dateSource === "tvmaze" || b.nextEpisode?.dateSource === "tvmaze";
+        if (aTvmaze !== bTvmaze) return aTvmaze ? -1 : 1;
+        return (a.airstamp ?? "9999").localeCompare(b.airstamp ?? "9999");
+      })[0];
       if (chosen) merged.push(chosen);
     }
     // Last line of defence for rows whose stored identity never made it to disk.
