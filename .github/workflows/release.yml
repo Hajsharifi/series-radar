@@ -103,11 +103,14 @@ jobs:
       - name: Build APK
         working-directory: ./android-native
         env:
-          SERIES_RADAR_KEYSTORE: app/release.keystore
           SERIES_RADAR_KEYSTORE_PASSWORD: ${{ secrets.SERIES_RADAR_KEYSTORE_PASSWORD }}
           SERIES_RADAR_KEY_ALIAS: ${{ secrets.SERIES_RADAR_KEY_ALIAS }}
           SERIES_RADAR_KEY_PASSWORD: ${{ secrets.SERIES_RADAR_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease
+        run: |
+          if [ -f app/release.keystore ]; then
+            export SERIES_RADAR_KEYSTORE=release.keystore
+          fi
+          ./gradlew assembleRelease
 
       - name: Verify APK (size, signature, code-split chunks)
         run: |

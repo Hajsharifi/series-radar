@@ -10,20 +10,20 @@ android {
         applicationId = "com.serieradar.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 61
-        versionName = "1.16.13"
+        versionCode = 62
+        versionName = "1.16.14"
     }
 
     signingConfigs {
         create("release") {
-            val ksFile = System.getenv("SERIES_RADAR_KEYSTORE")
-                    ?: (project.findProperty("seriesRadar.keystore") as String?)
-            val ksPassword = System.getenv("SERIES_RADAR_KEYSTORE_PASSWORD")
-                    ?: (project.findProperty("seriesRadar.keystorePassword") as String?)
-            val alias = System.getenv("SERIES_RADAR_KEY_ALIAS")
-                    ?: (project.findProperty("seriesRadar.keyAlias") as String?)
-            val keyPass = System.getenv("SERIES_RADAR_KEY_PASSWORD")
-                    ?: (project.findProperty("seriesRadar.keyPassword") as String?)
+            fun envOrProp(env: String, prop: String): String? {
+                val v = System.getenv(env) ?: (project.findProperty(prop) as String?)
+                return v?.takeIf { it.isNotBlank() }
+            }
+            val ksFile = envOrProp("SERIES_RADAR_KEYSTORE", "seriesRadar.keystore")
+            val ksPassword = envOrProp("SERIES_RADAR_KEYSTORE_PASSWORD", "seriesRadar.keystorePassword")
+            val alias = envOrProp("SERIES_RADAR_KEY_ALIAS", "seriesRadar.keyAlias")
+            val keyPass = envOrProp("SERIES_RADAR_KEY_PASSWORD", "seriesRadar.keyPassword")
             if (ksFile != null && ksPassword != null && alias != null && keyPass != null) {
                 storeFile = file(ksFile)
                 storePassword = ksPassword
