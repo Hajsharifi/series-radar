@@ -14,6 +14,7 @@ from .boxoffice import box_office
 from .cache import cache_get, cache_put, cache_stats, prune_cache
 from .catalog import (
     enrich_search_dates,
+    enrich_with_omdb,
     now_playing,
     online_releases,
     quality_waiting,
@@ -70,7 +71,8 @@ class Handler(BaseHTTPRequestHandler):
         inc_request(path)
         try:
             if path == "/api/health":
-                return self.send_json({"ok": True, "time": dt.datetime.utcnow().isoformat() + "Z"})
+                tmdb_ok = bool(TMDB_TOKEN)
+                return self.send_json({"ok": tmdb_ok, "tmdb": tmdb_ok, "time": dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")})
             if path == "/api/downloads/match":
                 keys = [item.strip() for item in (query.get("keys") or [""])[0].split(",") if item.strip()]
                 return self.send_json({"items": match_downloads(keys[:MAX_KEYS], force)})
@@ -240,7 +242,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"error": "upstream HTTP %s" % error.code}, 502)
         except Exception as error:
             inc_error(path)
-            return self.send_json({"error": str(error)}, 500)
+            request_id = "%d" % int(time.time() * 1000)
+            sys.stderr.write("request %s %s failed: %r\\n" % (request_id, path, error))
+            return self.send_json({"error": "internal error", "requestId": request_id}, 500)
         finally:
             try:
                 observe_latency(path, (time.time() - _started) * 1000.0)

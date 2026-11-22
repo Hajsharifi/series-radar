@@ -53,9 +53,11 @@ export default function SearchPage() {
   const isLive = query.trim().length >= 2;
   const results: SearchResult[] = isLive
     ? live.results
-    : advanced.data?.items || [];
+    : (advanced.data?.pages.flatMap((p: { items: SearchResult[] }) => p.items) || []);
   const loading = isLive ? live.isFetching : advanced.isFetching;
   const error = isLive ? live.isError : advanced.isError;
+  const canLoadMore = !isLive && Boolean(advanced.hasNextPage);
+  const loadingMore = advanced.isFetchingNextPage;
 
   const hasActiveFilters = Boolean(filters.genre || filters.year || filters.rating);
 
@@ -275,11 +277,23 @@ export default function SearchPage() {
             compact
           />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {results.map((item, i) => (
-              <SearchResultCard key={`${item.mediaType}-${item.id}-${i}`} item={item} byId={catalog.byId} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {results.map((item, i) => (
+                <SearchResultCard key={`${item.mediaType}-${item.id}-${i}`} item={item} byId={catalog.byId} />
+              ))}
+            </div>
+            {canLoadMore && (
+              <button
+                type="button"
+                onClick={() => advanced.fetchNextPage()}
+                disabled={loadingMore}
+                className="mt-3 w-full rounded-xl border border-edge/10 bg-panel/60 py-2.5 text-xs font-semibold text-ink-200 active:bg-white/5 disabled:opacity-60"
+              >
+                {loadingMore ? "در حال بارگذاری…" : "بارگذاری بیشتر"}
+              </button>
+            )}
+          </>
         )}
       </section>
     </div>

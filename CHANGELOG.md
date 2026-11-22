@@ -2,6 +2,25 @@
 
 All notable changes to Series Radar are documented here.
 
+## [Unreleased]
+
+- رفع ۵۰۰ در `/api/movies/discover` (import گم‌شدهٔ `enrich_with_omdb`) + ۲۵ تست HTTP handler
+- اصلاح مهاجرت ستاره‌های TVMaze→TMDB: تطبیق با `title`/`originalTitle`، عدم حذف در خطای شبکه، بازیابی از legacy storage، ۴ تست
+- سخت‌سازی WebView: `WebViewAssetLoader`، allowlist scheme/هاست، file access خاموش، CSP، اعتبارسنجی URL/نسخهٔ آپدیت
+- چرخش کلید امضا: signing env-based + CI decode secret + fallback debug + keystore جدید (cert `83:5B:…:F3:52`)
+- عملکرد سرور: `enrich_tmdb_details` موازی + کش ۷ روزه؛ `match_downloads` موازی با deadline ۱۵s
+- کاهش درخواست‌های دوزبانهٔ `localized_collection` (en-US فقط وقتی متن فارسی خالی است)
+- متریک‌ها پایدار (ذخیرهٔ دوره‌ای در فایل) + `/api/health` وضعیت TMDB
+- خطاهای ۵۰۰ بدون leakage متن exception + request id
+- سرویس systemd با کاربر غیر root + hardening
+- مستندات/attribution: README/ARCHITECTURE/PRIVACY به TMDB-only؛ attribution در «درباره»
+- حذف بازماندهٔ TVMaze: `useTvmazeCredits`، مسیرهای `/show` و `/series` به `/tv` redirect
+- تصاویر: srcset/sizes/width/height برای پوسترها + preconnect
+- حذف RUM مرده (console.debug)
+- `strict: true` در tsconfig + Dependabot config
+- صفحه‌بندی جستجو/کشف (بارگذاری بیشتر)
+- بروزرسانی plan: نقشه راه جامع
+
 ## [v1.16.1] - 2026-11-21
 
 - رفع مشکل پنهان شدن سریالهای فصلاول در فیلتر «همه»؛ دلیل، محدودیت ۲۰/۲۵/۳۰ کارتی هر گروه بود نه خود فیلتر

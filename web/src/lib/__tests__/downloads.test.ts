@@ -91,7 +91,7 @@ describe("download link helpers", () => {
     const dl = await import("../downloads");
     expect(dl.detailRouteFor("movie:603692")).toBe("/movie/603692");
     expect(dl.detailRouteFor("series:tmdb:95396")).toBe("/tv/95396");
-    expect(dl.detailRouteFor("series:tvmaze:82")).toBe("/show/82");
+    expect(dl.detailRouteFor("series:tvmaze:82")).toBe("/tv/82");
     expect(dl.detailRouteFor("bad")).toBeNull();
   });
 });

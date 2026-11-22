@@ -349,21 +349,46 @@ def tmdb_search(title, year=None):
     return payload
 
 
+ENRICH_DATES_TTL = 7 * 86400
+
+
+def _enrich_one_movie(movie):
+    """Fill release dates / imdb id for a single movie (cached)."""
+    if "digitalDate" in movie and movie.get("imdbId"):
+        return movie
+    mid = movie.get("id")
+    if not mid:
+        return movie
+    cache_key = "movie_dates_%s" % mid
+    cached = cache_get(cache_key, ENRICH_DATES_TTL)
+    if cached is not None:
+        movie.update(cached.get("dates") or {})
+        if cached.get("imdbId") and not movie.get("imdbId"):
+            movie["imdbId"] = cached["imdbId"]
+        return movie
+    try:
+        detail = fetch_json(
+            "%s/movie/%s?append_to_response=release_dates,external_ids&language=en-US" % (TMDB, mid),
+            headers={"Authorization": "Bearer " + TMDB_TOKEN, "Accept": "application/json"},
+            timeout=20,
+        )
+        dates = pick_release_dates(detail)
+        movie.update(dates)
+        imdb_id = movie.get("imdbId") or (detail.get("external_ids") or {}).get("imdb_id")
+        if imdb_id:
+            movie["imdbId"] = imdb_id
+        cache_put(cache_key, {"dates": dates, "imdbId": imdb_id})
+    except Exception:
+        pass
+    return movie
+
+
 def enrich_tmdb_details(movies):
-    """Fill release dates / imdb id from TMDB detail (needed for the archive rule)."""
-    for movie in movies:
-        if "digitalDate" in movie and movie.get("imdbId"):
-            continue
-        try:
-            detail = fetch_json(
-                "%s/movie/%s?append_to_response=release_dates,external_ids&language=en-US" % (TMDB, movie["id"]),
-                headers={"Authorization": "Bearer " + TMDB_TOKEN, "Accept": "application/json"},
-                timeout=20,
-            )
-            movie.update(pick_release_dates(detail))
-            movie["imdbId"] = movie.get("imdbId") or (detail.get("external_ids") or {}).get("imdb_id")
-        except Exception:
-            pass
+    """Fill release dates / imdb id from TMDB detail (parallel + cached)."""
+    if not movies:
+        return movies
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(_enrich_one_movie, movies))
     return movies
 
 

@@ -39,6 +39,10 @@ android-native/app/release/
 android-native/app/src/main/assets/web/
 
 # Signing keystore is committed on purpose (required for consistent update signatures).
+# Any new release keystore must stay out of git (use GitHub Secrets + CI).
+*.keystore
+*.jks
+!android-native/app/debug.keystore
 # between local builds and GitHub Actions). The password is intentionally public.
 
 # Secrets

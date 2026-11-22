@@ -13,6 +13,12 @@ function PosterInner({ show, className = "", rounded = "rounded-card" }: PosterP
   const [failed, setFailed] = useState(false);
   const url = posterUrl(show);
 
+  // Responsive srcset for TMDB posters (2:3 aspect ratio) to cut payload and CLS.
+  const srcSet =
+    show.posterPath && !show.posterPath.startsWith("http")
+      ? `https://image.tmdb.org/t/p/w342${show.posterPath} 342w, https://image.tmdb.org/t/p/w500${show.posterPath} 500w`
+      : undefined;
+
   useEffect(() => {
     setFailed(false);
   }, [url]);
@@ -32,6 +38,10 @@ function PosterInner({ show, className = "", rounded = "rounded-card" }: PosterP
   return (
     <img
       src={url}
+      srcSet={srcSet}
+      sizes="(max-width: 640px) 45vw, 200px"
+      width={342}
+      height={513}
       alt={show.title}
       loading="lazy"
       decoding="async"

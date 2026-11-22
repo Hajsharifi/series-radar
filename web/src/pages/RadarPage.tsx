@@ -492,7 +492,7 @@ export function RadarPage() {
               return (
                 <Link
                   key={show.favoriteKey}
-                  to={show.source === "tmdb" ? `/tv/${show.id}` : `/series/${show.id}`}
+                  to={`/tv/${show.id}`}
                   className="block"
                 >
                   <article className="relative overflow-hidden rounded-card border border-edge/10 bg-panel/80">

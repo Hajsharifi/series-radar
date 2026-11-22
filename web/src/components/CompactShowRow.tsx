@@ -22,7 +22,7 @@ function CompactShowRowInner({ show, favorite, onToggleFavorite }: CompactShowRo
       : nextSeason
         ? `فصل ${toPersianDigits(nextSeason)}`
         : "در حال پخش";
-  const detailPath = show.source === "tmdb" ? `/tv/${show.id}` : `/show/${show.id}`;
+  const detailPath = `/tv/${show.id}`;
   const clock = show.airstamp && show.source !== "tmdb" ? tehranClock(show.airstamp) : "";
 
   return (

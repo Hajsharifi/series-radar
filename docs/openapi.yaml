@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: Series Radar API
+  version: 1.16.12
+  description: |
+    TMDB-backed API for Series Radar (series and movies). All endpoints return JSON.
+    Base URL: https://radar.hajsharifi.online:8443
+servers:
+  - url: https://radar.hajsharifi.online:8443
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+  /api/tv/upcoming:
+    get:
+      summary: Upcoming TV shows (merged discover queries)
+      responses:
+        "200":
+          description: List of shows
+  /api/tv/{id}:
+    get:
+      summary: TV show detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Show detail
+  /api/tv/search:
+    get:
+      summary: Search TV shows
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Search results
+  /api/tv/discover:
+    get:
+      summary: Discover TV shows
+      responses:
+        "200":
+          description: Discovered shows with total_pages
+  /api/movies/discover:
+    get:
+      summary: Discover movies
+      responses:
+        "200":
+          description: Discovered movies with total_pages
+  /api/movies/quality:
+    get:
+      summary: Movies waiting for a good digital release
+      responses:
+        "200":
+          description: Movie list
+  /api/search/multi:
+    get:
+      summary: Unified movie/TV search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+        - name: type
+          in: query
+          schema: { type: string, enum: [movie, tv, all] }
+      responses:
+        "200":
+          description: Search results
+  /api/downloads/match:
+    get:
+      summary: Resolve download links for stable keys
+      parameters:
+        - name: keys
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Download payloads
+  /api/metrics:
+    get:
+      summary: Runtime metrics (requests, errors, latency, cache)
+      responses:
+        "200":
+          description: Metrics snapshot

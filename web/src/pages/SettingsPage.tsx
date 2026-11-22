@@ -140,11 +140,26 @@ export function SettingsPage() {
         <p className="mt-1 text-caption text-muted">داده‌ها، یادآوری و وضعیت اپ</p>
       </header>
 
+      <section className="rounded-card border border-amber-400/25 bg-amber-500/10 p-4">
+        <h2 className="mb-1 text-title text-amber-200">پیش از به‌روزرسانی</h2>
+        <p className="text-caption leading-relaxed text-amber-100/90">
+          قبل از نصب نسخهٔ جدید، از تنظیمات پشتیبان بگیرید تا ستاره‌ها و یادآورها از دست نروند.
+          در صورت تغییر کلید امضا، باید نسخهٔ قبلی را حذف و نسخهٔ جدید را نصب کنید.
+        </p>
+        <button
+          type="button"
+          onClick={downloadBackup}
+          className="mt-2 rounded-lg bg-amber-400/20 px-3 py-1.5 text-xs font-semibold text-amber-100 active:bg-amber-400/30"
+        >
+          دانلود پشتیبان
+        </button>
+      </section>
+
       <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-title text-white">داده‌ها</h2>
           <span className="rounded-full bg-emerald-400/12 px-2 py-0.5 text-micro font-medium text-emerald-300">
-            TVMaze + TMDB
+            TMDB
           </span>
         </div>
         <Row label="تعداد سریال‌های زیر رادار" value={`${toPersianDigits(schedule.shows.length)} سریال`} />
@@ -443,13 +458,13 @@ export function SettingsPage() {
       <section className="rounded-card border border-edge/10 bg-panel/70 p-4">
         <h2 className="mb-2 text-sm font-bold text-white">درباره</h2>
         <Row label="نسخه" value={toPersianDigits(__APP_VERSION__)} />
-        <Row label="منبع داده" value="TVMaze · TMDB · Box Office Mojo" />
+        <Row label="منبع داده" value="TMDB · Box Office Mojo" />
         <Row label="تقویم" value="شمسی + میلادی" />
         <Row label="یادآوری" value="آلارم اندروید" />
         <Row label="وضعیت ورود" value="محلی، بدون حساب" />
         <p className="mt-2 text-caption leading-relaxed text-muted">
-          سریال‌ها از TVMaze، فیلم‌ها و تاریخ‌های انتشار از TMDB و اعداد گیشه از Box Office Mojo گرفته
-          می‌شوند. همهٔ داده‌های تو محلی است و نیازی به ورود یا حساب ابری نیست.
+          سریال‌ها و فیلم‌ها (همراه با تاریخ‌های انتشار) از TMDB و اعداد گیشه از Box Office Mojo
+          گرفته می‌شوند. همهٔ داده‌های تو محلی است و نیازی به ورود یا حساب ابری نیست.
         </p>
         <p className="mt-2 text-caption leading-relaxed text-muted">
           This product uses the TMDB API but is not endorsed or certified by TMDB.
@@ -458,9 +473,7 @@ export function SettingsPage() {
           <button type="button" onClick={() => openExternalUrl("https://www.themoviedb.org/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-caption text-ink-200">
             TMDB
           </button>
-          <button type="button" onClick={() => openExternalUrl("https://www.tvmaze.com/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-caption text-ink-200">
-            TVMaze
-          </button>
+
           <button type="button" onClick={() => openExternalUrl("https://www.boxofficemojo.com/")} className="rounded-lg bg-white/6 px-2.5 py-1 text-caption text-ink-200">
             Box Office Mojo
           </button>

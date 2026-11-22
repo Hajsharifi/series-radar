@@ -1,8 +1,11 @@
 """Tiny thread-safe counters exposed by /api/metrics."""
 
+import json
+import os
 import threading
 import time
 
+METRICS_FILE = os.environ.get("SERIES_RADAR_METRICS_FILE", "")
 STARTED_AT = time.time()
 REQUEST_COUNT = 0
 ERROR_COUNT = 0
@@ -14,6 +17,48 @@ _ROUTE_ERRORS = {}
 _ROUTE_LATENCY_SUM_MS = {}
 _ROUTE_LATENCY_COUNT = {}
 _MAX_ROUTES = 64
+
+
+def _load():
+    global REQUEST_COUNT, ERROR_COUNT, _ROUTE_COUNTS, _ROUTE_ERRORS
+    global _ROUTE_LATENCY_SUM_MS, _ROUTE_LATENCY_COUNT, STARTED_AT
+    if not METRICS_FILE or not os.path.exists(METRICS_FILE):
+        return
+    try:
+        with open(METRICS_FILE, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+        REQUEST_COUNT = int(data.get("requests", 0))
+        ERROR_COUNT = int(data.get("errors", 0))
+        _ROUTE_COUNTS = dict(data.get("routeCounts", {}))
+        _ROUTE_ERRORS = dict(data.get("routeErrors", {}))
+        _ROUTE_LATENCY_SUM_MS = {k: float(v) for k, v in (data.get("routeLatencySum", {}) or {}).items()}
+        _ROUTE_LATENCY_COUNT = {k: int(v) for k, v in (data.get("routeLatencyCount", {}) or {}).items()}
+    except Exception:
+        pass
+
+
+def save():
+    if not METRICS_FILE:
+        return
+    try:
+        with METRICS_LOCK:
+            data = {
+                "requests": REQUEST_COUNT,
+                "errors": ERROR_COUNT,
+                "routeCounts": _ROUTE_COUNTS,
+                "routeErrors": _ROUTE_ERRORS,
+                "routeLatencySum": _ROUTE_LATENCY_SUM_MS,
+                "routeLatencyCount": _ROUTE_LATENCY_COUNT,
+            }
+        tmp = METRICS_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as handle:
+            json.dump(data, handle)
+        os.replace(tmp, METRICS_FILE)
+    except Exception:
+        pass
+
+
+_load()
 
 
 def _normalize_path(path):
@@ -72,7 +117,7 @@ def snapshot(cache_files=0, cache_bytes=0):
                 "errors": errors,
                 "avgLatencyMs": round(lat_sum / lat_count, 2) if lat_count else 0.0,
             }
-        return {
+        result = {
             "ok": True,
             "uptimeSeconds": int(time.time() - STARTED_AT),
             "requests": REQUEST_COUNT,
@@ -81,3 +126,6 @@ def snapshot(cache_files=0, cache_bytes=0):
             "cacheBytes": cache_bytes,
             "byRoute": by_route,
         }
+        # Persist counters so a restart does not wipe them.
+        threading.Thread(target=save, daemon=True).start()
+        return result

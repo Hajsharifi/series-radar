@@ -22,7 +22,7 @@ import { ShowCard } from "../components/ShowCard";
 import { CreditsSection } from "../components/CreditsSection";
 import { DownloadPanel } from "../components/DownloadPanel";
 import { seriesDownloadKey } from "../lib/downloads";
-import { useTvmazeCredits } from "../hooks/useTvmazeCredits";
+
 import { cachedFetchJson } from "../lib/offline";
 import { API_BASE } from "../lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -34,8 +34,6 @@ export function ShowDetailsPage() {
   const showId = Number(id);
   const schedule = useScheduleContext();
   const favorites = useFavorites();
-  const credits = useTvmazeCredits(Number.isFinite(showId) ? showId : null);
-
   const { data: detail, isLoading: detailLoading } = useQuery({
     queryKey: ["showDetailPage", showId],
     queryFn: () => cachedFetchJson<any>(`${API_BASE}/api/tv/${showId}`, 15000),
@@ -277,7 +275,7 @@ export function ShowDetailsPage() {
             </div>
           )}
 
-          <CreditsSection kind="series" creators={credits.data?.creators} creatorIds={credits.data?.creatorIds} cast={credits.data?.cast} />
+          <CreditsSection kind="series" creators={detail?.createdBy} creatorIds={detail?.createdByIds} cast={detail?.cast} />
 
           {show.officialSite && (
             <a

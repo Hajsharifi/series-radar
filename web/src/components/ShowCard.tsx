@@ -21,7 +21,7 @@ function ShowCardInner({ show, favorite, onToggleFavorite }: ShowCardProps) {
   const dateStamp = show.airstamp ?? (show.nextEpisode?.airdate ? `${show.nextEpisode.airdate}T12:00:00Z` : null);
   const nextSeason = show.nextEpisode?.season ?? show.seasonNumber;
   const nextNumber = show.nextEpisode?.number;
-  const detailPath = show.source === "tmdb" ? `/tv/${show.id}` : `/show/${show.id}`;
+  const detailPath = `/tv/${show.id}`;
 
   return (
     <article className="sr-card-hover sr-pop group relative flex flex-col overflow-hidden rounded-card border border-edge/10 bg-panel/85 shadow-card">
@@ -115,7 +115,7 @@ export const ShowCard: MemoExoticComponent<typeof ShowCardInner> = memo(ShowCard
 
 function ShowRowInner({ show, favorite, onToggleFavorite }: ShowCardProps) {
   const countdown = countdownLabel(show.airstamp);
-  const detailPath = show.source === "tmdb" ? `/tv/${show.id}` : `/show/${show.id}`;
+  const detailPath = `/tv/${show.id}`;
   const event = showEventKind(show);
   const nextSeason = show.nextEpisode?.season ?? show.seasonNumber;
   const nextNumber = show.nextEpisode?.number;

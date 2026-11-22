@@ -14,6 +14,7 @@ import html as htmlmod
 import json
 import re
 import sys
+import concurrent.futures
 import threading
 import time
 import urllib.error
@@ -706,25 +707,58 @@ def resolve_key(key, refresh=False):
         return {"key": key, "status": "error", "checkedAt": _now(), "error": str(error)}
 
 
+DOWNLOAD_DEADLINE_SEC = 15.0
+
+
 def match_downloads(keys, refresh=False):
-    """Resolve up to MAX_KEYS stable keys, preferring the local cache."""
+    """Resolve up to MAX_KEYS stable keys, preferring the local cache.
+
+    Resolution runs in a small thread pool so a slow key cannot block the
+    whole batch; a global deadline turns the remaining keys into "pending"
+    results instead of making the client wait (and abort) forever.
+    """
     if not isinstance(keys, (list, tuple)):
         return []
-    results = []
-    for key in keys[:MAX_KEYS]:
-        key = str(key).strip()[:120]
-        if not key:
+    cleaned = [str(k).strip()[:120] for k in list(keys)[:MAX_KEYS]]
+    cleaned = [k for k in cleaned if k]
+
+    unique = []
+    seen = set()
+    for key in cleaned:
+        if key in seen:
             continue
+        seen.add(key)
+        unique.append(key)
+
+    deadline = time.monotonic() + DOWNLOAD_DEADLINE_SEC
+    results_map = {}
+
+    def resolve_one(key):
+        if time.monotonic() > deadline:
+            return key, {"key": key, "status": "pending", "checkedAt": _now()}
         cached = None if refresh else cache_get(CACHE_PREFIX + key, CACHE_FOUND)
         if cached is not None:
             ttl = CACHE_NONE if cached.get("status") == "none" else CACHE_FOUND
             if time.time() - cached.get("cachedAt", 0) <= ttl:
-                results.append({k: v for k, v in cached.items() if k != "cachedAt"})
-                continue
+                return key, {k: v for k, v in cached.items() if k != "cachedAt"}
         payload = resolve_key(key, refresh)
-        if payload["status"] != "error":
+        if payload.get("status") != "error":
             to_cache = dict(payload)
             to_cache["cachedAt"] = time.time()
             cache_put(CACHE_PREFIX + key, to_cache)
-        results.append(payload)
-    return results
+        return key, payload
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        futures = [pool.submit(resolve_one, key) for key in unique]
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                key, payload = future.result()
+                results_map[key] = payload
+            except Exception as error:
+                pass
+
+    for key in unique:
+        if key not in results_map:
+            results_map[key] = {"key": key, "status": "pending", "checkedAt": _now()}
+
+    return [results_map[key] for key in cleaned]

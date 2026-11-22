@@ -205,5 +205,5 @@ export function detailRouteFor(key: string): string | null {
   const parsed = parseDownloadKey(key);
   if (!parsed) return null;
   if (parsed.kind === "movie") return `/movie/${parsed.id}`;
-  return parsed.source === "tmdb" ? `/tv/${parsed.id}` : `/show/${parsed.id}`;
+  return `/tv/${parsed.id}`;
 }

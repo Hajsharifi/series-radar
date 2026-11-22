@@ -10,25 +10,40 @@ android {
         applicationId = "com.serieradar.app"
         minSdk = 24
         targetSdk = 34
-        versionCode = 60
-        versionName = "1.16.12"
+        versionCode = 61
+        versionName = "1.16.13"
     }
 
     signingConfigs {
         create("release") {
-            // Same debug keystore that signed previously distributed APKs.
-            // Using the identical certificate is REQUIRED for in-place updates
-            // on devices where older versions are already installed.
-            storeFile = file("debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+            val ksFile = System.getenv("SERIES_RADAR_KEYSTORE")
+                    ?: (project.findProperty("seriesRadar.keystore") as String?)
+            val ksPassword = System.getenv("SERIES_RADAR_KEYSTORE_PASSWORD")
+                    ?: (project.findProperty("seriesRadar.keystorePassword") as String?)
+            val alias = System.getenv("SERIES_RADAR_KEY_ALIAS")
+                    ?: (project.findProperty("seriesRadar.keyAlias") as String?)
+            val keyPass = System.getenv("SERIES_RADAR_KEY_PASSWORD")
+                    ?: (project.findProperty("seriesRadar.keyPassword") as String?)
+            if (ksFile != null && ksPassword != null && alias != null && keyPass != null) {
+                storeFile = file(ksFile)
+                storePassword = ksPassword
+                keyAlias = alias
+                keyPassword = keyPass
+            } else {
+                // Fallback for local development only. CI and release builds MUST
+                // provide the env/properties above (private release key).
+                storeFile = file("debug.keystore")
+                storePassword = "android"
+                keyAlias = "androiddebugkey"
+                keyPassword = "android"
+            }
         }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }
     }

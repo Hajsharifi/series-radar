@@ -271,7 +271,7 @@ def now_playing(force=False):
         if (movie.get("theatricalDate") or movie.get("releaseDate") or "") <= today_iso
     ]
     movies = drop_archived(movies)
-    payload = {"updatedAt": dt.datetime.utcnow().isoformat() + "Z", "source": "TMDB", "items": movies}
+    payload = {"updatedAt": dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat() + "Z", "source": "TMDB", "items": movies}
     cache_put("now_playing_us", payload)
     return payload
 
@@ -301,7 +301,7 @@ def upcoming(force=False):
         if (movie.get("theatricalDate") or movie.get("releaseDate") or "") > today
     ]
     movies = drop_archived(movies)
-    payload = {"updatedAt": dt.datetime.utcnow().isoformat() + "Z", "source": "TMDB", "items": movies}
+    payload = {"updatedAt": dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat() + "Z", "source": "TMDB", "items": movies}
     cache_put("upcoming_us", payload)
     return payload
 
@@ -363,7 +363,7 @@ def online_releases(force=False):
                 items.append(detail)
     # Sort by nearest upcoming release date
     items.sort(key=lambda item: item.get("onlineDate") or "9999")
-    payload = {"updatedAt": dt.datetime.utcnow().isoformat() + "Z", "source": "TMDB", "items": items}
+    payload = {"updatedAt": dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat() + "Z", "source": "TMDB", "items": items}
     cache_put("online_us", payload)
     return payload
 
@@ -463,6 +463,6 @@ def quality_waiting(force=False):
     no_date = sorted((m for m in items if not m.get("onlineDate")), key=lambda m: m.get("theatricalDate") or "", reverse=True)
     items = with_date + no_date
 
-    payload = {"updatedAt": dt.datetime.utcnow().isoformat() + "Z", "source": "TMDB", "items": items}
+    payload = {"updatedAt": dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat() + "Z", "source": "TMDB", "items": items}
     cache_put("quality_us", payload)
     return payload

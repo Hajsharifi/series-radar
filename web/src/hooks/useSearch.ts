@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { cachedFetchJson } from "../lib/offline";
 import { API_BASE } from "../lib/api";
@@ -91,27 +91,36 @@ export function useLiveSearch(query: string, type: "movie" | "tv" | "all" = "all
 
 /** Discover/browse when no text query is present. */
 export function useAdvancedSearch(filters: SearchFilters) {
-  const params: Record<string, string> = {
+  const baseParams: Record<string, string> = {
     sort_by: `${filters.sortBy}.${filters.sortOrder}`,
     include_adult: "false",
-    page: "1",
   };
-  if (filters.year) params["primary_release_date.gte"] = `${filters.year}-01-01`;
-  if (filters.year) params["primary_release_date.lte"] = `${filters.year}-12-31`;
-  if (filters.rating) params["vote_average.gte"] = filters.rating;
-  if (filters.genre) params["with_genres"] = filters.genre;
+  if (filters.year) baseParams["primary_release_date.gte"] = `${filters.year}-01-01`;
+  if (filters.year) baseParams["primary_release_date.lte"] = `${filters.year}-12-31`;
+  if (filters.rating) baseParams["vote_average.gte"] = filters.rating;
+  if (filters.genre) baseParams["with_genres"] = filters.genre;
 
-  const queryKey = ["discover", filters.type, params];
+  const queryKey = ["discover", filters.type, baseParams];
 
-  const query = useQuery({
+  const query = useInfiniteQuery({
     queryKey,
-    queryFn: async () => {
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const params = { ...baseParams, page: String(pageParam) };
       if (filters.type === "movie") {
         const data = await fetchDiscover(params, "movie");
-        return { items: (data.items || []).map((r: SearchResult) => ({ ...r, mediaType: "movie" as const, source: "tmdb" as const })) };
+        return {
+          items: (data.items || []).map((r: SearchResult) => ({ ...r, mediaType: "movie" as const, source: "tmdb" as const })),
+          totalPages: data.total_pages || 1,
+          page: pageParam,
+        };
       } else if (filters.type === "tv") {
         const data = await fetchDiscover(params, "tv");
-        return { items: (data.results || []).map((r: SearchResult) => ({ ...r, mediaType: "tv" as const, source: "tmdb" as const })) };
+        return {
+          items: (data.results || []).map((r: SearchResult) => ({ ...r, mediaType: "tv" as const, source: "tmdb" as const })),
+          totalPages: data.total_pages || 1,
+          page: pageParam,
+        };
       }
       const [movies, tv] = await Promise.all([
         fetchDiscover(params, "movie"),
@@ -122,8 +131,11 @@ export function useAdvancedSearch(filters: SearchFilters) {
           ...(movies.items || []).map((r: SearchResult) => ({ ...r, mediaType: "movie" as const, source: "tmdb" as const })),
           ...(tv.results || []).map((r: SearchResult) => ({ ...r, mediaType: "tv" as const, source: "tmdb" as const })),
         ],
+        totalPages: Math.max(movies.total_pages || 1, tv.total_pages || 1),
+        page: pageParam,
       };
     },
+    getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
     enabled: !filters.query || filters.query.length < 2,
     staleTime: 5 * 60 * 1000,
   });

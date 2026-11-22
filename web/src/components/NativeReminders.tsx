@@ -170,7 +170,7 @@ export function NativeReminders() {
       items.push({
         id: nativeShowId(show.id, show.source ?? "tmdb"),
         kind: "show",
-        route: show.source === "tmdb" ? `/tv/${show.id}` : `/show/${show.id}`,
+        route: `/tv/${show.id}`,
         title: `${EVENT_LABEL[showEventKind(show)]} «${show.title}»`,
         body: [episode, `${leadHoursLabel(lead)}، ساعت ${tehranClock(new Date(triggerAt).toISOString())} به وقت تهران.`]
           .filter(Boolean)

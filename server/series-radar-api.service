@@ -7,9 +7,16 @@ Type=simple
 ExecStart=/usr/bin/python3 /opt/series-radar-api/server.py
 Restart=always
 RestartSec=5
-User=root
+User=seriesradar
+Group=seriesradar
 Environment=PYTHONUNBUFFERED=1
 EnvironmentFile=-/opt/series-radar-api/env
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/series-radar-api/cache /opt/series-radar-api
 
 [Install]
 WantedBy=multi-user.target

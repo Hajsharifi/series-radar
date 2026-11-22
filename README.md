@@ -11,7 +11,7 @@
 | رابط کاربری | React 19 + Vite + HashRouter | `web/src` |
 | پوستهٔ اندروید | Java + WebView + AlarmManager | `android-native/` |
 | API داده | Python 3 (`http.server`) + کش فایلی | `server/server.py` |
-| داده‌ها | TVMaze، TMDB، Box Office Mojo، OMDB (اختیاری) | از طریق API |
+| داده‌ها | TMDB (سریال‌ها و فیلم‌ها)، Box Office Mojo، OMDB (اختیاری) | از طریق API |
 | ذخیره‌سازی کاربر | `localStorage` + `sessionStorage` | روی دستگاه |
 
 اپ وب داخل WebView اجرا می‌شود. اعلان‌ها و آلارم‌ها کاملاً محلی‌اند
@@ -112,5 +112,5 @@ git push origin master --tags
 
 ## منابع داده
 
-این محصول از APIهای TMDB و TVMaze استفاده می‌کند اما توسط آن‌ها تأیید یا
+این محصول از APIی TMDB استفاده می‌کند اما توسط آن تأیید یا
 پشتیبانی نشده است. جزئیات در `ATTRIBUTION.md`.

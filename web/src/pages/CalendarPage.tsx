@@ -118,7 +118,7 @@ export default function CalendarPage() {
         title: show.title,
         subtitle: show.seasonNumber ? `فصل ${toPersianDigits(show.seasonNumber)}` : show.network ?? "سریال",
         clock: source === "tmdb" ? "زمان اعلام نشده" : tehranClock(show.airstamp),
-        path: source === "tmdb" ? `/tv/${show.id}` : `/show/${show.id}`,
+        path: `/tv/${show.id}`,
         source,
         kind: "series",
         posterPath: show.posterPath,
@@ -146,7 +146,7 @@ export default function CalendarPage() {
           ? `فصل ${toPersianDigits(next.season)} · قسمت ${toPersianDigits(next.number)}`
           : show.network ?? "سریال",
         clock: show.source === "tmdb" ? "زمان اعلام نشده" : tehranClock(show.airstamp),
-        path: show.source === "tmdb" ? `/tv/${show.id}` : `/series/${show.id}`,
+        path: `/tv/${show.id}`,
         source: show.source ?? "tmdb",
         kind: "series",
         posterPath: show.posterPath,

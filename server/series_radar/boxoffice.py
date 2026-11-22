@@ -175,7 +175,7 @@ def box_office(year=None, force=False):
     yearly_out.sort(key=lambda item: item.get("worldwide") or 0, reverse=True)
 
     payload = {
-        "updatedAt": dt.datetime.utcnow().isoformat() + "Z",
+        "updatedAt": dt.datetime.now(dt.timezone.utc).replace(tzinfo=None).isoformat() + "Z",
         "source": "Box Office Mojo",
         "year": year,
         "weekendLabel": weekend_label,

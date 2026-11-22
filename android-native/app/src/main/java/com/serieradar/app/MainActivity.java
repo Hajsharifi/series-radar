@@ -23,8 +23,12 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
+
+import androidx.webkit.WebViewAssetLoader;
 
 import androidx.core.content.FileProvider;
 
@@ -73,23 +77,46 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        settings.setAllowFileAccess(true);
+        settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(true);
         settings.setLoadWithOverviewMode(true);
         settings.setUseWideViewPort(true);
         settings.setSupportZoom(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMediaPlaybackRequiresUserGesture(false);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setTextZoom(100);
 
-        // ES modules (Vite) require CORS/file access for local assets.
-        settings.setAllowFileAccessFromFileURLs(true);
-        settings.setAllowUniversalAccessFromFileURLs(true);
+        // Local assets are served through WebViewAssetLoader (no file:// access).
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+
+        final WebViewAssetLoader assetLoader = new WebViewAssetLoader.Builder()
+                .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+                .build();
 
         webView.addJavascriptInterface(new ReminderBridge(), "AndroidReminders");
 
         webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                Uri uri = request.getUrl();
+                String scheme = uri.getScheme();
+                if ("https".equals(scheme) && "appassets.androidplatform.net".equals(uri.getHost())) {
+                    return false; // let the asset loader handle it
+                }
+                if ("http".equals(scheme) || "https".equals(scheme)) {
+                    openExternalLink(uri.toString());
+                    return true;
+                }
+                return true; // block everything else
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                return assetLoader.shouldInterceptRequest(request.getUrl());
+            }
+
             @Override
             public void onPageFinished(WebView view, String url) {
                 pageLoaded = true;
@@ -98,7 +125,7 @@ public class MainActivity extends Activity {
         });
         webView.setWebChromeClient(new WebChromeClient());
 
-        webView.loadUrl("file:///android_asset/web/index.html");
+        webView.loadUrl("https://appassets.androidplatform.net/assets/web/index.html");
 
         // Request required permissions upfront once, on first launch.
         requestUpfrontPermissions();
@@ -186,8 +213,17 @@ public class MainActivity extends Activity {
 
     /** Opens external links (trailer, GitHub) in the proper external app. */
     private void openExternalLink(String url) {
+        if (url == null) return;
+        Uri uri;
         try {
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            uri = Uri.parse(url);
+        } catch (Exception ignored) {
+            return;
+        }
+        String scheme = uri.getScheme();
+        if (!"http".equals(scheme) && !"https".equals(scheme)) return;
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         } catch (Exception ignored) {
@@ -217,6 +253,30 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) {
                 openExternalLink(url);
             }
+            return;
+        }
+        // Only allow APK downloads from trusted hosts over HTTPS.
+        Uri apkUri;
+        try {
+            apkUri = Uri.parse(url);
+        } catch (Exception ignored) {
+            return;
+        }
+        if (!"https".equals(apkUri.getScheme())) {
+            openExternalLink(url);
+            return;
+        }
+        String host = apkUri.getHost();
+        boolean trustedHost = host != null && (
+                host.equals("github.com") ||
+                host.equals("objects.githubusercontent.com") ||
+                host.equals("release-assets.githubusercontent.com") ||
+                host.equals("radar.hajsharifi.online"));
+        if (!trustedHost) {
+            openExternalLink(url);
+            return;
+        }
+        if (version == null || !version.matches("[0-9A-Za-z._-]+")) {
             return;
         }
         try {
