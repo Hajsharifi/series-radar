@@ -35,6 +35,7 @@ from .downloads import MAX_KEYS, match_downloads
 from .http import localized_collection, tmdb_get
 from .metrics import inc_error, inc_request, observe_latency, snapshot
 from .people import person_detail
+from .site_showcase import fetch_showcase, start_warmer as start_showcase_warmer
 from .text import normalize_fa
 from .tmdb import (
     enrich_tv_meta,
@@ -79,6 +80,12 @@ class Handler(BaseHTTPRequestHandler):
         _started = time.time()
         inc_request(path)
         try:
+            if path == "/api/showcase":
+                try:
+                    items = fetch_showcase(force)
+                except Exception:
+                    items = []
+                return self.send_json({"items": items, "source": "myf2ms.top"})
             if path == "/api/health":
                 tmdb_ok = bool(TMDB_TOKEN)
                 return self.send_json({"ok": tmdb_ok, "tmdb": tmdb_ok, "time": dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")})
@@ -324,6 +331,11 @@ def main():
         print("Airdate warmer started", flush=True)
     except Exception as exc:
         print("Airdate warmer failed to start: %s" % exc, flush=True)
+    try:
+        start_showcase_warmer()
+        print("Site showcase warmer started", flush=True)
+    except Exception as exc:
+        print("Site showcase warmer failed to start: %s" % exc, flush=True)
     server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print("Series Radar API on :%d" % PORT, flush=True)
     server.serve_forever()

@@ -11,11 +11,11 @@ import {
   type ShowFilters,
 } from "../hooks/useSchedule";
 import { useFavoriteEpisodes } from "../hooks/useFavoriteEpisodes";
-import { useFeaturedDismissed } from "../hooks/useFeaturedDismissed";
+
 import { useLiveTVSections } from "../hooks/useLiveTV";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { CATEGORY_LABEL, genreLabel } from "../lib/labels";
-import { rankFeaturedSuggestions } from "../lib/featured";
+
 import { favoriteKey } from "../lib/favorites";
 import { RADAR_DEFAULTS, countNonDefaultFilters } from "../lib/radar-filters";
 import { radarGroupLimit, type RadarView } from "../lib/radar-group-limit";
@@ -31,6 +31,7 @@ import { ShowCard, ShowRow } from "../components/ShowCard";
 import { CompactShowRow } from "../components/CompactShowRow";
 import { MovieCard } from "../components/MovieCard";
 import { fetchBoxOffice } from "../lib/boxoffice";
+import { fetchShowcase, type ShowcaseItem } from "../lib/showcase";
 import { EmptyState, SkeletonCards } from "../components/StateViews";
 import { LayoutGrid, List, Radar, RefreshCw, Rows3, Search, SlidersHorizontal, X } from "lucide-react";
 import { Button, Chip, Input, SectionHeader } from "../components/ui";
@@ -199,6 +200,12 @@ export function RadarPage() {
   const liveTV = useLiveTVSections();
   const favoriteEpisodes = useFavoriteEpisodes();
   const [radarMovies, setRadarMovies] = useState<Movie[]>([]);
+  const [showcase, setShowcase] = useState<ShowcaseItem[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchShowcase(false).then((items) => { if (!cancelled) setShowcase(items); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   useEffect(() => {
     let cancelled = false;
     fetchBoxOffice(false)
@@ -243,7 +250,6 @@ export function RadarPage() {
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
-  const dismissedFeatured = useFeaturedDismissed();
   const thisWeek = useMemo(() => {
     const weekLater = now + 7 * 86_400_000;
     return favoriteEpisodes.items
@@ -260,24 +266,7 @@ export function RadarPage() {
       .slice(0, 10);
   }, [favoriteEpisodes.items, now, hideUnscripted, language, country]);
 
-  const featured = useMemo(() => {
-    const byKey = new Map(
-      schedule.shows.map((show) => [favoriteKey(show.id, show.source ?? "tmdb"), show]),
-    );
-    const favoriteGenres = favorites.items.flatMap(
-      (item) => byKey.get(favoriteKey(item.showId, item.source))?.genres ?? [],
-    );
-    const excludedKeys = new Set<string>();
-    [...liveTV.onTheAir, ...liveTV.airingToday].forEach((show) => excludedKeys.add(`tmdb:${show.id}`));
-    return rankFeaturedSuggestions(filtered, {
-      now,
-      favoriteKeys,
-      favoriteGenres,
-      excludedKeys,
-      dismissedKeys: dismissedFeatured.keys,
-      limit: 6,
-    });
-  }, [filtered, now, favorites.items, favoriteKeys, schedule.shows, liveTV.onTheAir, liveTV.airingToday, dismissedFeatured.keys]);
+  // (featured TV suggestions removed — replaced by site showcase posters)
 
   // Filter live TV sections with content preferences and date filtering for airingToday
   const today = useMemo(() => toIsoDay(dateAfterDays(0)), [now]);
@@ -463,35 +452,33 @@ export function RadarPage() {
         )}
       </section>
 
-      {featured.length > 0 && !hasNarrowingFilters && (
+      {showcase.length > 0 && !hasNarrowingFilters && (
         <section>
           <SectionHeader
             className="mb-3"
-            title="پیشنهاد رادار"
-            description="انتخاب بر اساس امتیاز، محبوبیت، نزدیکی پخش و تنوع ژانر"
+            title="جدید و محبوب در سایت"
+            description="بهروزرسانی هر ۶ ساعت از صفحهٔ اصلی سایت"
           />
           <div className="sr-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
-            {featured.map((suggestion) => {
-              const show = suggestion.show;
-              const key = favoriteKey(show.id, show.source ?? "tmdb");
-              return (
-                <div key={key} className="relative w-[148px] shrink-0">
-                  <button
-                    type="button"
-                    aria-label="این پیشنهاد را نشان نده"
-                    title="علاقه ندارم"
-                    onClick={() => dismissedFeatured.dismiss(key)}
-                    className="sr-no-tap absolute right-2 top-2 z-20 grid h-6 w-6 place-items-center rounded-full bg-black/55 text-caption text-white/75 backdrop-blur active:bg-black/75"
-                  >
-                    <X className="h-3.5 w-3.5" strokeWidth={2} />
-                  </button>
-                  <ShowCard show={show} favorite={isFavorite(show)} onToggleFavorite={toggle} />
-                  <p className="mt-1 truncate text-center text-caption text-muted" title={suggestion.reasons.join(" · ")}>
-                    {suggestion.reasons.join(" · ")}
-                  </p>
+            {showcase.map((item) => (
+              <a
+                key={item.url}
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="relative w-[120px] shrink-0"
+              >
+                <div className="overflow-hidden rounded-card border border-edge/10 bg-panel/80 shadow-card">
+                  <img
+                    src={item.posterUrl}
+                    alt={item.title}
+                    loading="lazy"
+                    className="aspect-[2/3] w-full object-cover"
+                  />
                 </div>
-              );
-            })}
+                <p className="mt-1 line-clamp-2 text-center text-micro text-muted">{item.title}</p>
+              </a>
+            ))}
           </div>
         </section>
       )}

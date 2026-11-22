@@ -29,6 +29,7 @@ const NAV: Array<{ to: string; label: string; icon: LucideIcon }> = [
   { to: "/search", label: "جستجو", icon: Search },
   { to: "/calendar", label: "تقویم", icon: CalendarDays },
   { to: "/movies", label: "فیلم‌ها", icon: Film },
+  { to: "/boxoffice", label: "گیشه", icon: Ticket },
   { to: "/favorites", label: "ستاره‌ها", icon: Star },
 ];
 
