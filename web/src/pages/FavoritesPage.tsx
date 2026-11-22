@@ -29,7 +29,7 @@ import { ShowRow } from "../components/ShowCard";
 import { MovieRow } from "../components/MovieCard";
 import { MovieHistoryPageLink } from "../components/MovieHistoryLink";
 import { EmptyState } from "../components/StateViews";
-import { Download, Star } from "lucide-react";
+import { Star } from "lucide-react";
 
 type Tab = "series" | "movies";
 
@@ -326,24 +326,6 @@ export function FavoritesPage() {
           </Link>
         </div>
       </header>
-
-      <Link
-        to="/downloads"
-        className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-emerald-400/18 bg-emerald-500/8 px-4 py-3 transition hover:border-emerald-400/35"
-      >
-        <span className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-control bg-emerald-400/15 text-emerald-300">
-            <Download className="h-4 w-4" strokeWidth={1.9} />
-          </span>
-          <span>
-            <span className="block text-body font-bold text-white">لینکهای دانلود</span>
-            <span className="mt-0.5 block text-micro text-emerald-200/75">
-              لینکهای جدید سریالها و فیلمهای ستارهشده، حتی بعد از آرشیو شدن
-            </span>
-          </span>
-        </span>
-        <span className="text-caption text-emerald-200">دیدن لینکها ←</span>
-      </Link>
 
       <div className="flex flex-wrap gap-2">
         <button
