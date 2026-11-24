@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
 import {
   CalendarDays,
-  Download,
   Ellipsis,
   Film,
   Radar,
@@ -137,15 +136,6 @@ export function Layout() {
                   role="menu"
                   className="sr-pop absolute left-0 top-full z-40 mt-2 w-44 overflow-hidden rounded-card border border-edge/15 bg-panel-raised p-1 shadow-float"
                 >
-                  <Link
-                    to="/downloads"
-                    role="menuitem"
-                    onClick={() => setMoreOpen(false)}
-                    className="flex items-center gap-2 rounded-control px-3 py-2 text-caption text-copy transition hover:bg-white/6"
-                  >
-                    <Download className="h-4 w-4 text-emerald-300" strokeWidth={1.8} />
-                    لینکهای دانلود
-                  </Link>
                   <Link
                     to="/boxoffice"
                     role="menuitem"

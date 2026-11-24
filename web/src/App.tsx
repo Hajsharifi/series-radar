@@ -23,7 +23,6 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const CalendarPage = lazy(() => import("./pages/CalendarPage"));
 const MovieHistoryPage = lazy(() => import("./pages/MovieHistoryPage"));
-const DownloadsPage = lazy(() => import("./pages/DownloadsPage"));
 const PersonPage = lazy(() => import("./pages/PersonPage"));
 
 function RedirectToTv() {
@@ -57,7 +56,6 @@ export default function App() {
 <Route path="/search" element={<SearchPage />} />
                 <Route path="/calendar" element={<CalendarPage />} />
                 <Route path="/movie-history" element={<MovieHistoryPage />} />
-                <Route path="/downloads" element={<DownloadsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

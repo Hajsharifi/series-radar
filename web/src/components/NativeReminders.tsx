@@ -25,6 +25,7 @@ import {
   tehranTodayISO,
 } from "../lib/movies";
 import { recordMovieRemoval } from "../lib/movie-removals";
+import { fetchDownloads, movieDownloadKey, payloadLinkCount } from "../lib/downloads";
 import {
   isNativeApp,
   syncNativeReminders,
@@ -70,6 +71,7 @@ export function NativeReminders() {
       const movie = byId.get(item.movieId);
       if (movie && isMovieFinished(movie) && !pruned.current.has(item.movieId)) {
         pruned.current.add(item.movieId);
+        recordMovieRemoval(movie.id, movie.title, movieStage(movie));
         movieTrack.remove(item.movieId);
       }
     }
@@ -115,6 +117,33 @@ export function NativeReminders() {
       cancelled = true;
     };
   }, [movieFavorites, movieTrack, byId]);
+
+  // Site-link signal: a starred movie whose source page already has a
+  // non-cinema (WEB-DL/BluRay) download link is treated as "quality released"
+  // even when TMDB has no digital date. Archived for 90 days in history.
+  const linkArchived = useRef(new Set<number>());
+  useEffect(() => {
+    const candidates = movieFavorites.items.filter((fav) => !linkArchived.current.has(fav.movieId));
+    if (candidates.length === 0) return;
+    let cancelled = false;
+    fetchDownloads(candidates.map((f) => movieDownloadKey(f.movieId)), false)
+      .then((payloads) => {
+        if (cancelled) return;
+        for (const fav of candidates) {
+          const payload = payloads[movieDownloadKey(fav.movieId)];
+          if (!payload || payload.status !== "found") continue;
+          if (payloadLinkCount(payload) === 0) continue;
+          if (linkArchived.current.has(fav.movieId)) continue;
+          linkArchived.current.add(fav.movieId);
+          const movie = byId.get(fav.movieId);
+          const title = movie?.title ?? `فیلم ${fav.movieId}`;
+          recordMovieRemoval(fav.movieId, title, "available");
+          movieFavorites.remove(fav.movieId);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [movieFavorites.items, byId]);
 
   // Hands the watchlist to the native background checker. It fills the gap for
   // films with no digital date yet, which have no exact alarm to schedule.
