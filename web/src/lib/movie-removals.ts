@@ -5,6 +5,7 @@ export interface MovieRemoval {
   title: string;
   reason: "available" | "expired";
   at: string;
+  posterPath?: string | null;
 }
 
 const STORAGE_KEY = "sr:movie-removals:v1";
@@ -39,11 +40,12 @@ export function recordMovieRemoval(
   movieId: number,
   title: string,
   stage: MovieStage,
+  posterPath?: string | null,
 ): void {
   const reason: MovieRemoval["reason"] = stage === "expired" ? "expired" : "available";
   const items = getMovieRemovals();
   if (items.some((item) => item.movieId === movieId)) return;
-  items.unshift({ movieId, title, reason, at: new Date().toISOString() });
+  items.unshift({ movieId, title, reason, at: new Date().toISOString(), posterPath: posterPath ?? null });
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, 100)));
   } catch {

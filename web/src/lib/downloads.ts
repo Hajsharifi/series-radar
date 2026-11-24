@@ -97,6 +97,7 @@ export interface DownloadPayload {
   source?: DownloadSource;
   groups?: DownloadGroup[];
   seasons?: DownloadSeason[];
+  qualityReleased?: boolean;
 }
 
 export interface DownloadsResponse {
@@ -159,6 +160,28 @@ export function payloadLinks(payload: DownloadPayload | undefined): DownloadLink
 
 export function payloadLinkCount(payload: DownloadPayload | undefined): number {
   return payloadLinks(payload).length;
+}
+
+/** True when the payload contains at least one 720/1080 (incl. x265) non-cinema
+ *  quality — i.e. the movie's good-quality release is actually out. */
+export function hasGoodQuality(payload: DownloadPayload | undefined): boolean {
+  if (!payload) return false;
+  if (payload.qualityReleased === true) return true;
+  const re = /\b(720|1080)\b/i;
+  const check = (q?: string | null) => !!q && !isCinemaRipQuality(q) && re.test(q);
+  for (const group of payload.groups ?? []) {
+    for (const item of group.items ?? []) {
+      if (check(item.quality)) return true;
+    }
+  }
+  for (const season of payload.seasons ?? []) {
+    for (const group of season.groups ?? []) {
+      for (const episode of group.episodes ?? []) {
+        if (check(episode.quality)) return true;
+      }
+    }
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------

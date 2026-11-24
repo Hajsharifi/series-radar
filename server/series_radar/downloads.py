@@ -88,6 +88,83 @@ def is_cinema_rip_quality(quality):
             or q.strip() in ("cam", "ts", "telesync"))
 
 
+def _good_quality(quality):
+    """True for 720/1080 (incl. x265) non-cinema qualities."""
+    if not quality or is_cinema_rip_quality(quality):
+        return False
+    q = str(quality).lower()
+    return ("720" in q or "1080" in q)
+
+
+def filter_movie_groups(groups):
+    out = []
+    for g in groups or []:
+        items = []
+        for it in (g.get("items") or []):
+            q = it.get("quality")
+            if is_cinema_rip_quality(q):
+                continue
+            items.append(it)
+        if items:
+            g = dict(g)
+            g["items"] = items
+            out.append(g)
+    return out
+
+
+def filter_series_seasons(seasons):
+    out = []
+    for s in seasons or []:
+        groups = []
+        for g in (s.get("groups") or []):
+            eps = []
+            for ep in (g.get("episodes") or []):
+                q = ep.get("quality")
+                if is_cinema_rip_quality(q):
+                    continue
+                eps.append(ep)
+            if eps:
+                g = dict(g)
+                g["episodes"] = eps
+                g["quality"] = sorted({ep.get("quality") for ep in eps if ep.get("quality")})
+                groups.append(g)
+        if groups:
+            s = dict(s)
+            s["groups"] = groups
+            out.append(s)
+    return out
+
+
+def has_good_quality_movie(groups):
+    for g in (groups or []):
+        for it in (g.get("items") or []):
+            if _good_quality(it.get("quality")):
+                return True
+    return False
+
+
+def has_good_quality_series(seasons):
+    for s in (seasons or []):
+        for g in (s.get("groups") or []):
+            for ep in (g.get("episodes") or []):
+                if _good_quality(ep.get("quality")):
+                    return True
+    return False
+
+
+def normalize_download_payload(payload):
+    """Apply cinema-rip filter + qualityReleased flag (parser-agnostic)."""
+    if not isinstance(payload, dict) or payload.get("status") != "found":
+        return payload
+    if payload.get("groups") is not None:
+        payload["groups"] = filter_movie_groups(payload.get("groups") or [])
+        payload["qualityReleased"] = has_good_quality_movie(payload["groups"])
+    if payload.get("seasons") is not None:
+        payload["seasons"] = filter_series_seasons(payload.get("seasons") or [])
+        payload["qualityReleased"] = has_good_quality_series(payload["seasons"])
+    return payload
+
+
 def _now():
     return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
@@ -693,23 +770,29 @@ def resolve_key(key, refresh=False):
                 continue
             if spec["kind"] == "movie":
                 groups = parse_movie_page(page)
+                groups = filter_movie_groups(groups)
                 if not groups:
                     continue
-                return {
+                payload = {
                     "key": key, "status": "found", "checkedAt": _now(),
                     "source": {"kind": "movie", "title": meta["title"] or meta["original"],
                                "url": candidate["url"]},
                     "groups": groups,
+                    "qualityReleased": has_good_quality_movie(groups),
                 }
+                return normalize_download_payload(payload)
             seasons = parse_series_page(page)
+            seasons = filter_series_seasons(seasons)
             if not seasons:
                 continue
-            return {
+            payload = {
                 "key": key, "status": "found", "checkedAt": _now(),
                 "source": {"kind": "series", "title": meta["title"] or meta["original"],
                            "url": candidate["url"]},
                 "seasons": seasons,
+                "qualityReleased": has_good_quality_series(seasons),
             }
+            return normalize_download_payload(payload)
         return _not_found(key, meta)
     except SourceError as error:
         return {"key": key, "status": "error", "checkedAt": _now(), "error": str(error)}
@@ -753,7 +836,12 @@ def match_downloads(keys, refresh=False):
         if cached is not None:
             ttl = CACHE_NONE if cached.get("status") == "none" else CACHE_FOUND
             if time.time() - cached.get("cachedAt", 0) <= ttl:
-                return key, {k: v for k, v in cached.items() if k != "cachedAt"}
+                out = {k: v for k, v in cached.items() if k != "cachedAt"}
+                try:
+                    normalize_download_payload(out)
+                except Exception:
+                    pass
+                return key, out
         payload = resolve_key(key, refresh)
         if payload.get("status") != "error":
             to_cache = dict(payload)

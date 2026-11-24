@@ -7,6 +7,8 @@ import {
   type MovieRemoval,
 } from "../lib/movie-removals";
 import { JalaliSpans } from "../components/DateChip";
+import { MoviePoster } from "../components/MoviePoster";
+import type { Movie } from "../types";
 import { BackButton } from "../components/BackButton";
 import { toPersianDigits } from "../lib/date";
 
@@ -74,6 +76,11 @@ export default function MovieHistoryPage() {
                 className="sr-no-tap block"
               >
                 <article className="flex items-center gap-3 rounded-card border border-edge/10 bg-panel/80 p-3">
+                  <MoviePoster
+                    movie={{ id: item.movieId, title: item.title, posterPath: item.posterPath ?? null, mediaType: "movie", source: "tmdb", category: "available" } as Movie}
+                    className="h-16 w-11 shrink-0 rounded-lg"
+                    rounded="rounded-lg"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-white" dir="auto">{item.title}</p>
                     <p className="mt-0.5 text-caption text-ink-300">

@@ -25,7 +25,7 @@ import {
   tehranTodayISO,
 } from "../lib/movies";
 import { recordMovieRemoval } from "../lib/movie-removals";
-import { fetchDownloads, movieDownloadKey, payloadLinkCount } from "../lib/downloads";
+import { fetchDownloads, hasGoodQuality, movieDownloadKey } from "../lib/downloads";
 import {
   isNativeApp,
   syncNativeReminders,
@@ -63,7 +63,7 @@ export function NativeReminders() {
       const movie = byId.get(item.movieId);
       if (movie && isMovieFinished(movie) && !pruned.current.has(item.movieId)) {
         pruned.current.add(item.movieId);
-        recordMovieRemoval(movie.id, movie.title, movieStage(movie));
+        recordMovieRemoval(movie.id, movie.title, movieStage(movie), movie.posterPath);
         movieFavorites.remove(item.movieId);
       }
     }
@@ -71,7 +71,7 @@ export function NativeReminders() {
       const movie = byId.get(item.movieId);
       if (movie && isMovieFinished(movie) && !pruned.current.has(item.movieId)) {
         pruned.current.add(item.movieId);
-        recordMovieRemoval(movie.id, movie.title, movieStage(movie));
+        recordMovieRemoval(movie.id, movie.title, movieStage(movie), movie.posterPath);
         movieTrack.remove(item.movieId);
       }
     }
@@ -105,7 +105,7 @@ export function NativeReminders() {
       for (const movie of details) {
         if (!movie || !isMovieFinished(movie)) continue;
         if (movieFavorites.items.some((item) => item.movieId === movie.id)) {
-          recordMovieRemoval(movie.id, movie.title, movieStage(movie));
+          recordMovieRemoval(movie.id, movie.title, movieStage(movie), movie.posterPath);
           movieFavorites.remove(movie.id);
         }
         if (movieTrack.items.some((item) => item.movieId === movie.id)) {
@@ -132,12 +132,12 @@ export function NativeReminders() {
         for (const fav of candidates) {
           const payload = payloads[movieDownloadKey(fav.movieId)];
           if (!payload || payload.status !== "found") continue;
-          if (payloadLinkCount(payload) === 0) continue;
+          if (!hasGoodQuality(payload)) continue;
           if (linkArchived.current.has(fav.movieId)) continue;
           linkArchived.current.add(fav.movieId);
           const movie = byId.get(fav.movieId);
           const title = movie?.title ?? `فیلم ${fav.movieId}`;
-          recordMovieRemoval(fav.movieId, title, "available");
+          recordMovieRemoval(fav.movieId, title, "available", movie?.posterPath);
           movieFavorites.remove(fav.movieId);
         }
       })
