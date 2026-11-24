@@ -59,14 +59,8 @@ export function NativeReminders() {
   // Global lifecycle cleanup. A released film leaves favorites AND tracking on
   // every screen, and the reason is kept for the "recently released" history.
   useEffect(() => {
-    for (const item of movieFavorites.items) {
-      const movie = byId.get(item.movieId);
-      if (movie && isMovieFinished(movie) && !pruned.current.has(item.movieId)) {
-        pruned.current.add(item.movieId);
-        recordMovieRemoval(movie.id, movie.title, movieStage(movie), movie.posterPath);
-        movieFavorites.remove(item.movieId);
-      }
-    }
+    // Tracked movies: keep the existing expired-based pruning (no digital date
+    // needed) so stale tracking entries do not linger forever.
     for (const item of movieTrack.items) {
       const movie = byId.get(item.movieId);
       if (movie && isMovieFinished(movie) && !pruned.current.has(item.movieId)) {
@@ -75,15 +69,12 @@ export function NativeReminders() {
         movieTrack.remove(item.movieId);
       }
     }
-  }, [movieFavorites, movieTrack, byId]);
+  }, [movieTrack, byId]);
 
   // Favorites that vanished from both lists need a fresh detail lookup before
   // we can conclude their good quality has been released. Offline: never prune.
   useEffect(() => {
-    const ids = new Set([
-      ...movieFavorites.items.map((item) => item.movieId),
-      ...movieTrack.items.map((item) => item.movieId),
-    ]);
+    const ids = new Set(movieTrack.items.map((item) => item.movieId));
     const now = Date.now();
     for (const id of byId.keys()) detailChecked.current.delete(id);
     const missing = [...ids].filter(
@@ -104,11 +95,8 @@ export function NativeReminders() {
       if (cancelled) return;
       for (const movie of details) {
         if (!movie || !isMovieFinished(movie)) continue;
-        if (movieFavorites.items.some((item) => item.movieId === movie.id)) {
-          recordMovieRemoval(movie.id, movie.title, movieStage(movie), movie.posterPath);
-          movieFavorites.remove(movie.id);
-        }
         if (movieTrack.items.some((item) => item.movieId === movie.id)) {
+          recordMovieRemoval(movie.id, movie.title, movieStage(movie), movie.posterPath);
           movieTrack.remove(movie.id);
         }
       }
@@ -116,7 +104,7 @@ export function NativeReminders() {
     return () => {
       cancelled = true;
     };
-  }, [movieFavorites, movieTrack, byId]);
+  }, [movieTrack, byId]);
 
   // Site-link signal: a starred movie whose source page already has a
   // non-cinema (WEB-DL/BluRay) download link is treated as "quality released"
